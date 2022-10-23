@@ -1,7 +1,7 @@
 {
   stdenv,
-  autoreconfHook,
-  libtool,
+  meson,
+  ninja,
   pkg-config,
   fuse3
 }: stdenv.mkDerivation {
@@ -10,8 +10,8 @@
   src = ./.;
 
   nativeBuildInputs = [
-    autoreconfHook
-    libtool
+    meson
+    ninja
     pkg-config
   ];
   buildInputs = [
