@@ -1,5 +1,5 @@
-project('tealfs', 'c')
+project('dimfs', 'c')
 
 fuse = dependency('fuse3')
 
-executable('tealfs', 'src/main.c', dependencies: fuse, install: true)
+executable('dimfs', 'src/main.c', dependencies: fuse, install: true)

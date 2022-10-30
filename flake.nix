@@ -2,13 +2,13 @@
   outputs = { self, nixpkgs, flake-utils }: flake-utils.lib.eachDefaultSystem (system:
     with import nixpkgs { inherit system; };
     let
-      tealfs = callPackage ./. { };
+      dimfs = callPackage ./. { };
     in
     {
-      defaultPackage = tealfs;
+      defaultPackage = dimfs;
       devShell = mkShell {
         inputsFrom = [
-          tealfs
+          dimfs
         ];
         CPATH = "${fuse3}/include/fuse3";
       };
