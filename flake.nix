@@ -2,15 +2,14 @@
   outputs = { self, nixpkgs, flake-utils }: flake-utils.lib.eachDefaultSystem (system:
     with import nixpkgs { inherit system; };
     let
-      dimfs = callPackage ./. { };
+      klunok = callPackage ./. { };
     in
     {
-      defaultPackage = dimfs;
+      defaultPackage = klunok;
       devShell = mkShell {
         inputsFrom = [
-          dimfs
+          klunok
         ];
-        CPATH = "${fuse3}/include/fuse3";
       };
     }
   );

@@ -1,5 +1,3 @@
-project('dimfs', 'c')
+project('klunok', 'c')
 
-fuse = dependency('fuse3')
-
-executable('dimfs', 'src/main.c', dependencies: fuse, install: true)
+executable('klunok', 'src/main.c', install: true)
