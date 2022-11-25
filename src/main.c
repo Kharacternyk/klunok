@@ -11,7 +11,7 @@ int main() {
   int fanotify_fd = fanotify_init(FAN_CLASS_CONTENT, O_RDWR);
 
   if (fanotify_fd < 0) {
-    fprintf(stderr, "Cannot init fanotify: %s", strerror(errno));
+    fprintf(stderr, "Cannot init fanotify: %s\n", strerror(errno));
     return 1;
   }
 
@@ -19,7 +19,7 @@ int main() {
                          FAN_MODIFY, 0, "/home");
 
   if (status < 0) {
-    fprintf(stderr, "Cannot mark /home: %s", strerror(errno));
+    fprintf(stderr, "Cannot mark /home: %s\n", strerror(errno));
     return 1;
   }
 
@@ -28,7 +28,7 @@ int main() {
     status = read(fanotify_fd, &event, sizeof event);
 
     if (status < sizeof event) {
-      fprintf(stderr, "Cannot read an event: %s", strerror(errno));
+      fprintf(stderr, "Cannot read an event: %s\n", strerror(errno));
       return 1;
     }
 
@@ -38,7 +38,7 @@ int main() {
     status = readlink(path, path, sizeof path - 1);
 
     if (status < 0) {
-      fprintf(stderr, "Cannot process executable path: %s", strerror(errno));
+      fprintf(stderr, "Cannot process executable path: %s\n", strerror(errno));
       return 1;
     }
 
@@ -49,7 +49,7 @@ int main() {
     status = readlink(path, path, sizeof path - 1);
 
     if (status < 0) {
-      fprintf(stderr, "Cannot resolve file path: %s", strerror(errno));
+      fprintf(stderr, "Cannot resolve file path: %s\n", strerror(errno));
       return 1;
     }
 
