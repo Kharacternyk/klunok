@@ -8,6 +8,7 @@
 
 int main() {
   int status = 0;
+  /* TODO Why does it behave strange with O_RDWR? */
   int fanotify_fd = fanotify_init(FAN_CLASS_CONTENT, O_RDONLY);
 
   if (fanotify_fd < 0) {
