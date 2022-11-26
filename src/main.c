@@ -8,7 +8,7 @@
 
 int main() {
   int status = 0;
-  int fanotify_fd = fanotify_init(FAN_CLASS_CONTENT, O_RDWR);
+  int fanotify_fd = fanotify_init(FAN_CLASS_CONTENT, O_RDONLY);
 
   if (fanotify_fd < 0) {
     fprintf(stderr, "Cannot init fanotify: %s\n", strerror(errno));
@@ -16,7 +16,7 @@ int main() {
   }
 
   status = fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
-                         FAN_MODIFY, 0, "/home");
+                         FAN_OPEN_PERM, 0, "/home");
 
   if (status < 0) {
     fprintf(stderr, "Cannot mark /home: %s\n", strerror(errno));
@@ -56,6 +56,11 @@ int main() {
     path[status] = 0;
     printf("\t%s\n", path);
 
+    struct fanotify_response response = {
+        .fd = event.fd,
+        .response = FAN_ALLOW,
+    };
+    write(fanotify_fd, &response, sizeof response);
     close(event.fd);
   }
 
