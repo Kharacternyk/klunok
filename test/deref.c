@@ -9,7 +9,6 @@
 
 int main() {
   int fd = open(PATH, O_RDONLY);
-  fprintf(stderr, "%s\n", deref_fd(fd));
   assert(!strcmp(deref_fd(fd), PATH));
 
   int pid = getpid();
