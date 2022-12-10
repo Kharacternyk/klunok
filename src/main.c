@@ -1,12 +1,18 @@
+#include "deref.h"
+#include "set.h"
 #include <errno.h>
 #include <fcntl.h>
-#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/fanotify.h>
 #include <unistd.h>
 
-int main() {
+int main(int argc, const char **argv) {
+  struct set *editors = create_set();
+  for (int i = 1; i < argc; ++i) {
+    add_to_set(argv[i], editors);
+  }
+
   int status = 0;
   /* TODO Why does it behave strange with O_RDWR? */
   int fanotify_fd = fanotify_init(FAN_CLASS_CONTENT, O_RDONLY);
@@ -33,29 +39,25 @@ int main() {
       return 1;
     }
 
-    char path[PATH_MAX];
+    const char *exe_path = deref_pid(event.pid);
 
-    snprintf(path, PATH_MAX, "/proc/%d/exe", event.pid);
-    status = readlink(path, path, sizeof path - 1);
-
-    if (status < 0) {
-      fprintf(stderr, "Cannot process executable path: %s\n", strerror(errno));
+    if (!exe_path) {
+      fprintf(stderr, "Cannot resolve executable path: %s\n", strerror(errno));
       return 1;
     }
 
-    path[status] = 0;
-    printf("%s\n", path);
+    if (is_in_set(exe_path, editors)) {
+      printf("EDITOR:");
+    }
 
-    snprintf(path, PATH_MAX, "/proc/self/fd/%d", event.fd);
-    status = readlink(path, path, sizeof path - 1);
+    const char *file_path = deref_fd(event.fd);
 
     if (status < 0) {
       fprintf(stderr, "Cannot resolve file path: %s\n", strerror(errno));
       return 1;
     }
 
-    path[status] = 0;
-    printf("\t%s\n", path);
+    printf("\t%s\n", file_path);
 
     struct fanotify_response response = {
         .fd = event.fd,
