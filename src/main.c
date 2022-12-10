@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/fanotify.h>
 #include <unistd.h>
@@ -39,25 +40,33 @@ int main(int argc, const char **argv) {
       return 1;
     }
 
-    const char *exe_path = deref_pid(event.pid);
+    char *exe_path = deref_pid(event.pid);
 
     if (!exe_path) {
       fprintf(stderr, "Cannot resolve executable path: %s\n", strerror(errno));
       return 1;
     }
 
-    if (is_in_set(exe_path, editors)) {
-      printf("EDITOR:");
-    }
+    char *exe_filename = strrchr(exe_path, '/');
 
-    const char *file_path = deref_fd(event.fd);
-
-    if (status < 0) {
-      fprintf(stderr, "Cannot resolve file path: %s\n", strerror(errno));
+    if (!exe_filename) {
+      fprintf(stderr, "Cannot resolve executable path: %s\n", strerror(errno));
       return 1;
     }
 
-    printf("\t%s\n", file_path);
+    ++exe_filename;
+
+    if (is_in_set(exe_filename, editors)) {
+      char *file_path = deref_fd(event.fd);
+
+      if (status < 0) {
+        fprintf(stderr, "Cannot resolve file path: %s\n", strerror(errno));
+        return 1;
+      }
+
+      printf("%s\n", file_path);
+      free(file_path);
+    }
 
     struct fanotify_response response = {
         .fd = event.fd,
@@ -65,6 +74,7 @@ int main(int argc, const char **argv) {
     };
     write(fanotify_fd, &response, sizeof response);
     close(event.fd);
+    free(exe_path);
   }
 
   return fanotify_fd;
