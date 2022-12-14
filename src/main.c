@@ -1,5 +1,5 @@
+#include "config.h"
 #include "deref.h"
-#include "set.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -9,10 +9,7 @@
 #include <unistd.h>
 
 int main(int argc, const char **argv) {
-  struct set *editors = create_set();
-  for (int i = 1; i < argc; ++i) {
-    add_to_set(argv[i], editors);
-  }
+  struct set *editors = get_editors();
 
   int status = 0;
   /* TODO Why does it behave strange with O_RDWR? */
