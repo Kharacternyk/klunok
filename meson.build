@@ -12,8 +12,5 @@ executable('klunok', sources, install: true)
 
 test('set', executable('test-set', ['test/set.c', 'src/set.c']))
 test('deref', executable('test-deref', ['test/deref.c', 'src/deref.c']))
-test(
-  'store',
-  executable('test-store', ['test/store.c', 'src/store.c']),
-  workdir: meson.current_source_dir() + '/test'
-)
+test('store', executable('test-store', ['test/store.c', 'src/store.c'],
+  c_args: '-DPROJECT_ROOT="' + meson.current_source_dir() + '"'))

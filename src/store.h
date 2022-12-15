@@ -4,4 +4,4 @@ struct store;
 
 struct store *create_store(const char *path);
 bool is_in_store(const char *path, struct store *store);
-void link_to_store(const char *path, struct store *store);
+bool link_to_store(const char *path, struct store *store);
