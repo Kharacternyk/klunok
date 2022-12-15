@@ -1,22 +1,31 @@
-#include <limits.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 static char *deref(const char *pattern, int value) {
-  char *path = malloc(PATH_MAX);
-  snprintf(path, PATH_MAX, pattern, value);
+  size_t max_length = 1024;
 
-  int length = readlink(path, path, PATH_MAX);
+  for (;;) {
+    char *path = malloc(max_length);
+    snprintf(path, max_length, pattern, value);
 
-  if (length < 0) {
+    int length = readlink(path, path, max_length);
+
+    if (length < 0) {
+      int _errno = errno;
+      free(path);
+      errno = _errno;
+      return NULL;
+    }
+    if (length < max_length) {
+      path[length] = 0;
+      return path;
+    }
+
     free(path);
-    return NULL;
+    max_length *= 2;
   }
-
-  path[length] = 0;
-
-  return path;
 }
 
 char *deref_pid(int pid) { return deref("/proc/%d/exe", pid); }
