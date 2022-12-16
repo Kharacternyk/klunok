@@ -1,16 +1,29 @@
 project('klunok', 'c')
 
-sources = [
-  'src/main.c',
-  'src/set.c',
-  'src/deref.c',
-  'src/config.c',
-  'src/store.c',
-]
+components = {
+  'set': [],
+  'deref': [],
+  'store': [],
+  'config': ['set'],
+}
 
-executable('klunok', sources, install: true)
+sources = {}
+all_sources = []
+foreach component: components.keys() + ['main']
+  source = 'src/' + component + '.c'
+  sources += {component: source}
+  all_sources += [source]
+endforeach
 
-test('set', executable('test-set', ['test/set.c', 'src/set.c']))
-test('deref', executable('test-deref', ['test/deref.c', 'src/deref.c']))
-test('store', executable('test-store', ['test/store.c', 'src/store.c'],
-  c_args: '-DPROJECT_ROOT="' + meson.current_source_dir() + '"'))
+executable('klunok', all_sources, install: true)
+
+foreach component, dependencies: components
+  test_sources = ['test/' + component + '.c', sources[component]]
+  foreach test_dependency: dependencies
+    test_sources += sources[test_dependency]
+  endforeach
+
+  c_args = '-DPROJECT_ROOT="' + meson.current_source_dir() + '"'
+
+  test(component, executable('test-' + component, test_sources, c_args: c_args))
+endforeach
