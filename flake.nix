@@ -10,6 +10,10 @@
         inputsFrom = [
           klunok
         ];
+        packages = [
+          valgrind
+          gdb
+        ];
       };
     }
   );

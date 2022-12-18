@@ -1,5 +1,6 @@
 #include "config.h"
 #include "deref.h"
+#include "store.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -10,6 +11,8 @@
 
 int main(int argc, const char **argv) {
   struct set *editors = get_editors();
+  const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
+  struct store *store = create_store(store_root);
 
   int status = 0;
   /* TODO Why does it behave strange with O_RDWR? */
@@ -61,7 +64,9 @@ int main(int argc, const char **argv) {
         return 1;
       }
 
-      printf("%s\n", file_path);
+      if (!link_to_store(file_path, store)) {
+        fprintf(stderr, "Cannot link a file: %s\n", strerror(errno));
+      }
       free(file_path);
     }
 

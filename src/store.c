@@ -23,7 +23,8 @@ struct store *create_store(const char *root) {
 
 static char *get_store_path(const char *filesystem_path, struct store *store) {
   assert(*filesystem_path == '/');
-  size_t length = store->root_length + strlen(filesystem_path);
+  size_t length =
+      store->root_length + strlen(filesystem_path) + (/*0 at the end*/ 1);
   char *store_path = malloc(length);
   sprintf(store_path, "%s%s", store->root, filesystem_path);
   return store_path;
@@ -63,7 +64,6 @@ bool link_to_store(const char *filesystem_path, struct store *store) {
 
 fail:
   _errno = errno;
-  fprintf(stderr, "%s\n", strerror(errno));
   free(store_path);
   errno = _errno;
   return false;
