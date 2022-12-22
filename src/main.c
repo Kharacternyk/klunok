@@ -9,26 +9,56 @@
 #include <sys/fanotify.h>
 #include <unistd.h>
 
+static void log_errno(const char *prefix) {
+  fprintf(stderr, "%s: %s\n", prefix, strerror(errno));
+}
+
+static void panic(const char *message) {
+  log_errno(message);
+  exit(1);
+}
+
+static void typed_bearable_error_callback_function(const char **message) {
+  log_errno(*message);
+}
+
+static void typed_fatal_error_callback_function(const char **message) {
+  panic(*message);
+}
+
+static void bearable_error_callback_function(void *message) {
+  typed_bearable_error_callback_function(message);
+}
+
+static void fatal_error_callback_function(void *message) {
+  typed_fatal_error_callback_function(message);
+}
+
 int main(int argc, const char **argv) {
+  const char *error_message = NULL;
+  struct callback *bearable_error_callback =
+      create_callback(bearable_error_callback_function, &error_message);
+  struct callback *fatal_error_callback =
+      create_callback(fatal_error_callback_function, &error_message);
+
   struct set *editors = get_editors();
   const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
-  struct store *store = create_store(store_root);
+  error_message = "Cannot create store";
+  struct store *store = create_store(store_root, fatal_error_callback);
 
   int status = 0;
   /* TODO Why does it behave strange with O_RDWR? */
   int fanotify_fd = fanotify_init(FAN_CLASS_CONTENT, O_RDONLY);
 
   if (fanotify_fd < 0) {
-    fprintf(stderr, "Cannot init fanotify: %s\n", strerror(errno));
-    return 1;
+    panic("Cannot init fanotirfy");
   }
 
   status = fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
                          FAN_OPEN_PERM, 0, "/home");
 
   if (status < 0) {
-    fprintf(stderr, "Cannot mark /home: %s\n", strerror(errno));
-    return 1;
+    panic("Cannot mark /home");
   }
 
   for (;;) {
@@ -36,37 +66,24 @@ int main(int argc, const char **argv) {
     status = read(fanotify_fd, &event, sizeof event);
 
     if (status < sizeof event) {
-      fprintf(stderr, "Cannot read an event: %s\n", strerror(errno));
-      return 1;
+      panic("Cannot read an event");
     }
 
-    char *exe_path = deref_pid(event.pid);
-
-    if (!exe_path) {
-      fprintf(stderr, "Cannot resolve executable path: %s\n", strerror(errno));
-      return 1;
-    }
-
+    error_message = "Cannot resolve executable path";
+    char *exe_path = deref_pid(event.pid, fatal_error_callback);
     char *exe_filename = strrchr(exe_path, '/');
 
     if (!exe_filename) {
-      fprintf(stderr, "Cannot resolve executable path: %s\n", strerror(errno));
-      return 1;
+      panic("Cannot resolve executable path");
     }
 
     ++exe_filename;
 
     if (is_in_set(exe_filename, editors)) {
-      char *file_path = deref_fd(event.fd);
-
-      if (status < 0) {
-        fprintf(stderr, "Cannot resolve file path: %s\n", strerror(errno));
-        return 1;
-      }
-
-      if (!link_to_store(file_path, store)) {
-        fprintf(stderr, "Cannot link a file: %s\n", strerror(errno));
-      }
+      error_message = "Cannot resolve file path";
+      char *file_path = deref_fd(event.fd, fatal_error_callback);
+      error_message = "Cannot link file to store";
+      link_to_store(file_path, store, bearable_error_callback);
       free(file_path);
     }
 

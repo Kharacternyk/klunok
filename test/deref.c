@@ -9,8 +9,8 @@
 
 int main() {
   int fd = open(PATH, O_RDONLY);
-  assert(!strcmp(deref_fd(fd), PATH));
+  assert(!strcmp(deref_fd(fd, NULL), PATH));
 
   int pid = getpid();
-  assert(deref_pid(pid));
+  assert(deref_pid(pid, NULL));
 }

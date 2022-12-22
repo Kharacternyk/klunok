@@ -8,14 +8,17 @@
 #define CREATED_FILE PROJECT_ROOT "/meson.build"
 
 int main() {
-  struct store *store = create_store(TEST_STORE);
-  assert(is_in_store(EXISTING_FILE, store));
-  assert(!is_in_store(MISSING_FILE, store));
+  struct store *store = create_store(TEST_STORE, NULL);
+  assert(store);
+  assert(is_in_store(EXISTING_FILE, store, NULL));
+  assert(!is_in_store(MISSING_FILE, store, NULL));
 
   unlink(TEST_STORE CREATED_FILE);
-  assert(!is_in_store(CREATED_FILE, store));
-  assert(link_to_store(CREATED_FILE, store));
-  assert(is_in_store(CREATED_FILE, store));
+  assert(!is_in_store(CREATED_FILE, store, NULL));
+
+  link_to_store(CREATED_FILE, store, NULL);
+
+  assert(is_in_store(CREATED_FILE, store, NULL));
   unlink(TEST_STORE CREATED_FILE);
-  assert(!is_in_store(CREATED_FILE, store));
+  assert(!is_in_store(CREATED_FILE, store, NULL));
 }

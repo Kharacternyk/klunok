@@ -1,9 +1,10 @@
-#include <errno.h>
+#include "deref.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-static char *deref(const char *pattern, int value) {
+static char *deref(const char *pattern, int value,
+                   struct callback *error_callback) {
   size_t max_length = 1024;
 
   for (;;) {
@@ -13,9 +14,8 @@ static char *deref(const char *pattern, int value) {
     int length = readlink(path, path, max_length);
 
     if (length < 0) {
-      int _errno = errno;
+      invoke_callback(error_callback);
       free(path);
-      errno = _errno;
       return NULL;
     }
     if (length < max_length) {
@@ -28,6 +28,10 @@ static char *deref(const char *pattern, int value) {
   }
 }
 
-char *deref_pid(int pid) { return deref("/proc/%d/exe", pid); }
+char *deref_pid(int pid, struct callback *error_callback) {
+  return deref("/proc/%d/exe", pid, error_callback);
+}
 
-char *deref_fd(int fd) { return deref("/proc/self/fd/%d", fd); }
+char *deref_fd(int fd, struct callback *error_callback) {
+  return deref("/proc/self/fd/%d", fd, error_callback);
+}

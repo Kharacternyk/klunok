@@ -2,8 +2,9 @@ project('klunok', 'c')
 
 components = {
   'set': [],
-  'deref': [],
-  'store': [],
+  'callback': [],
+  'deref': ['callback'],
+  'store': ['callback'],
   'config': ['set'],
 }
 
