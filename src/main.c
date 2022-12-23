@@ -98,7 +98,10 @@ int main(int argc, const char **argv) {
         .fd = event.fd,
         .response = FAN_ALLOW,
     };
-    write(fanotify_fd, &response, sizeof response);
+    if (write(fanotify_fd, &response, sizeof response) < sizeof response) {
+      perror("Cannot allow file access");
+      return ERROR_FANOTIFY;
+    }
     close(event.fd);
     free(exe_path);
   }

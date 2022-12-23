@@ -8,22 +8,26 @@ static char *deref(const char *pattern, int value,
   size_t max_length = 1024;
 
   for (;;) {
-    char *path = malloc(max_length);
-    snprintf(path, max_length, pattern, value);
+    char *link = malloc(max_length);
+    char *target = malloc(max_length);
+    snprintf(link, max_length, pattern, value);
 
-    int length = readlink(path, path, max_length);
+    int length = readlink(link, target, max_length);
 
     if (length < 0) {
       invoke_callback(error_callback);
-      free(path);
+      free(link);
+      free(target);
       return NULL;
     }
     if (length < max_length) {
-      path[length] = 0;
-      return path;
+      free(link);
+      target[length] = 0;
+      return target;
     }
 
-    free(path);
+    free(link);
+    free(target);
     max_length *= 2;
   }
 }
