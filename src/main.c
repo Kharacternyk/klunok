@@ -36,7 +36,6 @@ int main(int argc, const char **argv) {
     return ERROR_STORE;
   }
 
-  int status = 0;
   /* TODO Why does it behave strange with O_RDWR? */
   int fanotify_fd = fanotify_init(FAN_CLASS_CONTENT, O_RDONLY);
 
@@ -45,66 +44,64 @@ int main(int argc, const char **argv) {
     return ERROR_FANOTIFY;
   }
 
-  status = fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
-                         FAN_OPEN_PERM, 0, "/home");
-
-  if (status < 0) {
+  if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
+                    FAN_OPEN_PERM | FAN_CLOSE_WRITE, 0, "/home") < 0) {
     perror("Cannot mark /home");
     return ERROR_FANOTIFY;
   }
 
   for (;;) {
     struct fanotify_event_metadata event;
-    status = read(fanotify_fd, &event, sizeof event);
-
-    if (status < sizeof event) {
+    if (read(fanotify_fd, &event, sizeof event) < sizeof event) {
       perror("Cannot read an event");
       return ERROR_FANOTIFY;
     }
 
-    error_message = "Cannot resolve executable path";
-    char *exe_path = deref_pid(event.pid, error_callback);
+    if (event.mask & FAN_OPEN_PERM) {
+      struct fanotify_response response = {
+          .fd = event.fd,
+          .response = FAN_ALLOW,
+      };
+      if (write(fanotify_fd, &response, sizeof response) < sizeof response) {
+        perror("Cannot allow file access");
+        return ERROR_FANOTIFY;
+      }
+    } else if (event.mask & FAN_CLOSE_WRITE) {
+      error_message = "Cannot resolve executable path";
+      char *exe_path = deref_pid(event.pid, error_callback);
 
-    if (!error_message) {
-      return ERROR_PROC;
-    }
-
-    char *exe_filename = strrchr(exe_path, '/');
-
-    if (!exe_filename) {
-      perror("Cannot resolve executable path");
-      return ERROR_PROC;
-    }
-
-    ++exe_filename;
-
-    if (is_in_set(exe_filename, editors)) {
-      error_message = "Cannot resolve file path";
-      char *file_path = deref_fd(event.fd, error_callback);
       if (!error_message) {
         return ERROR_PROC;
       }
 
-      error_message = "Cannot link file to store";
-      link_to_store(file_path, store, error_callback);
-      if (!error_message) {
-        return ERROR_STORE;
+      char *exe_filename = strrchr(exe_path, '/');
+
+      if (!exe_filename) {
+        perror("Cannot resolve executable path");
+        return ERROR_PROC;
       }
 
-      free(file_path);
+      ++exe_filename;
+
+      if (is_in_set(exe_filename, editors)) {
+        error_message = "Cannot resolve file path";
+        char *file_path = deref_fd(event.fd, error_callback);
+        if (!error_message) {
+          return ERROR_PROC;
+        }
+
+        error_message = "Cannot link file to store";
+        link_to_store(file_path, store, error_callback);
+        if (!error_message) {
+          return ERROR_STORE;
+        }
+
+        free(file_path);
+      }
+
+      free(exe_path);
     }
 
-    struct fanotify_response response = {
-        .fd = event.fd,
-        .response = FAN_ALLOW,
-    };
-    if (write(fanotify_fd, &response, sizeof response) < sizeof response) {
-      perror("Cannot allow file access");
-      return ERROR_FANOTIFY;
-    }
     close(event.fd);
-    free(exe_path);
   }
-
-  return fanotify_fd;
 }

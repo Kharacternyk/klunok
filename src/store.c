@@ -73,7 +73,14 @@ void link_to_store(const char *filesystem_path, struct store *store,
   }
 
   if (link(filesystem_path, store_path) < 0) {
-    invoke_callback(error_callback);
+    switch (errno) {
+    case EXDEV:
+    case EEXIST:
+    case ENOENT:
+      break;
+    default:
+      invoke_callback(error_callback);
+    }
   }
 
   free(store_path);
