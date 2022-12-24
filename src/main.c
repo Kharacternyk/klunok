@@ -90,10 +90,12 @@ int main(int argc, const char **argv) {
           return ERROR_PROC;
         }
 
-        error_message = "Cannot link file to store";
-        link_to_store(file_path, store, error_callback);
-        if (!error_message) {
-          return ERROR_STORE;
+        if (strstr(file_path, "/.") == NULL) {
+          error_message = "Cannot link file to store";
+          link_to_store(file_path, store, error_callback);
+          if (!error_message) {
+            return ERROR_STORE;
+          }
         }
 
         free(file_path);
