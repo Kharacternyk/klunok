@@ -7,7 +7,7 @@
 #define S3 "yerkn11ke1" /* hash collision with S2 */
 
 int main() {
-  struct set *set = create_set();
+  struct set *set = create_set(0);
 
   assert(!is_in_set(strdup(S1), set));
   add_to_set(S1, set);

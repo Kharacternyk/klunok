@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SET_INIT_SIZE 1000
-
 struct entry {
   const char *value;
   struct entry *next;
@@ -16,11 +14,12 @@ struct set {
   struct entry **entries;
 };
 
-struct set *create_set() {
-  struct entry **entries = calloc(SET_INIT_SIZE, sizeof(struct entry *));
+struct set *create_set(size_t size_guess) {
+  size_t size = size_guess * 2 + 2;
+  struct entry **entries = calloc(size, sizeof(struct entry *));
   struct set *set = malloc(sizeof(struct set));
 
-  set->size = SET_INIT_SIZE;
+  set->size = size;
   set->entries = entries;
 
   return set;
