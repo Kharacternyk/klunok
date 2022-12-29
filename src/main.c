@@ -3,6 +3,7 @@
 #include "store.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,8 +15,7 @@
 #define ERROR_FANOTIFY 2
 #define ERROR_PROC 3
 #define ERROR_TIME 4
-
-#define LINK_VERSION "link"
+#define ERROR_MEMORY 5
 
 static void typed_error_callback_function(const char **message) {
   perror(*message);
@@ -27,6 +27,12 @@ static void error_callback_function(void *message) {
 }
 
 int main(int argc, const char **argv) {
+  size_t pid_array_size = 1 << 16;
+  bool *pid_array = calloc(pid_array_size, 1);
+  if (!pid_array) {
+    return ERROR_MEMORY;
+  }
+
   const char *error_message = NULL;
   struct callback *error_callback =
       create_callback(error_callback_function, &error_message);
@@ -49,7 +55,7 @@ int main(int argc, const char **argv) {
   }
 
   if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
-                    /*FAN_OPEN_PERM |*/ FAN_CLOSE_WRITE, 0, "/home") < 0) {
+                    FAN_OPEN_EXEC_PERM | FAN_CLOSE_WRITE, 0, "/home") < 0) {
     perror("Cannot mark /home");
     return ERROR_FANOTIFY;
   }
@@ -61,7 +67,37 @@ int main(int argc, const char **argv) {
       return ERROR_FANOTIFY;
     }
 
-    if (event.mask & FAN_OPEN_PERM) {
+    error_message = "Cannot resolve file path";
+    char *file_path = deref_fd(event.fd, error_callback);
+    if (!error_message) {
+      return ERROR_PROC;
+    }
+
+    if (event.mask & FAN_OPEN_EXEC_PERM) {
+      char *exe_filename = strrchr(file_path, '/');
+      if (!exe_filename) {
+        perror("Cannot resolve executable path");
+        return ERROR_PROC;
+      }
+      ++exe_filename;
+
+      if (event.pid >= pid_array_size) {
+        fprintf(stderr, "%s\n", "RESIZE");
+        bool *new_pid_array = calloc(event.pid * 2, 1);
+        if (!new_pid_array) {
+          return ERROR_MEMORY;
+        }
+        memcpy(new_pid_array, pid_array, pid_array_size);
+        pid_array_size = event.pid * 2;
+        free(pid_array);
+        pid_array = new_pid_array;
+      }
+
+      /*FIXME*/
+      if (fnmatch("ld-linux*.so*", exe_filename, 0)) {
+        pid_array[event.pid] = is_in_set(exe_filename, editors);
+      }
+
       struct fanotify_response response = {
           .fd = event.fd,
           .response = FAN_ALLOW,
@@ -71,20 +107,8 @@ int main(int argc, const char **argv) {
         return ERROR_FANOTIFY;
       }
     } else if (event.mask & FAN_CLOSE_WRITE) {
-      error_message = "Cannot resolve file path";
-      char *file_path = deref_fd(event.fd, error_callback);
-      if (!error_message) {
-        return ERROR_PROC;
-      }
-
-      error_message = "Cannot check store";
-      bool is_linked_to_store =
-          is_in_store(file_path, LINK_VERSION, store, error_callback);
-      if (!error_message) {
-        return ERROR_STORE;
-      }
-
-      if (is_linked_to_store) {
+      if (event.pid < pid_array_size && pid_array[event.pid] &&
+          strstr(file_path, "/.") == NULL) {
         time_t t = time(NULL);
         struct tm *tm = localtime(&t);
         if (!tm) {
@@ -99,40 +123,10 @@ int main(int argc, const char **argv) {
 
         error_message = "Cannot copy file to store";
         copy_to_store(file_path, version, store, error_callback);
-        if (!error_message) {
-          return ERROR_STORE;
-        }
-      } else {
-        error_message = "Cannot resolve executable path";
-        char *exe_path = deref_pid(event.pid, error_callback);
-        if (!error_message) {
-          return ERROR_PROC;
-        }
-
-        char *exe_filename = strrchr(exe_path, '/');
-        if (!exe_filename) {
-          perror("Cannot resolve executable path");
-          return ERROR_PROC;
-        }
-
-        ++exe_filename;
-
-        if (is_in_set(exe_filename, editors)) {
-          if (strstr(file_path, "/.") == NULL) {
-            error_message = "Cannot link file to store";
-            link_to_store(file_path, LINK_VERSION, store, error_callback);
-            if (!error_message) {
-              return ERROR_STORE;
-            }
-          }
-        }
-
-        free(exe_path);
       }
-
-      free(file_path);
     }
 
+    free(file_path);
     close(event.fd);
   }
 }

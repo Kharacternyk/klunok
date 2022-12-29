@@ -29,114 +29,96 @@ struct store *create_store(const char *root, struct callback *error_callback) {
 }
 
 static char *get_store_path(const char *filesystem_path, const char *version,
-                            struct store *store,
-                            struct callback *error_callback) {
+                            struct store *store) {
   assert(*filesystem_path == '/');
   size_t length = store->root_length + strlen(filesystem_path) +
                   (/*a slash*/ 1) + strlen(version);
   char *store_path = malloc(length + (/*0 at the end*/ 1));
   if (!store_path) {
-    invoke_callback(error_callback);
     return NULL;
   }
   sprintf(store_path, "%s%s/%s", store->root, filesystem_path, version);
   return store_path;
 }
 
-bool is_in_store(const char *filesystem_path, const char *version,
-                 struct store *store, struct callback *error_callback) {
-  char *store_path =
-      get_store_path(filesystem_path, version, store, error_callback);
-  if (!store_path) {
-    return false;
-  }
-  bool result = access(store_path, F_OK) == 0;
-  free(store_path);
-  return result;
-}
+static bool create_dirs(char *path) {
+  char *slash = strchr(path, '/');
 
-static void create_dirs(char **path, struct callback *error_callback) {
-  char *slash = strchr(*path, '/');
-
-  if (slash == *path) {
+  if (slash == path) {
     slash = strchr(slash + 1, '/');
   }
 
   while (slash) {
     *slash = 0;
-    if (mkdir(*path, STORE_DIR_MODE) < 0) {
-      if (errno != EEXIST) {
-        invoke_callback(error_callback);
-        free(*path);
-        *path = NULL;
-        return;
-      }
+    if (mkdir(path, STORE_DIR_MODE) < 0 && errno != EEXIST) {
+      *slash = '/';
+      return false;
     }
     *slash = '/';
     ++slash;
     slash = strchr(slash, '/');
   }
+
+  return true;
 }
 
-void link_to_store(const char *filesystem_path, const char *version,
-                   struct store *store, struct callback *error_callback) {
-  char *store_path =
-      get_store_path(filesystem_path, version, store, error_callback);
-  if (!store_path) {
-    return;
-  }
-  create_dirs(&store_path, error_callback);
-  if (!store_path) {
-    return;
+static bool remove_dirs(char *path) {
+  char *slash = strrchr(path, '/');
+
+  while (slash && slash != path) {
+    *slash = 0;
+    if (rmdir(path) < 0) {
+      *slash = '/';
+      return errno == ENOTEMPTY;
+    }
+    char *old_slash = slash;
+    slash = strrchr(path, '/');
+    *old_slash = '/';
   }
 
-  if (link(filesystem_path, store_path) < 0) {
+  return true;
+}
+
+static void cleanup(char *path, struct callback *error_callback) {
+  invoke_callback(error_callback);
+  if (!remove_dirs(path)) {
     invoke_callback(error_callback);
   }
-
-  free(store_path);
+  free(path);
 }
 
 void copy_to_store(const char *filesystem_path, const char *version,
                    struct store *store, struct callback *error_callback) {
-  char *store_path =
-      get_store_path(filesystem_path, version, store, error_callback);
+  char *store_path = get_store_path(filesystem_path, version, store);
   if (!store_path) {
-    return;
+    return invoke_callback(error_callback);
   }
-  create_dirs(&store_path, error_callback);
-  if (!store_path) {
-    return;
+  if (!create_dirs(store_path)) {
+    return cleanup(store_path, error_callback);
   }
 
   int in_fd = open(filesystem_path, O_RDONLY);
+  if (in_fd < 0) {
+    return cleanup(store_path, error_callback);
+  }
 
-  if (in_fd > 0) {
-    int out_fd =
-        open(store_path, O_CREAT | O_WRONLY | O_TRUNC, STORE_FILE_MODE);
+  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_TRUNC, STORE_FILE_MODE);
+  if (out_fd < 0) {
+    return cleanup(store_path, error_callback);
+  }
 
-    if (out_fd > 0) {
-      struct stat in_fd_stat;
+  struct stat in_fd_stat;
+  if (fstat(in_fd, &in_fd_stat) < 0) {
+    return cleanup(store_path, error_callback);
+  }
 
-      if (fstat(in_fd, &in_fd_stat) >= 0) {
-        while (in_fd_stat.st_size) {
-          size_t written_size =
-              sendfile(out_fd, in_fd, NULL, in_fd_stat.st_size);
-          if (written_size > 0) {
-            in_fd_stat.st_size -= written_size;
-          } else {
-            invoke_callback(error_callback);
-            break;
-          }
-        }
-      } else {
-        invoke_callback(error_callback);
-      }
+  while (in_fd_stat.st_size) {
+    size_t written_size = sendfile(out_fd, in_fd, NULL, in_fd_stat.st_size);
+    if (written_size > 0) {
+      in_fd_stat.st_size -= written_size;
     } else {
-      invoke_callback(error_callback);
+      return cleanup(store_path, error_callback);
     }
-  } else {
-    invoke_callback(error_callback);
   }
 
   free(store_path);
