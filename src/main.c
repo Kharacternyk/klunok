@@ -1,6 +1,7 @@
 #include "config.h"
 #include "deref.h"
 #include "store.h"
+#include "timestamp.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <fnmatch.h>
@@ -8,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/fanotify.h>
-#include <time.h>
 #include <unistd.h>
 
 #define ERROR_STORE 1
@@ -16,6 +16,9 @@
 #define ERROR_PROC 3
 #define ERROR_TIME 4
 #define ERROR_MEMORY 5
+
+#define VERSION_PATTERN "v%Y-%m-%d-%H-%M-%S"
+#define VERSION_LENGTH 20
 
 static void typed_error_callback_function(const char **message) {
   perror(*message);
@@ -109,20 +112,16 @@ int main(int argc, const char **argv) {
     } else if (event.mask & FAN_CLOSE_WRITE) {
       if (event.pid < pid_array_size && pid_array[event.pid] &&
           strstr(file_path, "/.") == NULL) {
-        time_t t = time(NULL);
-        struct tm *tm = localtime(&t);
-        if (!tm) {
-          perror("Cannot get local time");
-          return ERROR_TIME;
-        }
-        char version[128];
-        if (!strftime(version, sizeof version, "v%Y-%m-%d-%H-%M-%S", tm)) {
-          perror("Cannot create time-based version");
+        error_message = "Cannot create date-based version";
+        char *version =
+            get_timestamp(VERSION_PATTERN, VERSION_LENGTH, error_callback);
+        if (!error_message) {
           return ERROR_TIME;
         }
 
         error_message = "Cannot copy file to store";
         copy_to_store(file_path, version, store, error_callback);
+        free(version);
       }
     }
 

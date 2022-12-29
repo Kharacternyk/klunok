@@ -5,6 +5,7 @@ components = {
   'callback': [],
   'deref': ['callback'],
   'store': ['callback'],
+  'timestamp': ['callback'],
   'config': ['set'],
 }
 
