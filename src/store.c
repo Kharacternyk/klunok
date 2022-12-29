@@ -1,7 +1,7 @@
 #include "store.h"
-#include "fcntl.h"
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -91,14 +91,7 @@ void link_to_store(const char *filesystem_path, const char *version,
   }
 
   if (link(filesystem_path, store_path) < 0) {
-    switch (errno) {
-    case EXDEV:
-    case EEXIST:
-    case ENOENT:
-      break;
-    default:
-      invoke_callback(error_callback);
-    }
+    invoke_callback(error_callback);
   }
 
   free(store_path);
