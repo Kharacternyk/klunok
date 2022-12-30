@@ -1,13 +1,12 @@
 project('klunok', 'c')
 
 components = {
-  'set': [],
   'callback': [],
+  'set': ['callback'],
   'bitmap': ['callback'],
   'deref': ['callback'],
   'store': ['callback'],
   'timestamp': ['callback'],
-  'config': ['set'],
 }
 
 sources = {}

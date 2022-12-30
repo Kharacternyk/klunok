@@ -1,6 +1,6 @@
 #include "bitmap.h"
-#include "config.h"
 #include "deref.h"
+#include "set.h"
 #include "store.h"
 #include "timestamp.h"
 #include <errno.h>
@@ -41,7 +41,23 @@ int main(int argc, const char **argv) {
     return ERROR_MEMORY;
   }
 
-  struct set *editors = get_editors();
+  const char *editor_array[] = {"nvim", "vim", "vi"};
+  const size_t editor_array_length =
+      sizeof editor_array / sizeof editor_array[0];
+  error_message = "Cannot create a set";
+  struct set *editors = create_set(editor_array_length, error_callback);
+  if (!error_message) {
+    return ERROR_MEMORY;
+  }
+
+  error_message = "Cannot add a value to a set";
+  for (int i = 0; i < editor_array_length; ++i) {
+    add_to_set(editor_array[i], editors, error_callback);
+    if (!error_message) {
+      return ERROR_MEMORY;
+    }
+  }
+
   const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
   error_message = "Cannot create store";
   struct store *store = create_store(store_root, error_callback);

@@ -1,6 +1,4 @@
 #include "set.h"
-#include <stdbool.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,10 +12,20 @@ struct set {
   struct entry **entries;
 };
 
-struct set *create_set(size_t size_guess) {
+struct set *create_set(size_t size_guess, struct callback *error_callback) {
   size_t size = size_guess * 2 + 2;
   struct entry **entries = calloc(size, sizeof(struct entry *));
+  if (!entries) {
+    invoke_callback(error_callback);
+    return NULL;
+  }
+
   struct set *set = malloc(sizeof(struct set));
+  if (!set) {
+    invoke_callback(error_callback);
+    free(entries);
+    return NULL;
+  }
 
   set->size = size;
   set->entries = entries;
@@ -56,12 +64,16 @@ bool is_in_set(const char *value, struct set *set) {
   return false;
 }
 
-void add_to_set(const char *value, struct set *set) {
+void add_to_set(const char *value, struct set *set,
+                struct callback *error_callback) {
   size_t hashed_value = hash(value);
   struct entry **entry = &(set->entries[hashed_value % set->size]);
 
   if (!*entry) {
     *entry = malloc(sizeof(struct entry));
+    if (!*entry) {
+      return invoke_callback(error_callback);
+    }
     (*entry)->next = NULL;
     (*entry)->value = strdup(value);
     return;
@@ -72,6 +84,9 @@ void add_to_set(const char *value, struct set *set) {
   }
 
   (*entry)->next = malloc(sizeof(struct entry));
+  if (!*entry) {
+    return invoke_callback(error_callback);
+  }
   (*entry)->next->next = NULL;
   (*entry)->next->value = strdup(value);
 }
