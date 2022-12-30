@@ -79,37 +79,41 @@ static bool remove_dirs(char *path) {
   return true;
 }
 
-static void cleanup(char *path, struct callback *error_callback) {
+static void rollback(char *path, struct callback *error_callback) {
   invoke_callback(error_callback);
   if (!remove_dirs(path)) {
     invoke_callback(error_callback);
   }
-  free(path);
 }
 
 void copy_to_store(const char *filesystem_path, const char *version,
                    struct store *store, struct callback *error_callback) {
   char *store_path = get_store_path(filesystem_path, version, store);
   if (!store_path) {
-    return invoke_callback(error_callback);
+    invoke_callback(error_callback);
+    return;
   }
   if (!create_dirs(store_path)) {
-    return cleanup(store_path, error_callback);
+    rollback(store_path, error_callback);
+    goto path_cleanup;
   }
 
   int in_fd = open(filesystem_path, O_RDONLY);
   if (in_fd < 0) {
-    return cleanup(store_path, error_callback);
+    rollback(store_path, error_callback);
+    goto path_cleanup;
   }
 
   int out_fd = open(store_path, O_CREAT | O_WRONLY | O_TRUNC, STORE_FILE_MODE);
   if (out_fd < 0) {
-    return cleanup(store_path, error_callback);
+    rollback(store_path, error_callback);
+    goto in_fd_cleanup;
   }
 
   struct stat in_fd_stat;
   if (fstat(in_fd, &in_fd_stat) < 0) {
-    return cleanup(store_path, error_callback);
+    rollback(store_path, error_callback);
+    goto out_fd_cleanup;
   }
 
   while (in_fd_stat.st_size) {
@@ -117,9 +121,15 @@ void copy_to_store(const char *filesystem_path, const char *version,
     if (written_size > 0) {
       in_fd_stat.st_size -= written_size;
     } else {
-      return cleanup(store_path, error_callback);
+      rollback(store_path, error_callback);
+      goto out_fd_cleanup;
     }
   }
 
+out_fd_cleanup:
+  close(out_fd);
+in_fd_cleanup:
+  close(in_fd);
+path_cleanup:
   free(store_path);
 }
