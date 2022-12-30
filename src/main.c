@@ -1,3 +1,4 @@
+#include "bitmap.h"
 #include "config.h"
 #include "deref.h"
 #include "store.h"
@@ -30,15 +31,15 @@ static void error_callback_function(void *message) {
 }
 
 int main(int argc, const char **argv) {
-  size_t pid_array_size = 1 << 16;
-  bool *pid_array = calloc(pid_array_size, 1);
-  if (!pid_array) {
-    return ERROR_MEMORY;
-  }
-
   const char *error_message = NULL;
   struct callback *error_callback =
       create_callback(error_callback_function, &error_message);
+
+  error_message = "Cannot create PID bitmap";
+  struct bitmap *editor_pid_bitmap = create_bitmap(1 << 16, error_callback);
+  if (!error_message) {
+    return ERROR_MEMORY;
+  }
 
   struct set *editors = get_editors();
   const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
@@ -84,21 +85,17 @@ int main(int argc, const char **argv) {
       }
       ++exe_filename;
 
-      if (event.pid >= pid_array_size) {
-        fprintf(stderr, "%s\n", "RESIZE");
-        bool *new_pid_array = calloc(event.pid * 2, 1);
-        if (!new_pid_array) {
-          return ERROR_MEMORY;
-        }
-        memcpy(new_pid_array, pid_array, pid_array_size);
-        pid_array_size = event.pid * 2;
-        free(pid_array);
-        pid_array = new_pid_array;
-      }
-
       /*FIXME*/
       if (fnmatch("ld-linux*.so*", exe_filename, 0)) {
-        pid_array[event.pid] = is_in_set(exe_filename, editors);
+        if (is_in_set(exe_filename, editors)) {
+          error_message = "Cannot set bit in PID bitmap";
+          set_bit_in_bitmap(event.pid, editor_pid_bitmap, error_callback);
+          if (!error_message) {
+            return ERROR_MEMORY;
+          }
+        } else {
+          unset_bit_in_bitmap(event.pid, editor_pid_bitmap);
+        }
       }
 
       struct fanotify_response response = {
@@ -110,7 +107,7 @@ int main(int argc, const char **argv) {
         return ERROR_FANOTIFY;
       }
     } else if (event.mask & FAN_CLOSE_WRITE) {
-      if (event.pid < pid_array_size && pid_array[event.pid] &&
+      if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
           strstr(file_path, "/.") == NULL) {
         error_message = "Cannot create date-based version";
         char *version =

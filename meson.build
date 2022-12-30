@@ -3,6 +3,7 @@ project('klunok', 'c')
 components = {
   'set': [],
   'callback': [],
+  'bitmap': ['callback'],
   'deref': ['callback'],
   'store': ['callback'],
   'timestamp': ['callback'],
