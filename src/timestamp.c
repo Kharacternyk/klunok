@@ -1,8 +1,9 @@
 #include "timestamp.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 
-char *get_timestamp(const char *format, size_t length_guess,
+char *get_timestamp(const char *format, size_t max_length,
                     struct callback *error_callback) {
   time_t t = time(NULL);
   struct tm *tm = localtime(&t);
@@ -11,27 +12,18 @@ char *get_timestamp(const char *format, size_t length_guess,
     return NULL;
   }
 
-  size_t timestamp_max_size = length_guess + 1;
-  char *timestamp = malloc(timestamp_max_size);
+  size_t max_size = max_length + 1;
+  char *timestamp = malloc(max_size);
+  size_t actual_length = strftime(timestamp, max_size, format, tm);
 
-  for (;;) {
-    size_t timestamp_actual_length =
-        strftime(timestamp, timestamp_max_size, format, tm);
-
-    if (timestamp_actual_length < 0) {
-      invoke_callback(error_callback);
-      free(timestamp);
-      return NULL;
-    } else if (timestamp_actual_length > 0) {
-      return timestamp;
-    } else if (timestamp_max_size > length_guess + 1) {
-      invoke_callback(error_callback);
-      free(timestamp);
-      return NULL;
+  if (actual_length <= 0) {
+    if (actual_length == 0) {
+      errno = EOVERFLOW;
     }
-
-    timestamp_max_size *= 2;
+    invoke_callback(error_callback);
     free(timestamp);
-    timestamp = malloc(timestamp_max_size);
+    return NULL;
   }
+
+  return timestamp;
 }
