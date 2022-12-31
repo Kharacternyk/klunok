@@ -68,7 +68,7 @@ int main(int argc, const char **argv) {
   }
 
   /* TODO Why does it behave strange with O_RDWR? */
-  int fanotify_fd = fanotify_init(FAN_CLASS_CONTENT, O_RDONLY);
+  int fanotify_fd = fanotify_init(FAN_CLASS_NOTIF, O_RDONLY);
 
   if (fanotify_fd < 0) {
     perror("Cannot init fanotify");
@@ -76,7 +76,7 @@ int main(int argc, const char **argv) {
   }
 
   if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
-                    FAN_OPEN_EXEC_PERM | FAN_CLOSE_WRITE, 0, "/home") < 0) {
+                    FAN_OPEN_EXEC | FAN_CLOSE_WRITE, 0, "/home") < 0) {
     perror("Cannot mark /home");
     return ERROR_FANOTIFY;
   }
@@ -94,11 +94,11 @@ int main(int argc, const char **argv) {
       return ERROR_PROC;
     }
 
-    if (event.mask & FAN_OPEN_EXEC_PERM) {
+    if (event.mask & FAN_OPEN_EXEC) {
       char *exe_filename = strrchr(file_path, '/');
       if (!exe_filename) {
         perror("Cannot resolve executable path");
-        return ERROR_PROC;
+        goto cleanup;
       }
       ++exe_filename;
 
@@ -113,15 +113,6 @@ int main(int argc, const char **argv) {
         } else {
           unset_bit_in_bitmap(event.pid, editor_pid_bitmap);
         }
-      }
-
-      struct fanotify_response response = {
-          .fd = event.fd,
-          .response = FAN_ALLOW,
-      };
-      if (write(fanotify_fd, &response, sizeof response) < sizeof response) {
-        perror("Cannot allow file access");
-        return ERROR_FANOTIFY;
       }
     } else if (event.mask & FAN_CLOSE_WRITE) {
       if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
@@ -139,6 +130,7 @@ int main(int argc, const char **argv) {
       }
     }
 
+  cleanup:
     free(file_path);
     close(event.fd);
   }
