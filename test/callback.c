@@ -11,11 +11,11 @@ static void put_value_void(void *p) { put_value(p); }
 
 int main() {
   int i = VALUE_OLD;
-  struct callback *callback = create_callback(put_value_void, &i);
+  struct callback *callback = create_callback(put_value_void, &i, NULL);
   assert(i == VALUE_OLD);
   invoke_callback(callback);
   assert(i == VALUE_NEW);
 
-  invoke_callback(create_callback(NULL, NULL));
+  invoke_callback(create_callback(NULL, NULL, NULL));
   invoke_callback(NULL);
 }

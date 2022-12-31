@@ -1,5 +1,6 @@
 #include "bitmap.h"
 #include "deref.h"
+#include "filelines.h"
 #include "set.h"
 #include "store.h"
 #include "timestamp.h"
@@ -13,11 +14,14 @@
 #include <sys/fanotify.h>
 #include <unistd.h>
 
-#define ERROR_STORE 1
-#define ERROR_FANOTIFY 2
-#define ERROR_PROC 3
-#define ERROR_TIME 4
-#define ERROR_MEMORY 5
+enum error {
+  ERROR_STORE,
+  ERROR_FANOTIFY,
+  ERROR_PROC,
+  ERROR_TIME,
+  ERROR_MEMORY,
+  ERROR_CONFIG,
+};
 
 #define VERSION_PATTERN "v%Y-%m-%d-%H-%M-%S"
 #define VERSION_LENGTH 20
@@ -34,7 +38,11 @@ static void error_callback_function(void *message) {
 int main(int argc, const char **argv) {
   const char *error_message = NULL;
   struct callback *error_callback =
-      create_callback(error_callback_function, &error_message);
+      create_callback(error_callback_function, &error_message, NULL);
+  if (!error_callback) {
+    perror("Cannot create error callback");
+    return ERROR_MEMORY;
+  }
 
   error_message = "Cannot create PID bitmap";
   struct bitmap *editor_pid_bitmap = create_bitmap(1 << 16, error_callback);
@@ -42,27 +50,16 @@ int main(int argc, const char **argv) {
     return ERROR_MEMORY;
   }
 
-  const char *editor_array[] = {"nvim", "vim", "vi"};
-  const size_t editor_array_length =
-      sizeof editor_array / sizeof editor_array[0];
-  error_message = "Cannot create a set";
-  struct set *editors = create_set(editor_array_length, error_callback);
+  const char *editors_path = argc > 2 ? argv[2] : "./editors";
+  error_message = "Cannot read editors";
+  struct set *editors = get_lines(editors_path, 8, error_callback);
   if (!error_message) {
-    return ERROR_MEMORY;
-  }
-
-  error_message = "Cannot add a value to a set";
-  for (int i = 0; i < editor_array_length; ++i) {
-    add_to_set(editor_array[i], editors, error_callback);
-    if (!error_message) {
-      return ERROR_MEMORY;
-    }
+    return ERROR_CONFIG;
   }
 
   const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
   error_message = "Cannot create store";
   struct store *store = create_store(store_root, error_callback);
-
   if (!error_message) {
     return ERROR_STORE;
   }

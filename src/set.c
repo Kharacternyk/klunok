@@ -3,7 +3,7 @@
 #include <string.h>
 
 struct entry {
-  const char *value;
+  char *value;
   struct entry *next;
 };
 
@@ -64,8 +64,7 @@ bool is_in_set(const char *value, struct set *set) {
   return false;
 }
 
-void add_to_set(const char *value, struct set *set,
-                struct callback *error_callback) {
+void add_to_set(char *value, struct set *set, struct callback *error_callback) {
   size_t hashed_value = hash(value);
   struct entry **entry = &(set->entries[hashed_value % set->size]);
 
@@ -75,7 +74,7 @@ void add_to_set(const char *value, struct set *set,
       return invoke_callback(error_callback);
     }
     (*entry)->next = NULL;
-    (*entry)->value = strdup(value);
+    (*entry)->value = value;
     return;
   }
 
@@ -88,5 +87,17 @@ void add_to_set(const char *value, struct set *set,
     return invoke_callback(error_callback);
   }
   (*entry)->next->next = NULL;
-  (*entry)->next->value = strdup(value);
+  (*entry)->next->value = value;
+}
+
+void free_set(struct set *set) {
+  for (size_t i = 0; i < set->size; ++i) {
+    struct entry *entry = set->entries[i];
+    while (entry) {
+      struct entry *next = entry->next;
+      free(entry->value);
+      free(entry);
+      entry = next;
+    }
+  }
 }

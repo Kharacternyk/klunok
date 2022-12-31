@@ -5,7 +5,7 @@ void error_callback_function(void *parameter) { assert(parameter); }
 
 int main() {
   struct callback *error_callback =
-      create_callback(error_callback_function, NULL);
+      create_callback(error_callback_function, NULL, NULL);
 
   struct bitmap *bitmap = create_bitmap(0, error_callback);
   assert(!get_bit_in_bitmap(42, bitmap));

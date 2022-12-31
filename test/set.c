@@ -10,7 +10,7 @@ void error_callback_function(void *parameter) { assert(parameter); }
 
 int main() {
   struct callback *error_callback =
-      create_callback(error_callback_function, NULL);
+      create_callback(error_callback_function, NULL, NULL);
   struct set *set = create_set(0, error_callback);
 
   assert(!is_in_set(strdup(S1), set));

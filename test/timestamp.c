@@ -7,7 +7,7 @@ void error_callback_function(void *parameter) { assert(parameter); }
 
 int main() {
   struct callback *error_callback =
-      create_callback(error_callback_function, NULL);
+      create_callback(error_callback_function, NULL, NULL);
 
   assert(!strcmp(get_timestamp("abc", 7, error_callback), "abc"));
   assert(!strcmp(get_timestamp("abc", 3, error_callback), "abc"));

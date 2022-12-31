@@ -11,7 +11,7 @@ void error_callback_function(void *parameter) { assert(parameter); }
 
 int main() {
   struct callback *error_callback =
-      create_callback(error_callback_function, NULL);
+      create_callback(error_callback_function, NULL, NULL);
 
   int fd = open(PATH, O_RDONLY);
   assert(!strcmp(deref_fd(fd, error_callback), PATH));

@@ -7,6 +7,7 @@ components = {
   'deref': ['callback'],
   'store': ['callback'],
   'timestamp': ['callback'],
+  'filelines': ['set', 'callback'],
 }
 
 sources = {}

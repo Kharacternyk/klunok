@@ -20,7 +20,7 @@ void error_callback_function(void *message) {
 int main() {
   const char *message = "create_store";
   struct callback *error_callback =
-      create_callback(error_callback_function, &message);
+      create_callback(error_callback_function, &message, NULL);
 
   struct store *store = create_store(STORE_ROOT, error_callback);
 
