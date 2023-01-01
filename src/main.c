@@ -23,8 +23,8 @@ enum error {
   ERROR_CONFIG,
 };
 
-#define VERSION_PATTERN "v%Y-%m-%d-%H-%M-%S"
-#define VERSION_LENGTH 20
+#define VERSION_PATTERN "v%Y-%m-%d-%H-%M"
+#define VERSION_LENGTH 17
 
 static void typed_error_callback_function(const char **message) {
   perror(*message);
