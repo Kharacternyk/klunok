@@ -100,4 +100,6 @@ void free_set(struct set *set) {
       entry = next;
     }
   }
+  free(set->entries);
+  free(set);
 }
