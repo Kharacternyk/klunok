@@ -125,6 +125,14 @@ int main(int argc, const char **argv) {
         copy_to_store(file_path, version, store, error_callback);
         free(version);
       }
+      if (!strcmp(file_path, editors_path)) {
+        error_message = "Cannot reload editors";
+        struct set *new_editors = get_lines(editors_path, 8, error_callback);
+        if (error_message) {
+          free_set(editors);
+          editors = new_editors;
+        }
+      }
     }
 
   cleanup:
