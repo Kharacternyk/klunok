@@ -14,87 +14,104 @@
 #include <sys/fanotify.h>
 #include <unistd.h>
 
-enum error {
-  ERROR_STORE,
-  ERROR_FANOTIFY,
-  ERROR_PROC,
-  ERROR_TIME,
-  ERROR_MEMORY,
-  ERROR_CONFIG,
+enum exit_code {
+  CODE_SUCCESS,
+  CODE_STORE,
+  CODE_FANOTIFY,
+  CODE_PROC,
+  CODE_TIME,
+  CODE_MEMORY,
+  CODE_CONFIG,
 };
 
 #define VERSION_PATTERN "v%Y-%m-%d-%H-%M"
 #define VERSION_LENGTH 17
 
-static void typed_error_callback_function(const char **message) {
-  perror(*message);
-  *message = NULL;
+struct error {
+  const char *message;
+  const char *context;
+};
+
+static void handle(struct error *error) {
+  if (error->context) {
+    fprintf(stderr, "%s (%s): %s\n", error->message, error->context,
+            strerror(errno));
+  } else {
+    perror(error->message);
+  }
+  error->message = NULL;
 }
 
-static void error_callback_function(void *message) {
-  typed_error_callback_function(message);
-}
+static void error_callback_function(void *error) { handle(error); }
 
 int main(int argc, const char **argv) {
-  const char *error_message = NULL;
+  struct error error = {"Cannot create callback", NULL};
   struct callback *error_callback =
-      create_callback(error_callback_function, &error_message, NULL);
+      create_callback(error_callback_function, &error, NULL);
   if (!error_callback) {
-    perror("Cannot create error callback");
-    return ERROR_MEMORY;
+    handle(&error);
+    return CODE_MEMORY;
   }
 
-  error_message = "Cannot create PID bitmap";
+  error.message = "Cannot create PID bitmap";
   struct bitmap *editor_pid_bitmap = create_bitmap(1 << 16, error_callback);
-  if (!error_message) {
-    return ERROR_MEMORY;
+  if (!error.message) {
+    return CODE_MEMORY;
   }
 
   const char *editors_path = argc > 2 ? argv[2] : "./editors";
-  error_message = "Cannot read editors";
+  error.context = editors_path;
+  error.message = "Cannot read editors";
   struct set *editors = get_lines(editors_path, 8, error_callback);
-  if (!error_message) {
-    return ERROR_CONFIG;
+  if (!error.message) {
+    return CODE_CONFIG;
   }
 
   const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
-  error_message = "Cannot create store";
+  error.context = store_root;
+  error.message = "Cannot create store";
   struct store *store = create_store(store_root, error_callback);
-  if (!error_message) {
-    return ERROR_STORE;
+  if (!error.message) {
+    return CODE_STORE;
   }
 
-  /* TODO Why does it behave strange with O_RDWR? */
+  error.context = NULL;
+  error.message = "Cannot init fanotify";
   int fanotify_fd = fanotify_init(FAN_CLASS_NOTIF, O_RDONLY);
-
   if (fanotify_fd < 0) {
-    perror("Cannot init fanotify");
-    return ERROR_FANOTIFY;
+    handle(&error);
+    return CODE_FANOTIFY;
   }
 
+  error.message = "Cannot mark home";
   if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
                     FAN_OPEN_EXEC | FAN_CLOSE_WRITE, 0, "/home") < 0) {
-    perror("Cannot mark /home");
-    return ERROR_FANOTIFY;
+    handle(&error);
+    return CODE_FANOTIFY;
   }
 
   for (;;) {
+    error.context = NULL;
+    error.message = "Cannot read an event";
     struct fanotify_event_metadata event;
     if (read(fanotify_fd, &event, sizeof event) < sizeof event) {
-      perror("Cannot read an event");
-      return ERROR_FANOTIFY;
+      handle(&error);
+      return CODE_FANOTIFY;
     }
 
-    error_message = "Cannot resolve file path";
+    error.message = "Cannot resolve file path";
     char *file_path = deref_fd(event.fd, error_callback);
-    if (!error_message) {
-      return ERROR_PROC;
+    if (!error.message) {
+      return CODE_PROC;
     }
+
+    error.context = file_path;
 
     if (event.mask & FAN_OPEN_EXEC) {
+      error.message = "Cannot resolve executable path";
       char *exe_filename = strrchr(file_path, '/');
       if (!exe_filename) {
-        perror("Cannot resolve executable path");
+        handle(&error);
         goto cleanup;
       }
       ++exe_filename;
@@ -102,10 +119,10 @@ int main(int argc, const char **argv) {
       /*FIXME*/
       if (fnmatch("ld-linux*.so*", exe_filename, 0)) {
         if (is_in_set(exe_filename, editors)) {
-          error_message = "Cannot set bit in PID bitmap";
+          error.message = "Cannot set bit in PID bitmap";
           set_bit_in_bitmap(event.pid, editor_pid_bitmap, error_callback);
-          if (!error_message) {
-            return ERROR_MEMORY;
+          if (!error.message) {
+            return CODE_MEMORY;
           }
         } else {
           unset_bit_in_bitmap(event.pid, editor_pid_bitmap);
@@ -114,21 +131,21 @@ int main(int argc, const char **argv) {
     } else if (event.mask & FAN_CLOSE_WRITE) {
       if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
           strstr(file_path, "/.") == NULL) {
-        error_message = "Cannot create date-based version";
+        error.message = "Cannot create date-based version";
         char *version =
             get_timestamp(VERSION_PATTERN, VERSION_LENGTH, error_callback);
-        if (!error_message) {
-          return ERROR_TIME;
+        if (!error.message) {
+          return CODE_TIME;
         }
 
-        error_message = "Cannot copy file to store";
+        error.message = "Cannot copy file to store";
         copy_to_store(file_path, version, store, error_callback);
         free(version);
       }
       if (!strcmp(file_path, editors_path)) {
-        error_message = "Cannot reload editors";
+        error.message = "Cannot reload editors";
         struct set *new_editors = get_lines(editors_path, 8, error_callback);
-        if (error_message) {
+        if (error.message) {
           free_set(editors);
           editors = new_editors;
         }
