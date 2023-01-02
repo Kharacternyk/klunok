@@ -137,6 +137,13 @@ int main(int argc, const char **argv) {
           return CODE_TIME;
         }
 
+        if (strchr(version, '/')) {
+          error.context = version;
+          error.message = "Versions must not contain slashes";
+          handle(&error);
+          return CODE_CONFIG;
+        }
+
         error.message = "Cannot copy file to store";
         copy_to_store(file_path, version, store, error_callback);
         free(version);
