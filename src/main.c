@@ -1,6 +1,6 @@
 #include "bitmap.h"
+#include "config.h"
 #include "deref.h"
-#include "filelines.h"
 #include "set.h"
 #include "store.h"
 #include "timestamp.h"
@@ -59,10 +59,10 @@ int main(int argc, const char **argv) {
     return CODE_MEMORY;
   }
 
-  const char *editors_path = argc > 2 ? argv[2] : "./editors";
-  error.context = editors_path;
-  error.message = "Cannot read editors";
-  struct set *editors = get_lines(editors_path, 8, error_callback);
+  const char *config_path = argc > 2 ? argv[2] : "./config.lua";
+  error.message = "Cannot load configuration";
+  struct config *config =
+      load_config(config_path, error_callback, &error.context);
   if (!error.message) {
     return CODE_CONFIG;
   }
@@ -118,7 +118,7 @@ int main(int argc, const char **argv) {
 
       /*FIXME*/
       if (fnmatch("ld-linux*.so*", exe_filename, 0)) {
-        if (is_in_set(exe_filename, editors)) {
+        if (is_in_set(exe_filename, get_editors_from_config(config))) {
           error.message = "Cannot set bit in PID bitmap";
           set_bit_in_bitmap(event.pid, editor_pid_bitmap, error_callback);
           if (!error.message) {
@@ -142,12 +142,14 @@ int main(int argc, const char **argv) {
         copy_to_store(file_path, version, store, error_callback);
         free(version);
       }
-      if (!strcmp(file_path, editors_path)) {
-        error.message = "Cannot reload editors";
-        struct set *new_editors = get_lines(editors_path, 8, error_callback);
+      if (!strcmp(file_path, config_path)) {
+        error.context = NULL;
+        error.message = "Cannot reload configuration";
+        struct config *new_config =
+            load_config(config_path, error_callback, &error.context);
         if (error.message) {
-          free_set(editors);
-          editors = new_editors;
+          free_config(config);
+          config = new_config;
         }
       }
     }

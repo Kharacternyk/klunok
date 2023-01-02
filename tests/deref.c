@@ -1,4 +1,4 @@
-#include "../src/deref.h"
+#include "deref.h"
 #include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>

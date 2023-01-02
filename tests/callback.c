@@ -1,4 +1,4 @@
-#include "../src/callback.h"
+#include "callback.h"
 #include <assert.h>
 #include <stdlib.h>
 

@@ -1,4 +1,4 @@
-#include "../src/bitmap.h"
+#include "bitmap.h"
 #include <assert.h>
 
 void error_callback_function(void *parameter) { assert(parameter); }

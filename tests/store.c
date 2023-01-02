@@ -1,10 +1,10 @@
-#include "../src/store.h"
+#include "store.h"
 #include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
 
-#define STORE_ROOT PROJECT_ROOT "/test/store"
-#define COPYIED_FILE PROJECT_ROOT "/LICENSE"
+#define STORE_ROOT TEST_ROOT "/store"
+#define COPYIED_FILE TEST_ROOT "/meson.build"
 #define FILE_VERSION "v123"
 #define FILE_COPY STORE_ROOT COPYIED_FILE "/" FILE_VERSION
 

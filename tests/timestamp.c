@@ -1,4 +1,4 @@
-#include "../src/timestamp.h"
+#include "timestamp.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
