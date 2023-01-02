@@ -91,6 +91,9 @@ void add_to_set(char *value, struct set *set, struct callback *error_callback) {
 }
 
 void free_set(struct set *set) {
+  if (!set) {
+    return;
+  }
   for (size_t i = 0; i < set->size; ++i) {
     struct entry *entry = set->entries[i];
     while (entry) {

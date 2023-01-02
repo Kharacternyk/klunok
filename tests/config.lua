@@ -1,3 +1,4 @@
+version_pattern = "v%Y"
 editors = {
   'vi',
   'vim',

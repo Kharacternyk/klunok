@@ -24,8 +24,7 @@ enum exit_code {
   CODE_CONFIG,
 };
 
-#define VERSION_PATTERN "v%Y-%m-%d-%H-%M"
-#define VERSION_LENGTH 17
+static const size_t version_max_size = 80;
 
 struct error {
   const char *message;
@@ -118,7 +117,7 @@ int main(int argc, const char **argv) {
 
       /*FIXME*/
       if (fnmatch("ld-linux*.so*", exe_filename, 0)) {
-        if (is_in_set(exe_filename, get_editors_from_config(config))) {
+        if (is_in_set(exe_filename, get_configured_editors(config))) {
           error.message = "Cannot set bit in PID bitmap";
           set_bit_in_bitmap(event.pid, editor_pid_bitmap, error_callback);
           if (!error.message) {
@@ -132,8 +131,8 @@ int main(int argc, const char **argv) {
       if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
           strstr(file_path, "/.") == NULL) {
         error.message = "Cannot create date-based version";
-        char *version =
-            get_timestamp(VERSION_PATTERN, VERSION_LENGTH, error_callback);
+        char *version = get_timestamp(get_configured_version_pattern(config),
+                                      version_max_size, error_callback);
         if (!error.message) {
           return CODE_TIME;
         }
