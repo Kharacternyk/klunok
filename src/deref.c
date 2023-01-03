@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-char *deref_fd(int fd, struct callback *error_callback) {
+char *deref_fd(int fd, const struct callback *error_callback) {
   size_t max_length = 1024;
 
   for (;;) {

@@ -4,7 +4,7 @@
 #include <time.h>
 
 char *get_timestamp(const char *format, size_t max_length,
-                    struct callback *error_callback) {
+                    const struct callback *error_callback) {
   time_t t = time(NULL);
   struct tm *tm = localtime(&t);
   if (!tm) {

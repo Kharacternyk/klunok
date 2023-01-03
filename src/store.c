@@ -17,7 +17,8 @@ struct store {
   size_t root_length;
 };
 
-struct store *create_store(const char *root, struct callback *error_callback) {
+struct store *create_store(const char *root,
+                           const struct callback *error_callback) {
   struct store *store = malloc(sizeof(struct store));
   if (!store) {
     invoke_callback(error_callback);
@@ -29,7 +30,7 @@ struct store *create_store(const char *root, struct callback *error_callback) {
 }
 
 static char *get_store_path(const char *filesystem_path, const char *version,
-                            struct store *store) {
+                            const struct store *store) {
   assert(*filesystem_path == '/');
   size_t length = store->root_length + strlen(filesystem_path) +
                   (/*a slash*/ 1) + strlen(version);
@@ -79,7 +80,7 @@ static bool remove_dirs(char *path) {
   return true;
 }
 
-static void rollback(char *path, struct callback *error_callback) {
+static void rollback(char *path, const struct callback *error_callback) {
   invoke_callback(error_callback);
   if (!remove_dirs(path)) {
     invoke_callback(error_callback);
@@ -87,7 +88,8 @@ static void rollback(char *path, struct callback *error_callback) {
 }
 
 void copy_to_store(const char *filesystem_path, const char *version,
-                   struct store *store, struct callback *error_callback) {
+                   const struct store *store,
+                   const struct callback *error_callback) {
   char *store_path = get_store_path(filesystem_path, version, store);
   if (!store_path) {
     invoke_callback(error_callback);

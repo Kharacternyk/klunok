@@ -12,7 +12,8 @@ struct set {
   struct entry **entries;
 };
 
-struct set *create_set(size_t size_guess, struct callback *error_callback) {
+struct set *create_set(size_t size_guess,
+                       const struct callback *error_callback) {
   size_t size = size_guess * 2 + 2;
   struct entry **entries = calloc(size, sizeof(struct entry *));
   if (!entries) {
@@ -50,7 +51,7 @@ static size_t hash(const char *value) {
   return result;
 }
 
-bool is_in_set(const char *value, struct set *set) {
+bool is_in_set(const char *value, const struct set *set) {
   size_t hashed_value = hash(value);
   struct entry *entry = set->entries[hashed_value % set->size];
 
@@ -64,7 +65,8 @@ bool is_in_set(const char *value, struct set *set) {
   return false;
 }
 
-void add_to_set(char *value, struct set *set, struct callback *error_callback) {
+void add_to_set(char *value, struct set *set,
+                const struct callback *error_callback) {
   size_t hashed_value = hash(value);
   struct entry **entry = &(set->entries[hashed_value % set->size]);
 
