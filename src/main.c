@@ -29,22 +29,26 @@ static const size_t version_max_size = 80;
 struct error {
   const char *message;
   const char *context;
+  bool is_errno_contextful;
+  bool is_ok;
 };
 
 static void handle(struct error *error) {
-  if (error->context) {
+  if (error->is_errno_contextful && error->context) {
     fprintf(stderr, "%s (%s): %s\n", error->message, error->context,
             strerror(errno));
+  } else if (error->context) {
+    fprintf(stderr, "%s (%s)", error->message, error->context);
   } else {
     perror(error->message);
   }
-  error->message = NULL;
+  error->is_ok = false;
 }
 
 static void error_callback_function(void *error) { handle(error); }
 
 int main(int argc, const char **argv) {
-  struct error error = {"Cannot create callback", NULL};
+  struct error error = {"Cannot create callback", NULL, true, true};
   struct callback *error_callback =
       create_callback(error_callback_function, &error, NULL);
   if (!error_callback) {
@@ -54,23 +58,25 @@ int main(int argc, const char **argv) {
 
   error.message = "Cannot create PID bitmap";
   struct bitmap *editor_pid_bitmap = create_bitmap(1 << 16, error_callback);
-  if (!error.message) {
+  if (!error.is_ok) {
     return CODE_MEMORY;
   }
 
   const char *config_path = argc > 2 ? argv[2] : "./config.lua";
   error.message = "Cannot load configuration";
+  error.is_errno_contextful = false;
   struct config *config =
       load_config(config_path, error_callback, &error.context);
-  if (!error.message) {
+  if (!error.is_ok) {
     return CODE_CONFIG;
   }
+  error.is_errno_contextful = true;
 
   const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
   error.context = store_root;
   error.message = "Cannot create store";
   struct store *store = create_store(store_root, error_callback);
-  if (!error.message) {
+  if (!error.is_ok) {
     return CODE_STORE;
   }
 
@@ -100,7 +106,7 @@ int main(int argc, const char **argv) {
 
     error.message = "Cannot resolve file path";
     char *file_path = deref_fd(event.fd, error_callback);
-    if (!error.message) {
+    if (!error.is_ok) {
       return CODE_PROC;
     }
 
@@ -120,7 +126,7 @@ int main(int argc, const char **argv) {
         if (is_in_set(exe_filename, get_configured_editors(config))) {
           error.message = "Cannot set bit in PID bitmap";
           set_bit_in_bitmap(event.pid, editor_pid_bitmap, error_callback);
-          if (!error.message) {
+          if (!error.is_ok) {
             return CODE_MEMORY;
           }
         } else {
@@ -133,7 +139,7 @@ int main(int argc, const char **argv) {
         error.message = "Cannot create date-based version";
         char *version = get_timestamp(get_configured_version_pattern(config),
                                       version_max_size, error_callback);
-        if (!error.message) {
+        if (!error.is_ok) {
           return CODE_TIME;
         }
 
@@ -147,15 +153,18 @@ int main(int argc, const char **argv) {
         error.message = "Cannot copy file to store";
         copy_to_store(file_path, version, store, error_callback);
         free(version);
+        error.is_ok = true;
       }
       if (!strcmp(file_path, config_path)) {
         error.context = NULL;
         error.message = "Cannot reload configuration";
         struct config *new_config =
             load_config(config_path, error_callback, &error.context);
-        if (error.message) {
+        if (error.is_ok) {
           free_config(config);
           config = new_config;
+        } else {
+          error.is_ok = true;
         }
       }
     }
