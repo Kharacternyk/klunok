@@ -65,18 +65,28 @@ bool is_in_set(const char *value, const struct set *set) {
   return false;
 }
 
-void add_to_set(char *value, struct set *set,
+void add_to_set(const char *value, struct set *set,
                 const struct callback *error_callback) {
   size_t hashed_value = hash(value);
   struct entry **entry = &(set->entries[hashed_value % set->size]);
 
+  char *value_copy = strdup(value);
+  if (!value_copy) {
+    invoke_callback(error_callback);
+    return;
+  }
+
+  struct entry *new_entry = malloc(sizeof(struct entry));
+  if (!new_entry) {
+    invoke_callback(error_callback);
+    free(value_copy);
+    return;
+  }
+  new_entry->next = NULL;
+  new_entry->value = value_copy;
+
   if (!*entry) {
-    *entry = malloc(sizeof(struct entry));
-    if (!*entry) {
-      return invoke_callback(error_callback);
-    }
-    (*entry)->next = NULL;
-    (*entry)->value = value;
+    *entry = new_entry;
     return;
   }
 
@@ -84,12 +94,7 @@ void add_to_set(char *value, struct set *set,
     entry = &((*entry)->next);
   }
 
-  (*entry)->next = malloc(sizeof(struct entry));
-  if (!*entry) {
-    return invoke_callback(error_callback);
-  }
-  (*entry)->next->next = NULL;
-  (*entry)->next->value = value;
+  (*entry)->next = new_entry;
 }
 
 void free_set(struct set *set) {

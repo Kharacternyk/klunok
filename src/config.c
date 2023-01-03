@@ -33,45 +33,37 @@ struct config *load_config(const char *path,
   lua_State *lua = luaL_newstate();
   if (luaL_loadfile(lua, path) || lua_pcall(lua, 0, 0, 0)) {
     *error_message = lua_tostring(lua, -1);
-    invoke_callback(error_callback);
-    goto cleanup;
+    goto fail;
   }
 
   lua_getglobal(lua, "version_pattern");
   if (!lua_isstring(lua, -1)) {
     *error_message = "`version_pattern` must be a string";
-    invoke_callback(error_callback);
-    goto cleanup;
+    goto fail;
   }
   config->version_pattern = strdup(lua_tostring(lua, -1));
 
   lua_getglobal(lua, "editors");
   if (!lua_istable(lua, -1)) {
     *error_message = "`editors` must be a list of strings";
-    invoke_callback(error_callback);
-    goto cleanup;
+    goto fail;
   }
 
   config->editors = create_set(lua_rawlen(lua, -1), wrapped_error_callback);
   if (is_error) {
-    invoke_callback(error_callback);
-    goto cleanup;
+    goto fail;
   }
 
   lua_pushnil(lua);
   while (lua_next(lua, -2)) {
     if (!lua_isstring(lua, -1)) {
       *error_message = "`editors` must be a list of strings";
-      invoke_callback(error_callback);
-      goto cleanup;
+      goto fail;
     }
 
-    char *editor = strdup(lua_tostring(lua, -1));
-    add_to_set(editor, config->editors, wrapped_error_callback);
+    add_to_set(lua_tostring(lua, -1), config->editors, wrapped_error_callback);
     if (is_error) {
-      invoke_callback(error_callback);
-      free(editor);
-      goto cleanup;
+      goto fail;
     }
 
     lua_pop(lua, 1);
@@ -81,7 +73,8 @@ struct config *load_config(const char *path,
   free(wrapped_error_callback);
   return config;
 
-cleanup:
+fail:
+  invoke_callback(error_callback);
   lua_close(lua);
   free(wrapped_error_callback);
   free_config(config);

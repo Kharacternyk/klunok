@@ -13,18 +13,18 @@ int main() {
       create_callback(error_callback_function, NULL, NULL);
   struct set *set = create_set(0, error_callback);
 
-  assert(!is_in_set(strdup(S1), set));
+  assert(!is_in_set(S1, set));
   add_to_set(S1, set, error_callback);
-  assert(is_in_set(strdup(S1), set));
+  assert(is_in_set(S1, set));
 
-  assert(!is_in_set(strdup(S2), set));
+  assert(!is_in_set(S2, set));
   add_to_set(S2, set, error_callback);
-  assert(is_in_set(strdup(S2), set));
-  assert(is_in_set(strdup(S1), set));
+  assert(is_in_set(S2, set));
+  assert(is_in_set(S1, set));
 
-  assert(!is_in_set(strdup(S3), set));
+  assert(!is_in_set(S3, set));
   add_to_set(S3, set, error_callback);
-  assert(is_in_set(strdup(S3), set));
-  assert(is_in_set(strdup(S2), set));
-  assert(is_in_set(strdup(S1), set));
+  assert(is_in_set(S3, set));
+  assert(is_in_set(S2, set));
+  assert(is_in_set(S1, set));
 }
