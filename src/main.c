@@ -22,6 +22,7 @@ enum exit_code {
   CODE_TIME,
   CODE_MEMORY,
   CODE_CONFIG,
+  CODE_UID_GID,
 };
 
 static const size_t version_max_size = 80;
@@ -61,6 +62,51 @@ int main(int argc, const char **argv) {
     return CODE_MEMORY;
   }
 
+  error.message = "Cannot init fanotify";
+  int fanotify_fd = fanotify_init(FAN_CLASS_NOTIF, O_RDONLY);
+  if (fanotify_fd < 0) {
+    handle(&error);
+    return CODE_FANOTIFY;
+  }
+
+  error.message = "Cannot mark home";
+  if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
+                    FAN_OPEN_EXEC | FAN_CLOSE_WRITE, 0, "/home") < 0) {
+    handle(&error);
+    return CODE_FANOTIFY;
+  }
+
+  const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
+  error.context = store_root;
+  error.message = "Cannot create store";
+  struct store *store = create_store(store_root, error_callback);
+  if (!error.is_ok) {
+    return CODE_STORE;
+  }
+  error.context = NULL;
+
+  error.message = "Cannot drop privileged group ID";
+  if (!get_store_gid(store)) {
+    error.context = "Store is owned by root";
+    error.is_errno_contextless = true;
+    handle(&error);
+    return CODE_STORE;
+  } else if (setgid(get_store_gid(store)) < 0) {
+    handle(&error);
+    return CODE_UID_GID;
+  }
+
+  error.message = "Cannot drop privileged user ID";
+  if (!get_store_uid(store)) {
+    error.context = "Store is owned by root";
+    error.is_errno_contextless = true;
+    handle(&error);
+    return CODE_STORE;
+  } else if (setuid(get_store_uid(store)) < 0) {
+    handle(&error);
+    return CODE_UID_GID;
+  }
+
   error.message = "Cannot create PID bitmap";
   struct bitmap *editor_pid_bitmap = create_bitmap(1 << 16, error_callback);
   if (!error.is_ok) {
@@ -76,29 +122,6 @@ int main(int argc, const char **argv) {
     return CODE_CONFIG;
   }
   error.is_errno_contextless = false;
-
-  const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
-  error.context = store_root;
-  error.message = "Cannot create store";
-  struct store *store = create_store(store_root, error_callback);
-  if (!error.is_ok) {
-    return CODE_STORE;
-  }
-
-  error.context = NULL;
-  error.message = "Cannot init fanotify";
-  int fanotify_fd = fanotify_init(FAN_CLASS_NOTIF, O_RDONLY);
-  if (fanotify_fd < 0) {
-    handle(&error);
-    return CODE_FANOTIFY;
-  }
-
-  error.message = "Cannot mark home";
-  if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
-                    FAN_OPEN_EXEC | FAN_CLOSE_WRITE, 0, "/home") < 0) {
-    handle(&error);
-    return CODE_FANOTIFY;
-  }
 
   for (;;) {
     error.context = NULL;
