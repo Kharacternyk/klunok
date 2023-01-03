@@ -34,14 +34,18 @@ struct error {
 };
 
 static void handle(struct error *error) {
-  if (error->is_errno_contextful && error->context) {
-    fprintf(stderr, "%s (%s): %s\n", error->message, error->context,
-            strerror(errno));
-  } else if (error->context) {
-    fprintf(stderr, "%s (%s)", error->message, error->context);
-  } else {
-    perror(error->message);
+  int saved_errno = errno;
+  if (!error->is_ok) {
+    fprintf(stderr, "+ ");
   }
+  fprintf(stderr, "%s", error->message);
+  if (error->context) {
+    fprintf(stderr, " (%s)", error->context);
+  }
+  if (error->is_errno_contextful || !error->context) {
+    fprintf(stderr, ": %s", strerror(saved_errno));
+  }
+  fprintf(stderr, "\n");
   error->is_ok = false;
 }
 
@@ -156,6 +160,7 @@ int main(int argc, const char **argv) {
         error.is_ok = true;
       }
       if (!strcmp(file_path, config_path)) {
+        error.is_errno_contextful = false;
         error.context = NULL;
         error.message = "Cannot reload configuration";
         struct config *new_config =
@@ -166,6 +171,7 @@ int main(int argc, const char **argv) {
         } else {
           error.is_ok = true;
         }
+        error.is_errno_contextful = true;
       }
     }
 
