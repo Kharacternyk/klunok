@@ -19,7 +19,7 @@ int main() {
   struct config *config =
       load_config(TEST_ROOT "/config.lua", error_callback, &error_message);
 
-  struct set *editors = get_configured_editors(config);
+  const struct set *editors = get_configured_editors(config);
   assert(is_in_set("vi", editors));
   assert(is_in_set("vim", editors));
   assert(is_in_set("nvim", editors));
