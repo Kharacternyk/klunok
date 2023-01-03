@@ -9,9 +9,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define STORE_DIR_MODE (S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH)
-#define STORE_FILE_MODE (S_IRUSR | S_IRGRP | S_IROTH)
-
 struct store {
   const char *root;
   size_t root_length;
@@ -51,7 +48,8 @@ static bool create_dirs(char *path) {
 
   while (slash) {
     *slash = 0;
-    if (mkdir(path, STORE_DIR_MODE) < 0 && errno != EEXIST) {
+    if (mkdir(path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) < 0 &&
+        errno != EEXIST) {
       *slash = '/';
       return false;
     }
@@ -106,7 +104,8 @@ void copy_to_store(const char *filesystem_path, const char *version,
     goto path_cleanup;
   }
 
-  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_TRUNC, STORE_FILE_MODE);
+  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_TRUNC,
+                    S_IRUSR | S_IRGRP | S_IROTH);
   if (out_fd < 0) {
     rollback(store_path, error_callback);
     goto in_fd_cleanup;
