@@ -5,8 +5,6 @@
 #include <string.h>
 #include <sys/stat.h>
 
-static const size_t editor_count_guess = 100;
-
 struct config {
   struct set *editors;
   char *version_pattern;
@@ -28,13 +26,8 @@ struct config *load_config(const char *path,
       create_simple_callback(&is_error, error_callback);
   if (!wrapped_error_callback) {
     invoke_callback(error_callback);
-    goto config_cleanup;
-  }
-
-  config->editors = create_set(editor_count_guess, wrapped_error_callback);
-  if (is_error) {
-    invoke_callback(error_callback);
-    goto config_cleanup;
+    free_config(config);
+    return NULL;
   }
 
   lua_State *lua = luaL_newstate();
@@ -59,6 +52,12 @@ struct config *load_config(const char *path,
     goto cleanup;
   }
 
+  config->editors = create_set(lua_rawlen(lua, -1), wrapped_error_callback);
+  if (is_error) {
+    invoke_callback(error_callback);
+    goto cleanup;
+  }
+
   lua_pushnil(lua);
   while (lua_next(lua, -2)) {
     if (!lua_isstring(lua, -1)) {
@@ -78,15 +77,14 @@ struct config *load_config(const char *path,
     lua_pop(lua, 1);
   }
 
-  free(wrapped_error_callback);
   lua_close(lua);
+  free(wrapped_error_callback);
   return config;
 
 cleanup:
   lua_close(lua);
-config_cleanup:
-  free_config(config);
   free(wrapped_error_callback);
+  free_config(config);
   return NULL;
 }
 
@@ -99,7 +97,9 @@ const char *get_configured_version_pattern(const struct config *config) {
 }
 
 void free_config(struct config *config) {
-  free_set(config->editors);
-  free(config->version_pattern);
-  free(config);
+  if (config) {
+    free_set(config->editors);
+    free(config->version_pattern);
+    free(config);
+  }
 }
