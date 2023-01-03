@@ -43,6 +43,7 @@ static void handle(struct error *error) {
     fprintf(stderr, " (%s)", error->context);
   }
   if (error->is_errno_contextful || !error->context) {
+    /*TODO strerror is not thread-safe*/
     fprintf(stderr, ": %s", strerror(saved_errno));
   }
   fprintf(stderr, "\n");
