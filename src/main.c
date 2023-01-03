@@ -29,7 +29,7 @@ static const size_t version_max_size = 80;
 struct error {
   const char *message;
   const char *context;
-  bool is_errno_contextful;
+  bool is_errno_contextless;
   bool is_ok;
 };
 
@@ -42,7 +42,7 @@ static void handle(struct error *error) {
   if (error->context) {
     fprintf(stderr, " (%s)", error->context);
   }
-  if (error->is_errno_contextful || !error->context) {
+  if (!error->is_errno_contextless || !error->context) {
     /*TODO strerror is not thread-safe*/
     fprintf(stderr, ": %s", strerror(saved_errno));
   }
@@ -53,7 +53,7 @@ static void handle(struct error *error) {
 static void error_callback_function(void *error) { handle(error); }
 
 int main(int argc, const char **argv) {
-  struct error error = {"Cannot create callback", NULL, true, true};
+  struct error error = {"Cannot create callback", NULL, false, true};
   struct callback *error_callback =
       create_callback(error_callback_function, &error, NULL);
   if (!error_callback) {
@@ -69,13 +69,13 @@ int main(int argc, const char **argv) {
 
   const char *config_path = argc > 2 ? argv[2] : "./config.lua";
   error.message = "Cannot load configuration";
-  error.is_errno_contextful = false;
+  error.is_errno_contextless = true;
   struct config *config =
       load_config(config_path, error_callback, &error.context);
   if (!error.is_ok) {
     return CODE_CONFIG;
   }
-  error.is_errno_contextful = true;
+  error.is_errno_contextless = false;
 
   const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
   error.context = store_root;
@@ -141,12 +141,16 @@ int main(int argc, const char **argv) {
     } else if (event.mask & FAN_CLOSE_WRITE) {
       if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
           strstr(file_path, "/.") == NULL) {
+        error.context = get_configured_version_pattern(config);
         error.message = "Cannot create date-based version";
         char *version = get_timestamp(get_configured_version_pattern(config),
-                                      version_max_size, error_callback);
+                                      version_max_size, error_callback,
+                                      &error.is_errno_contextless);
         if (!error.is_ok) {
           return CODE_TIME;
         }
+        error.context = file_path;
+        error.is_errno_contextless = false;
 
         if (strchr(version, '/')) {
           error.context = version;
@@ -161,7 +165,7 @@ int main(int argc, const char **argv) {
         error.is_ok = true;
       }
       if (!strcmp(file_path, config_path)) {
-        error.is_errno_contextful = false;
+        error.is_errno_contextless = true;
         error.context = NULL;
         error.message = "Cannot reload configuration";
         struct config *new_config =
@@ -169,10 +173,9 @@ int main(int argc, const char **argv) {
         if (error.is_ok) {
           free_config(config);
           config = new_config;
-        } else {
-          error.is_ok = true;
         }
-        error.is_errno_contextful = true;
+        error.is_ok = true;
+        error.is_errno_contextless = false;
       }
     }
 
