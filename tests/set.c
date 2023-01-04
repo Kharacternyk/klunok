@@ -28,4 +28,6 @@ int main() {
   assert(is_in_set(S3, set));
   assert(is_in_set(S2, set));
   assert(is_in_set(S1, set));
+
+  free_set(set);
 }

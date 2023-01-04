@@ -17,4 +17,6 @@ int main() {
   assert(!error_code);
   assert(get_bit_in_bitmap(42, bitmap));
   assert(get_bit_in_bitmap(2048, bitmap));
+
+  free_bitmap(bitmap);
 }

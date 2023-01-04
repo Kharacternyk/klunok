@@ -9,3 +9,4 @@ void copy_to_store(const char *path, const char *version,
                    int *cleanup_error_code);
 uid_t get_store_uid(const struct store *store);
 gid_t get_store_gid(const struct store *store);
+void free_store(struct store *store);

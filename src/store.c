@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 struct store {
-  const char *root;
+  char *root;
   size_t root_length;
   uid_t uid;
   gid_t gid;
@@ -30,7 +30,13 @@ struct store *create_store(const char *root, int *error_code) {
     return NULL;
   }
 
-  store->root = root;
+  store->root = strdup(root);
+  if (!store->root) {
+    *error_code = errno;
+    free(store);
+    return NULL;
+  }
+
   store->root_length = strlen(root);
   store->uid = root_stat.st_uid;
   store->gid = root_stat.st_gid;
@@ -147,3 +153,10 @@ path_cleanup:
 
 uid_t get_store_uid(const struct store *store) { return store->uid; }
 gid_t get_store_gid(const struct store *store) { return store->gid; }
+
+void free_store(struct store *store) {
+  if (store) {
+    free(store->root);
+    free(store);
+  }
+}

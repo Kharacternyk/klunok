@@ -57,3 +57,10 @@ bool get_bit_in_bitmap(size_t bit, const struct bitmap *bitmap) {
   }
   return false;
 }
+
+void free_bitmap(struct bitmap *bitmap) {
+  if (bitmap) {
+    free(bitmap->array);
+    free(bitmap);
+  }
+}

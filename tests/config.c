@@ -22,4 +22,6 @@ int main() {
 
   const char *version_pattern = get_configured_version_pattern(config);
   assert(!strcmp(version_pattern, "v%Y"));
+
+  free_config(config);
 }
