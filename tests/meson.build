@@ -23,7 +23,7 @@ foreach component: components
     test_sources,
     dependencies: dependencies,
     c_args: c_args,
-    include_directories: source_dir
+    include_directories: inc
   ))
   run_target('valgrind-' + component, command: ['valgrind.sh', component])
 endforeach

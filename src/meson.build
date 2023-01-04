@@ -8,8 +8,6 @@ components = [
   'main',
 ]
 
-source_dir = include_directories('.')
-
 sources = {}
 sources_list = []
 foreach component: components
@@ -18,4 +16,4 @@ foreach component: components
   sources_list += [file]
 endforeach
 
-executable('klunok', sources_list, dependencies: lua, install: true)
+executable('klunok', sources_list, dependencies: lua, include_directories: inc, install: true)
