@@ -11,6 +11,7 @@
           klunok
         ];
         packages = [
+          gcovr
           valgrind
           gdb
         ];
