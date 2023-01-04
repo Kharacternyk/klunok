@@ -3,10 +3,6 @@
     with import nixpkgs { inherit system; };
     let
       klunok = callPackage ./. { };
-      check = writeShellScriptBin "check" ''
-        meson test --wrap='valgrind --error-exitcode=1 --leak-check=full' --print-errorlogs \
-        "$@"
-      '';
     in
     {
       defaultPackage = klunok;
@@ -15,7 +11,6 @@
           klunok
         ];
         packages = [
-          check
           gcovr
           valgrind
           gdb
