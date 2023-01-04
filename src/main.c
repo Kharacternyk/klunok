@@ -92,7 +92,8 @@ int main(int argc, const char **argv) {
       config_path, &error_code, &static_error_message, &dynamic_error_message);
   if (static_error_message || dynamic_error_message || error_code) {
     report(error_code, "Cannot load configuration",
-           static_error_message ? static_error_message : dynamic_error_message);
+           dynamic_error_message ? dynamic_error_message
+                                 : static_error_message);
     return CODE_CONFIG;
   }
 
@@ -171,8 +172,8 @@ int main(int argc, const char **argv) {
           config = new_config;
         } else {
           report(error_code, "Cannot reload configuration",
-                 static_error_message ? static_error_message
-                                      : dynamic_error_message);
+                 dynamic_error_message ? dynamic_error_message
+                                       : static_error_message);
           if (dynamic_error_message) {
             free(dynamic_error_message);
           }

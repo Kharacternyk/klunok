@@ -11,6 +11,73 @@ struct config {
   char *version_pattern;
 };
 
+static char *read_lua_string(lua_State *lua, const char *name, int *error_code,
+                             const char **static_error_message,
+                             char **dynamic_error_message) {
+  lua_getglobal(lua, name);
+  if (!lua_isstring(lua, -1)) {
+    *static_error_message = "Cannot read a string";
+    const char *format = "`%s` must be a string";
+    size_t message_length = snprintf(NULL, 0, format, name);
+    *dynamic_error_message = malloc(message_length + 1);
+    if (dynamic_error_message) {
+      snprintf(*dynamic_error_message, message_length, format, name);
+    }
+    return NULL;
+  }
+
+  char *string = strdup(lua_tostring(lua, -1));
+  if (!string) {
+    *error_code = errno;
+  }
+  return string;
+}
+
+static struct set *read_lua_set(lua_State *lua, const char *name,
+                                int *error_code,
+                                const char **static_error_message,
+                                char **dynamic_error_message) {
+  lua_getglobal(lua, name);
+  if (!lua_istable(lua, -1)) {
+    goto lua_fail;
+  }
+
+  struct set *set = create_set(lua_rawlen(lua, -1), error_code);
+  if (*error_code) {
+    return NULL;
+  }
+
+  lua_pushnil(lua);
+  while (lua_next(lua, -2)) {
+    if (!lua_isstring(lua, -1)) {
+      free_set(set);
+      goto lua_fail;
+    }
+
+    add_to_set(lua_tostring(lua, -1), set, error_code);
+    if (*error_code) {
+      free_set(set);
+      return NULL;
+    }
+
+    lua_pop(lua, 1);
+  }
+
+  return set;
+
+  const char *format = "`%s` must be a list of strings";
+  size_t message_length;
+
+lua_fail:
+  message_length = snprintf(NULL, 0, format, name);
+  *static_error_message = "Cannot read a set";
+  *dynamic_error_message = malloc(message_length + 1);
+  if (dynamic_error_message) {
+    snprintf(*dynamic_error_message, message_length, format, name);
+  }
+  return NULL;
+}
+
 struct config *load_config(const char *path, int *error_code,
                            const char **static_error_message,
                            char **dynamic_error_message) {
@@ -24,44 +91,22 @@ struct config *load_config(const char *path, int *error_code,
 
   lua_State *lua = luaL_newstate();
   if (luaL_loadfile(lua, path) || lua_pcall(lua, 0, 0, 0)) {
+    *static_error_message = "Lua syntax error";
     *dynamic_error_message = strdup(lua_tostring(lua, -1));
-    if (!*dynamic_error_message) {
-      *static_error_message = "Lua syntax error";
-    }
     goto fail;
   }
 
-  lua_getglobal(lua, "version_pattern");
-  if (!lua_isstring(lua, -1)) {
-    *static_error_message = "`version_pattern` must be a string";
-    goto fail;
-  }
-  config->version_pattern = strdup(lua_tostring(lua, -1));
-
-  lua_getglobal(lua, "editors");
-  if (!lua_istable(lua, -1)) {
-    *static_error_message = "`editors` must be a list of strings";
+  config->editors = read_lua_set(lua, "editors", error_code,
+                                 static_error_message, dynamic_error_message);
+  if (!config->editors) {
     goto fail;
   }
 
-  config->editors = create_set(lua_rawlen(lua, -1), error_code);
-  if (*error_code) {
+  config->version_pattern =
+      read_lua_string(lua, "version_pattern", error_code, static_error_message,
+                      dynamic_error_message);
+  if (!config->version_pattern) {
     goto fail;
-  }
-
-  lua_pushnil(lua);
-  while (lua_next(lua, -2)) {
-    if (!lua_isstring(lua, -1)) {
-      *static_error_message = "`editors` must be a list of strings";
-      goto fail;
-    }
-
-    add_to_set(lua_tostring(lua, -1), config->editors, error_code);
-    if (*error_code) {
-      goto fail;
-    }
-
-    lua_pop(lua, 1);
   }
 
   lua_close(lua);
