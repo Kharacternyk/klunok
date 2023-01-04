@@ -1,4 +1,5 @@
 #include "set.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -12,18 +13,17 @@ struct set {
   struct entry **entries;
 };
 
-struct set *create_set(size_t size_guess,
-                       const struct callback *error_callback) {
+struct set *create_set(size_t size_guess, int *error_code) {
   size_t size = size_guess * 2 + 2;
   struct entry **entries = calloc(size, sizeof(struct entry *));
   if (!entries) {
-    invoke_callback(error_callback);
+    *error_code = errno;
     return NULL;
   }
 
   struct set *set = malloc(sizeof(struct set));
   if (!set) {
-    invoke_callback(error_callback);
+    *error_code = errno;
     free(entries);
     return NULL;
   }
@@ -65,20 +65,19 @@ bool is_in_set(const char *value, const struct set *set) {
   return false;
 }
 
-void add_to_set(const char *value, struct set *set,
-                const struct callback *error_callback) {
+void add_to_set(const char *value, struct set *set, int *error_code) {
   size_t hashed_value = hash(value);
   struct entry **entry = &(set->entries[hashed_value % set->size]);
 
   char *value_copy = strdup(value);
   if (!value_copy) {
-    invoke_callback(error_callback);
+    *error_code = errno;
     return;
   }
 
   struct entry *new_entry = malloc(sizeof(struct entry));
   if (!new_entry) {
-    invoke_callback(error_callback);
+    *error_code = errno;
     free(value_copy);
     return;
   }

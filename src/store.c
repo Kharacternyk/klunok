@@ -16,17 +16,16 @@ struct store {
   gid_t gid;
 };
 
-struct store *create_store(const char *root,
-                           const struct callback *error_callback) {
+struct store *create_store(const char *root, int *error_code) {
   struct store *store = malloc(sizeof(struct store));
   if (!store) {
-    invoke_callback(error_callback);
+    *error_code = errno;
     return NULL;
   }
 
   struct stat root_stat;
   if (stat(root, &root_stat) < 0) {
-    invoke_callback(error_callback);
+    *error_code = errno;
     free(store);
     return NULL;
   }
@@ -51,7 +50,7 @@ static char *get_store_path(const char *filesystem_path, const char *version,
   return store_path;
 }
 
-static bool create_dirs(char *path) {
+static void create_dirs(char *path, int *error_code) {
   char *slash = strchr(path, '/');
 
   if (slash == path) {
@@ -62,70 +61,68 @@ static bool create_dirs(char *path) {
     *slash = 0;
     if (mkdir(path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) < 0 &&
         errno != EEXIST) {
+      *error_code = errno;
       *slash = '/';
-      return false;
+      return;
     }
     *slash = '/';
     ++slash;
     slash = strchr(slash, '/');
   }
-
-  return true;
 }
 
-static bool remove_dirs(char *path) {
+static void remove_dirs(char *path, int *error_code) {
   char *slash = strrchr(path, '/');
 
   while (slash && slash != path) {
     *slash = 0;
     if (rmdir(path) < 0) {
+      if (errno != ENOTEMPTY) {
+        *error_code = errno;
+      }
       *slash = '/';
-      return errno == ENOTEMPTY;
+      return;
     }
     char *old_slash = slash;
     slash = strrchr(path, '/');
     *old_slash = '/';
   }
-
-  return true;
-}
-
-static void rollback(char *path, const struct callback *error_callback) {
-  invoke_callback(error_callback);
-  if (!remove_dirs(path)) {
-    invoke_callback(error_callback);
-  }
 }
 
 void copy_to_store(const char *filesystem_path, const char *version,
-                   const struct store *store,
-                   const struct callback *error_callback) {
+                   const struct store *store, int *error_code,
+                   int *cleanup_error_code) {
   char *store_path = get_store_path(filesystem_path, version, store);
   if (!store_path) {
-    invoke_callback(error_callback);
+    *error_code = errno;
     return;
   }
-  if (!create_dirs(store_path)) {
-    rollback(store_path, error_callback);
+
+  create_dirs(store_path, error_code);
+  if (*error_code) {
+    remove_dirs(store_path, cleanup_error_code);
     goto path_cleanup;
   }
 
   int in_fd = open(filesystem_path, O_RDONLY);
   if (in_fd < 0) {
-    rollback(store_path, error_callback);
+    *error_code = errno;
+    remove_dirs(store_path, cleanup_error_code);
     goto path_cleanup;
   }
 
   int out_fd = open(store_path, O_CREAT | O_WRONLY | O_TRUNC,
-                    S_IRUSR | S_IRGRP | S_IROTH);
+                    S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
   if (out_fd < 0) {
-    rollback(store_path, error_callback);
+    *error_code = errno;
+    remove_dirs(store_path, cleanup_error_code);
     goto in_fd_cleanup;
   }
 
   struct stat in_fd_stat;
   if (fstat(in_fd, &in_fd_stat) < 0) {
-    rollback(store_path, error_callback);
+    *error_code = errno;
+    remove_dirs(store_path, cleanup_error_code);
     goto out_fd_cleanup;
   }
 
@@ -134,7 +131,8 @@ void copy_to_store(const char *filesystem_path, const char *version,
     if (written_size > 0) {
       in_fd_stat.st_size -= written_size;
     } else {
-      rollback(store_path, error_callback);
+      *error_code = errno;
+      remove_dirs(store_path, cleanup_error_code);
       goto out_fd_cleanup;
     }
   }

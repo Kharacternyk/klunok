@@ -1,9 +1,10 @@
 #include "deref.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-char *deref_fd(int fd, const struct callback *error_callback) {
+char *deref_fd(int fd, int *error_code) {
   size_t max_length = 1024;
 
   for (;;) {
@@ -14,7 +15,7 @@ char *deref_fd(int fd, const struct callback *error_callback) {
     int length = readlink(link, target, max_length);
 
     if (length < 0) {
-      invoke_callback(error_callback);
+      *error_code = errno;
       free(link);
       free(target);
       return NULL;

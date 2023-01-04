@@ -3,25 +3,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-void error_callback_function(void *parameter) { assert(parameter); }
-
 int main() {
-  struct callback *error_callback =
-      create_callback(error_callback_function, NULL, NULL);
+  int error_code = 0;
   bool is_overflow = false;
+  const char *timestamp = get_timestamp("abc", 7, &error_code, &is_overflow);
+  assert(!error_code);
+  assert(!is_overflow);
+  assert(!strcmp(timestamp, "abc"));
 
-  assert(
-      !strcmp(get_timestamp("abc", 7, error_callback, &is_overflow), "abc") &&
-      !is_overflow);
-  assert(
-      !strcmp(get_timestamp("abc", 3, error_callback, &is_overflow), "abc") &&
-      !is_overflow);
-  assert(strlen(get_timestamp("%C", 2, error_callback, &is_overflow)) == 2 &&
-         !is_overflow);
-  assert(strlen(get_timestamp("%Y%m%d%H%M%S", 14, error_callback,
-                              &is_overflow)) == 14 &&
-         !is_overflow);
+  timestamp = get_timestamp("abc", 3, &error_code, &is_overflow);
+  assert(!error_code);
+  assert(!is_overflow);
+  assert(!strcmp(timestamp, "abc"));
 
-  get_timestamp("%Y", 3, NULL, &is_overflow);
+  timestamp = get_timestamp("%C", 2, &error_code, &is_overflow);
+  assert(!error_code);
+  assert(!is_overflow);
+  assert(strlen(timestamp) == 2);
+
+  timestamp = get_timestamp("%Y%m%d%H%M%S", 14, &error_code, &is_overflow);
+  assert(!error_code);
+  assert(!is_overflow);
+  assert(strlen(timestamp) == 14);
+
+  get_timestamp("%Y", 3, &error_code, &is_overflow);
+  assert(!error_code);
   assert(is_overflow);
 }

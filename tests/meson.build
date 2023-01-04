@@ -5,7 +5,6 @@ foreach component: components
 
   test_sources = [
     sources[component],
-    sources['callback'],
     component + '.c',
   ]
   c_args = []

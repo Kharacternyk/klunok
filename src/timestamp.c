@@ -1,13 +1,14 @@
 #include "timestamp.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 
-char *get_timestamp(const char *format, size_t max_length,
-                    const struct callback *error_callback, bool *is_overflow) {
+char *get_timestamp(const char *format, size_t max_length, int *error_code,
+                    bool *is_overflow) {
   time_t t = time(NULL);
   struct tm *tm = localtime(&t);
   if (!tm) {
-    invoke_callback(error_callback);
+    *error_code = errno;
     return NULL;
   }
 
@@ -19,7 +20,6 @@ char *get_timestamp(const char *format, size_t max_length,
     if (actual_length == 0) {
       *is_overflow = true;
     }
-    invoke_callback(error_callback);
     free(timestamp);
     return NULL;
   }

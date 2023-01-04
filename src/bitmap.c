@@ -1,4 +1,5 @@
 #include "bitmap.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -7,17 +8,16 @@ struct bitmap {
   bool *array;
 };
 
-struct bitmap *create_bitmap(size_t size_guess,
-                             const struct callback *error_callback) {
+struct bitmap *create_bitmap(size_t size_guess, int *error_code) {
   struct bitmap *bitmap = malloc(sizeof(struct bitmap));
   if (!bitmap) {
-    invoke_callback(error_callback);
+    *error_code = errno;
     return NULL;
   }
 
   bool *array = calloc(size_guess, sizeof(bool));
   if (!array) {
-    invoke_callback(error_callback);
+    *error_code = errno;
     free(bitmap);
     return NULL;
   }
@@ -28,13 +28,13 @@ struct bitmap *create_bitmap(size_t size_guess,
   return bitmap;
 }
 
-void set_bit_in_bitmap(size_t bit, struct bitmap *bitmap,
-                       const struct callback *error_callback) {
+void set_bit_in_bitmap(size_t bit, struct bitmap *bitmap, int *error_code) {
   if (bit >= bitmap->size) {
     size_t new_size = bit * 2;
     bool *new_array = calloc(new_size, sizeof(bool));
     if (!new_array) {
-      return invoke_callback(error_callback);
+      *error_code = errno;
+      return;
     }
     memcpy(new_array, bitmap->array, bitmap->size);
     free(bitmap->array);

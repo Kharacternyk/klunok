@@ -1,5 +1,4 @@
 components = [
-  'callback',
   'set',
   'bitmap',
   'deref',
