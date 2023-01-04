@@ -93,29 +93,31 @@ struct config *load_config(const char *path, int *error_code,
   if (luaL_loadfile(lua, path) || lua_pcall(lua, 0, 0, 0)) {
     *static_error_message = "Lua syntax error";
     *dynamic_error_message = strdup(lua_tostring(lua, -1));
-    goto fail;
+    free(config);
+    lua_close(lua);
+    return NULL;
   }
 
   config->editors = read_lua_set(lua, "editors", error_code,
                                  static_error_message, dynamic_error_message);
-  if (!config->editors) {
-    goto fail;
+  if (*error_code || *static_error_message) {
+    free(config);
+    lua_close(lua);
+    return NULL;
   }
 
   config->version_pattern =
       read_lua_string(lua, "version_pattern", error_code, static_error_message,
                       dynamic_error_message);
-  if (!config->version_pattern) {
-    goto fail;
+  if (*error_code || *static_error_message) {
+    free(config->editors);
+    free(config);
+    lua_close(lua);
+    return NULL;
   }
 
   lua_close(lua);
   return config;
-
-fail:
-  lua_close(lua);
-  free_config(config);
-  return NULL;
 }
 
 const struct set *get_configured_editors(const struct config *config) {
