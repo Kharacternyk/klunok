@@ -5,8 +5,8 @@
       klunok = callPackage ./. { };
     in
     {
-      defaultPackage = klunok;
-      devShell = mkShell {
+      packages.default = klunok;
+      devShells.default = mkShell {
         inputsFrom = [
           klunok
         ];
