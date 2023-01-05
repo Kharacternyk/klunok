@@ -18,7 +18,7 @@ int main() {
   assert(is_in_set("vim", editors));
   assert(is_in_set("nvim", editors));
   assert(is_in_set("rstudio", editors));
-  assert(!is_in_set("qutebrowser", editors));
+  assert(!is_in_set("cat", editors));
 
   const char *version_pattern = get_configured_version_pattern(config);
   assert(!strcmp(version_pattern, "v%Y-%m-%d-%H-%M"));
@@ -30,6 +30,13 @@ int main() {
   assert(!error_code);
   assert(!static_error_message);
   assert(!dynamic_error_message);
+
+  editors = get_configured_editors(config);
+  assert(!is_in_set("vi", editors));
+  assert(is_in_set("vim", editors));
+  assert(is_in_set("nvim", editors));
+  assert(is_in_set("rstudio", editors));
+  assert(is_in_set("cat", editors));
 
   version_pattern = get_configured_version_pattern(config);
   assert(!strcmp(version_pattern, "override"));

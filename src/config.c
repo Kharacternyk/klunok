@@ -52,15 +52,17 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 
   lua_pushnil(lua);
   while (lua_next(lua, -2)) {
-    if (!lua_isstring(lua, -1)) {
+    if (!lua_isstring(lua, -2)) {
       free_set(set);
       goto lua_fail;
     }
 
-    add_to_set(lua_tostring(lua, -1), set, error_code);
-    if (*error_code) {
-      free_set(set);
-      return NULL;
+    if (!lua_isnil(lua, -1)) {
+      add_to_set(lua_tostring(lua, -2), set, error_code);
+      if (*error_code) {
+        free_set(set);
+        return NULL;
+      }
     }
 
     lua_pop(lua, 1);
