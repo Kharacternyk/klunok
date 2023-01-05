@@ -18,7 +18,7 @@ static char *read_lua_string(lua_State *lua, const char *name, int *error_code,
                              const char **static_error_message,
                              char **dynamic_error_message) {
   lua_getglobal(lua, name);
-  if (!lua_isstring(lua, -1)) {
+  if (lua_type(lua, -1) != LUA_TSTRING) {
     *static_error_message = "Cannot read a string";
     const char *format = "`%s` must be a string";
     size_t message_length = snprintf(NULL, 0, format, name);
