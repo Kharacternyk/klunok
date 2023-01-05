@@ -1,7 +1,7 @@
 #include "store.h"
-#include "sys/stat.h"
 #include <assert.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #define STORE_ROOT TEST_ROOT "/store"
