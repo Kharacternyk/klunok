@@ -9,7 +9,7 @@ components = [
 ]
 
 sources = {}
-sources_list = []
+sources_list = [lua_config_object]
 foreach component: components
   file = files(component + '.c')[0]
   sources += {component: file}

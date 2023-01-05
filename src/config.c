@@ -6,6 +6,9 @@
 #include <string.h>
 #include <sys/stat.h>
 
+extern char _binary_lua_config_lua_start;
+extern char _binary_lua_config_lua_end;
+
 struct config {
   struct set *editors;
   char *version_pattern;
@@ -90,7 +93,12 @@ struct config *load_config(const char *path, int *error_code,
   config->version_pattern = NULL;
 
   lua_State *lua = luaL_newstate();
-  if (luaL_loadfile(lua, path) || lua_pcall(lua, 0, 0, 0)) {
+  if (luaL_loadbuffer(lua, &_binary_lua_config_lua_start,
+                      &_binary_lua_config_lua_end -
+                          &_binary_lua_config_lua_start,
+                      "default") ||
+      lua_pcall(lua, 0, 0, 0) || luaL_loadfile(lua, path) ||
+      lua_pcall(lua, 0, 0, 0)) {
     *static_error_message = "Lua syntax error";
     *dynamic_error_message = strdup(lua_tostring(lua, -1));
     free(config);

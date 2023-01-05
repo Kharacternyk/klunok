@@ -55,7 +55,7 @@ int main(int argc, const char **argv) {
 
   int error_code = 0;
 
-  const char *store_root = argc > 1 ? argv[1] : "./klunok-store";
+  const char *store_root = argc > 1 ? argv[1] : ".";
   struct store *store = create_store(store_root, &error_code);
   if (error_code) {
     report(error_code, "Cannot create store", store_root);
@@ -87,7 +87,7 @@ int main(int argc, const char **argv) {
   const char *static_error_message = NULL;
   char *dynamic_error_message = NULL;
 
-  const char *config_path = argc > 2 ? argv[2] : "./config.lua";
+  const char *config_path = argc > 2 ? argv[2] : "/etc/klunok/config.lua";
   struct config *config = load_config(
       config_path, &error_code, &static_error_message, &dynamic_error_message);
   if (static_error_message || dynamic_error_message || error_code) {

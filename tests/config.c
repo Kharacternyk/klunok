@@ -7,8 +7,8 @@ int main() {
   const char *static_error_message = NULL;
   char *dynamic_error_message = NULL;
   struct config *config =
-      load_config(TEST_ROOT "/config.lua", &error_code, &static_error_message,
-                  &dynamic_error_message);
+      load_config(TEST_ROOT "/configs/empty.lua", &error_code,
+                  &static_error_message, &dynamic_error_message);
   assert(!error_code);
   assert(!static_error_message);
   assert(!dynamic_error_message);
@@ -21,7 +21,18 @@ int main() {
   assert(!is_in_set("qutebrowser", editors));
 
   const char *version_pattern = get_configured_version_pattern(config);
-  assert(!strcmp(version_pattern, "v%Y"));
+  assert(!strcmp(version_pattern, "v%Y-%m-%d-%H-%M"));
+
+  free_config(config);
+
+  config = load_config(TEST_ROOT "/configs/override.lua", &error_code,
+                       &static_error_message, &dynamic_error_message);
+  assert(!error_code);
+  assert(!static_error_message);
+  assert(!dynamic_error_message);
+
+  version_pattern = get_configured_version_pattern(config);
+  assert(!strcmp(version_pattern, "override"));
 
   free_config(config);
 }
