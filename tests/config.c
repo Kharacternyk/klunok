@@ -1,5 +1,6 @@
 #include "config.h"
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
 int main() {
@@ -42,4 +43,19 @@ int main() {
   assert(!strcmp(version_pattern, "override"));
 
   free_config(config);
+
+  load_config(TEST_ROOT "/configs/broken-semantics.lua", &error_code,
+              &static_error_message, &dynamic_error_message);
+  assert(error_code || dynamic_error_message || static_error_message);
+
+  free(dynamic_error_message);
+  error_code = 0;
+  dynamic_error_message = NULL;
+  static_error_message = NULL;
+
+  load_config(TEST_ROOT "/configs/broken-syntax.lua", &error_code,
+              &static_error_message, &dynamic_error_message);
+  assert(error_code || dynamic_error_message || static_error_message);
+
+  free(dynamic_error_message);
 }

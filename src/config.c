@@ -23,8 +23,8 @@ static char *read_lua_string(lua_State *lua, const char *name, int *error_code,
     const char *format = "`%s` must be a string";
     size_t message_length = snprintf(NULL, 0, format, name);
     *dynamic_error_message = malloc(message_length + 1);
-    if (dynamic_error_message) {
-      snprintf(*dynamic_error_message, message_length, format, name);
+    if (*dynamic_error_message) {
+      snprintf(*dynamic_error_message, message_length + 1, format, name);
     }
     return NULL;
   }
@@ -52,7 +52,7 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 
   lua_pushnil(lua);
   while (lua_next(lua, -2)) {
-    if (!lua_isstring(lua, -2)) {
+    if (lua_type(lua, -2) != LUA_TSTRING) {
       free_set(set);
       goto lua_fail;
     }
@@ -77,8 +77,8 @@ lua_fail:
   message_length = snprintf(NULL, 0, format, name);
   *static_error_message = "Cannot read a set";
   *dynamic_error_message = malloc(message_length + 1);
-  if (dynamic_error_message) {
-    snprintf(*dynamic_error_message, message_length, format, name);
+  if (*dynamic_error_message) {
+    snprintf(*dynamic_error_message, message_length + 1, format, name);
   }
   return NULL;
 }
