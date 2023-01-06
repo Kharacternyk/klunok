@@ -16,7 +16,7 @@ foreach component: components
   if component == 'config'
     dependencies += lua
     test_sources += sources['set']
-    test_sources += lua_config_object
+    test_sources += lua_sources
   endif
 
   test(component, executable(

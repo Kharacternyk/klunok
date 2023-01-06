@@ -1,18 +1,20 @@
 ld = find_program('ld')
 
-lua_config_copy = custom_target(
-  output: 'config.lua',
-  input: 'config.lua',
-  command: [
-    'cp', '@INPUT@', '@OUTPUT@'
-  ],
-)
-
-lua_config_object = custom_target(
-  'config.lua.o',
-  output: 'config.lua.o',
-  input: lua_config_copy,
-  command: [
-    ld, '-z', 'noexecstack', '-r', '-b', 'binary', '-o', '@OUTPUT@', '@INPUT@'
-  ]
-)
+lua_sources = []
+foreach file: ['config.lua', 'validation.lua']
+  copy = custom_target(
+    output: file,
+    input: file,
+    command: [
+      'cp', '@INPUT@', '@OUTPUT@'
+    ],
+  )
+  lua_sources += custom_target(
+    file + '.o',
+    output: file + '.o',
+    input: copy,
+    command: [
+      ld, '-z', 'noexecstack', '-r', '-b', 'binary', '-o', '@OUTPUT@', '@INPUT@'
+    ]
+  )
+endforeach

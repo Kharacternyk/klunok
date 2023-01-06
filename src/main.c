@@ -84,16 +84,14 @@ int main(int argc, const char **argv) {
     return CODE_MEMORY;
   }
 
-  const char *static_error_message = NULL;
-  char *dynamic_error_message = NULL;
+  char *error_message = NULL;
+  bool is_generic_error = false;
 
   const char *config_path = argc > 2 ? argv[2] : "/etc/klunok/config.lua";
-  struct config *config = load_config(
-      config_path, &error_code, &static_error_message, &dynamic_error_message);
-  if (static_error_message || dynamic_error_message || error_code) {
-    report(error_code, "Cannot load configuration",
-           dynamic_error_message ? dynamic_error_message
-                                 : static_error_message);
+  struct config *config =
+      load_config(config_path, &error_code, &error_message, &is_generic_error);
+  if (error_message || error_code || is_generic_error) {
+    report(error_code, "Cannot load configuration", error_message);
     return CODE_CONFIG;
   }
 
@@ -164,22 +162,17 @@ int main(int argc, const char **argv) {
         error_code = 0;
       }
       if (!strcmp(file_path, config_path)) {
-        struct config *new_config =
-            load_config(config_path, &error_code, &static_error_message,
-                        &dynamic_error_message);
-        if (!static_error_message && !dynamic_error_message && !error_code) {
+        struct config *new_config = load_config(
+            config_path, &error_code, &error_message, &is_generic_error);
+        if (!error_message && !error_code && !is_generic_error) {
           free_config(config);
           config = new_config;
         } else {
-          report(error_code, "Cannot reload configuration",
-                 dynamic_error_message ? dynamic_error_message
-                                       : static_error_message);
-          if (dynamic_error_message) {
-            free(dynamic_error_message);
-          }
+          report(error_code, "Cannot reload configuration", error_message);
+          free(error_message);
           error_code = 0;
-          static_error_message = NULL;
-          dynamic_error_message = NULL;
+          error_message = NULL;
+          is_generic_error = false;
         }
       }
     }

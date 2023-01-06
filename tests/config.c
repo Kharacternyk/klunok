@@ -5,14 +5,14 @@
 
 int main() {
   int error_code = 0;
-  const char *static_error_message = NULL;
-  char *dynamic_error_message = NULL;
+  char *error_message = NULL;
+  bool is_generic_error = false;
   struct config *config =
-      load_config(TEST_ROOT "/configs/empty.lua", &error_code,
-                  &static_error_message, &dynamic_error_message);
+      load_config(TEST_ROOT "/configs/empty.lua", &error_code, &error_message,
+                  &is_generic_error);
   assert(!error_code);
-  assert(!static_error_message);
-  assert(!dynamic_error_message);
+  assert(!error_message);
+  assert(!is_generic_error);
 
   const struct set *editors = get_configured_editors(config);
   assert(is_in_set("vi", editors));
@@ -27,10 +27,10 @@ int main() {
   free_config(config);
 
   config = load_config(TEST_ROOT "/configs/override.lua", &error_code,
-                       &static_error_message, &dynamic_error_message);
+                       &error_message, &is_generic_error);
   assert(!error_code);
-  assert(!static_error_message);
-  assert(!dynamic_error_message);
+  assert(!error_message);
+  assert(!is_generic_error);
 
   editors = get_configured_editors(config);
   assert(!is_in_set("vi", editors));
@@ -45,17 +45,17 @@ int main() {
   free_config(config);
 
   load_config(TEST_ROOT "/configs/broken-semantics.lua", &error_code,
-              &static_error_message, &dynamic_error_message);
-  assert(error_code || dynamic_error_message || static_error_message);
+              &error_message, &is_generic_error);
+  assert(error_code || error_message || is_generic_error);
 
-  free(dynamic_error_message);
+  free(error_message);
   error_code = 0;
-  dynamic_error_message = NULL;
-  static_error_message = NULL;
+  error_message = NULL;
+  is_generic_error = false;
 
   load_config(TEST_ROOT "/configs/broken-syntax.lua", &error_code,
-              &static_error_message, &dynamic_error_message);
-  assert(error_code || dynamic_error_message || static_error_message);
+              &error_message, &is_generic_error);
+  assert(error_code || error_message || is_generic_error);
 
-  free(dynamic_error_message);
+  free(error_message);
 }
