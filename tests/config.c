@@ -23,6 +23,7 @@ int main() {
 
   assert(get_configured_version_max_length(config) == 80);
   assert(get_configured_path_length_guess(config) == 1024);
+  assert(get_configured_max_pid_guess(config) == 1 << 16);
 
   free_config(config);
 

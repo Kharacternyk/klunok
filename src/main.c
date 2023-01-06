@@ -76,12 +76,6 @@ int main(int argc, const char **argv) {
     return CODE_UID_GID;
   }
 
-  struct bitmap *editor_pid_bitmap = create_bitmap(1 << 16, &error_code);
-  if (error_code) {
-    report(error_code, "Cannot create PID bitmap", NULL);
-    return CODE_MEMORY;
-  }
-
   char *error_message = NULL;
 
   const char *config_path = argc > 2 ? argv[2] : "/dev/null";
@@ -89,6 +83,13 @@ int main(int argc, const char **argv) {
   if (error_message || error_code) {
     report(error_code, "Cannot load configuration", error_message);
     return CODE_CONFIG;
+  }
+
+  struct bitmap *editor_pid_bitmap =
+      create_bitmap(get_configured_max_pid_guess(config), &error_code);
+  if (error_code) {
+    report(error_code, "Cannot create PID bitmap", NULL);
+    return CODE_MEMORY;
   }
 
   const pid_t self = getpid();
