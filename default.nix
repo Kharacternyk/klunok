@@ -2,7 +2,7 @@
 , meson
 , ninja
 , pkg-config
-, lua
+, lua5_4
 }: stdenv.mkDerivation {
   pname = "klunok";
   version = "0.1.0";
@@ -14,6 +14,6 @@
     pkg-config
   ];
   buildInputs = [
-    lua
+    lua5_4
   ];
 }
