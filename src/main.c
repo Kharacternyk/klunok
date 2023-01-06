@@ -25,8 +25,6 @@ enum exit_code {
   CODE_UID_GID,
 };
 
-static const size_t version_max_size = 80;
-
 static void report(int error_code, const char *error_message,
                    const char *error_context) {
   fprintf(stderr, "%s", error_message);
@@ -133,9 +131,9 @@ int main(int argc, const char **argv) {
       if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
           strstr(file_path, "/.") == NULL) {
         bool is_overflow = false;
-        char *version =
-            get_timestamp(get_configured_version_pattern(config),
-                          version_max_size, &error_code, &is_overflow);
+        char *version = get_timestamp(get_configured_version_pattern(config),
+                                      get_configured_version_max_length(config),
+                                      &error_code, &is_overflow);
         if (error_code) {
           report(error_code, "Cannot create date-based version", NULL);
           return CODE_TIME;

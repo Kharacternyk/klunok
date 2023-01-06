@@ -24,6 +24,8 @@ int main() {
   const char *version_pattern = get_configured_version_pattern(config);
   assert(!strcmp(version_pattern, "v%Y-%m-%d-%H-%M"));
 
+  assert(get_configured_version_max_length(config) == 80);
+
   free_config(config);
 
   config = load_config(TEST_ROOT "/configs/override.lua", &error_code,

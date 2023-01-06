@@ -15,7 +15,19 @@ extern const char _binary_lua_validation_lua_end;
 struct config {
   struct set *editors;
   char *version_pattern;
+  size_t version_max_length;
 };
+
+static size_t read_lua_size(lua_State *lua, const char *name,
+                            bool *is_generic_error) {
+  lua_getglobal(lua, name);
+  lua_Integer integer = lua_tointeger(lua, -1);
+  if (integer < 0) {
+    *is_generic_error = true;
+    return 0;
+  }
+  return integer;
+}
 
 static char *read_lua_string(lua_State *lua, const char *name, int *error_code,
                              bool *is_generic_error) {
@@ -100,6 +112,12 @@ struct config *load_config(const char *path, int *error_code,
     goto config_cleanup;
   }
 
+  config->version_max_length =
+      read_lua_size(lua, "version_max_length", is_generic_error);
+  if (*is_generic_error) {
+    goto editors_cleanup;
+  }
+
   config->version_pattern =
       read_lua_string(lua, "version_pattern", error_code, is_generic_error);
   if (*error_code || *is_generic_error) {
@@ -123,6 +141,10 @@ const struct set *get_configured_editors(const struct config *config) {
 
 const char *get_configured_version_pattern(const struct config *config) {
   return config->version_pattern;
+}
+
+const size_t get_configured_version_max_length(const struct config *config) {
+  return config->version_max_length;
 }
 
 void free_config(struct config *config) {
