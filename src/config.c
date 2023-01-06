@@ -18,25 +18,14 @@ struct config {
   size_t version_max_length;
 };
 
-static size_t read_lua_size(lua_State *lua, const char *name,
-                            bool *is_generic_error) {
+static size_t read_lua_size(lua_State *lua, const char *name) {
   lua_getglobal(lua, name);
-  lua_Integer integer = lua_tointeger(lua, -1);
-  if (integer < 0) {
-    *is_generic_error = true;
-    return 0;
-  }
-  return integer;
+  return lua_tointeger(lua, -1);
 }
 
-static char *read_lua_string(lua_State *lua, const char *name, int *error_code,
-                             bool *is_generic_error) {
+static char *read_lua_string(lua_State *lua, const char *name,
+                             int *error_code) {
   lua_getglobal(lua, name);
-  if (lua_type(lua, -1) != LUA_TSTRING) {
-    *is_generic_error = true;
-    return NULL;
-  }
-
   char *string = strdup(lua_tostring(lua, -1));
   if (!string) {
     *error_code = errno;
@@ -45,12 +34,8 @@ static char *read_lua_string(lua_State *lua, const char *name, int *error_code,
 }
 
 static struct set *read_lua_set(lua_State *lua, const char *name,
-                                int *error_code, bool *is_generic_error) {
+                                int *error_code) {
   lua_getglobal(lua, name);
-  if (!lua_istable(lua, -1)) {
-    *is_generic_error = true;
-    return NULL;
-  }
 
   struct set *set = create_set(lua_rawlen(lua, -1), error_code);
   if (*error_code) {
@@ -59,18 +44,10 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 
   lua_pushnil(lua);
   while (lua_next(lua, -2)) {
-    if (lua_type(lua, -2) != LUA_TSTRING) {
+    add_to_set(lua_tostring(lua, -2), set, error_code);
+    if (*error_code) {
       free_set(set);
-      *is_generic_error = true;
       return NULL;
-    }
-
-    if (!lua_isnil(lua, -1)) {
-      add_to_set(lua_tostring(lua, -2), set, error_code);
-      if (*error_code) {
-        free_set(set);
-        return NULL;
-      }
     }
 
     lua_pop(lua, 1);
@@ -80,7 +57,7 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 }
 
 struct config *load_config(const char *path, int *error_code,
-                           char **error_message, bool *is_generic_error) {
+                           char **error_message) {
   struct config *config = malloc(sizeof(struct config));
   if (!config) {
     *error_code = errno;
@@ -107,22 +84,17 @@ struct config *load_config(const char *path, int *error_code,
     goto config_cleanup;
   }
 
-  config->editors = read_lua_set(lua, "editors", error_code, is_generic_error);
-  if (*error_code || *is_generic_error) {
+  config->editors = read_lua_set(lua, "editors", error_code);
+  if (*error_code) {
     goto config_cleanup;
   }
 
-  config->version_max_length =
-      read_lua_size(lua, "version_max_length", is_generic_error);
-  if (*is_generic_error) {
+  config->version_pattern = read_lua_string(lua, "version_pattern", error_code);
+  if (*error_code) {
     goto editors_cleanup;
   }
 
-  config->version_pattern =
-      read_lua_string(lua, "version_pattern", error_code, is_generic_error);
-  if (*error_code || *is_generic_error) {
-    goto editors_cleanup;
-  }
+  config->version_max_length = read_lua_size(lua, "version_max_length");
 
   lua_close(lua);
   return config;

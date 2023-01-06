@@ -83,12 +83,10 @@ int main(int argc, const char **argv) {
   }
 
   char *error_message = NULL;
-  bool is_generic_error = false;
 
   const char *config_path = argc > 2 ? argv[2] : "/dev/null";
-  struct config *config =
-      load_config(config_path, &error_code, &error_message, &is_generic_error);
-  if (error_message || error_code || is_generic_error) {
+  struct config *config = load_config(config_path, &error_code, &error_message);
+  if (error_message || error_code) {
     report(error_code, "Cannot load configuration", error_message);
     return CODE_CONFIG;
   }
@@ -162,9 +160,9 @@ int main(int argc, const char **argv) {
         error_code = 0;
       }
       if (!strcmp(file_path, config_path)) {
-        struct config *new_config = load_config(
-            config_path, &error_code, &error_message, &is_generic_error);
-        if (!error_message && !error_code && !is_generic_error) {
+        struct config *new_config =
+            load_config(config_path, &error_code, &error_message);
+        if (!error_message && !error_code) {
           free_config(config);
           config = new_config;
         } else {
@@ -172,7 +170,6 @@ int main(int argc, const char **argv) {
           free(error_message);
           error_code = 0;
           error_message = NULL;
-          is_generic_error = false;
         }
       }
     }
