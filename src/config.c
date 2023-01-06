@@ -16,6 +16,7 @@ struct config {
   struct set *editors;
   char *version_pattern;
   size_t version_max_length;
+  size_t path_length_guess;
 };
 
 static size_t read_lua_size(lua_State *lua, const char *name) {
@@ -95,6 +96,7 @@ struct config *load_config(const char *path, int *error_code,
   }
 
   config->version_max_length = read_lua_size(lua, "version_max_length");
+  config->path_length_guess = read_lua_size(lua, "path_length_guess");
 
   lua_close(lua);
   return config;
@@ -115,8 +117,12 @@ const char *get_configured_version_pattern(const struct config *config) {
   return config->version_pattern;
 }
 
-const size_t get_configured_version_max_length(const struct config *config) {
+size_t get_configured_version_max_length(const struct config *config) {
   return config->version_max_length;
+}
+
+size_t get_configured_path_length_guess(const struct config *config) {
+  return config->path_length_guess;
 }
 
 void free_config(struct config *config) {

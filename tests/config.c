@@ -22,6 +22,7 @@ int main() {
   assert(!strcmp(version_pattern, "v%Y-%m-%d-%H-%M"));
 
   assert(get_configured_version_max_length(config) == 80);
+  assert(get_configured_path_length_guess(config) == 1024);
 
   free_config(config);
 

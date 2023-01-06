@@ -9,7 +9,7 @@
 int main() {
   int fd = open(PATH, O_RDONLY);
   int error_code = 0;
-  char *path = deref_fd(fd, &error_code);
+  char *path = deref_fd(fd, 0, &error_code);
 
   assert(!error_code);
   assert(path);

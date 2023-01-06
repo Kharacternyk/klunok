@@ -100,7 +100,8 @@ int main(int argc, const char **argv) {
       return CODE_FANOTIFY;
     }
 
-    char *file_path = deref_fd(event.fd, &error_code);
+    char *file_path = deref_fd(
+        event.fd, get_configured_path_length_guess(config), &error_code);
     if (error_code) {
       report(error_code, "Cannot dereference file path", NULL);
     }

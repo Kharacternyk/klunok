@@ -4,30 +4,31 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-char *deref_fd(int fd, int *error_code) {
-  size_t max_length = 1024;
+char *deref_fd(int fd, size_t length_guess, int *error_code) {
+  size_t max_size = length_guess + 1;
 
   for (;;) {
-    char *link = malloc(max_length);
-    char *target = malloc(max_length);
-    snprintf(link, max_length, "/proc/self/fd/%d", fd);
+    char *link = malloc(max_size);
+    char *target = malloc(max_size);
 
-    int length = readlink(link, target, max_length);
+    if (snprintf(link, max_size, "/proc/self/fd/%d", fd) <= max_size) {
+      int length = readlink(link, target, max_size);
 
-    if (length < 0) {
-      *error_code = errno;
-      free(link);
-      free(target);
-      return NULL;
-    }
-    if (length < max_length) {
-      free(link);
-      target[length] = 0;
-      return target;
+      if (length < 0) {
+        *error_code = errno;
+        free(link);
+        free(target);
+        return NULL;
+      }
+      if (length < max_size) {
+        free(link);
+        target[length] = 0;
+        return target;
+      }
     }
 
     free(link);
     free(target);
-    max_length *= 2;
+    max_size *= 2;
   }
 }
