@@ -87,7 +87,7 @@ int main(int argc, const char **argv) {
   char *error_message = NULL;
   bool is_generic_error = false;
 
-  const char *config_path = argc > 2 ? argv[2] : "/etc/klunok/config.lua";
+  const char *config_path = argc > 2 ? argv[2] : "/dev/null";
   struct config *config =
       load_config(config_path, &error_code, &error_message, &is_generic_error);
   if (error_message || error_code || is_generic_error) {
