@@ -95,6 +95,8 @@ int main(int argc, const char **argv) {
     return CODE_CONFIG;
   }
 
+  const pid_t self = getpid();
+
   for (;;) {
     struct fanotify_event_metadata event;
     if (read(fanotify_fd, &event, sizeof event) < sizeof event) {
@@ -127,7 +129,7 @@ int main(int argc, const char **argv) {
           unset_bit_in_bitmap(event.pid, editor_pid_bitmap);
         }
       }
-    } else if (event.mask & FAN_CLOSE_WRITE) {
+    } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
       if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
           strstr(file_path, "/.") == NULL) {
         bool is_overflow = false;
