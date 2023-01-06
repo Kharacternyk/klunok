@@ -118,7 +118,7 @@ int main(int argc, const char **argv) {
         if (is_in_set(exe_filename, get_configured_editors(config))) {
           set_bit_in_bitmap(event.pid, editor_pid_bitmap, &error_code);
           if (error_code) {
-            report(error_code, "Cannot set bin in pid bitmap", NULL);
+            report(error_code, "Cannot set bit in pid bitmap", NULL);
             return CODE_MEMORY;
           }
         } else {
