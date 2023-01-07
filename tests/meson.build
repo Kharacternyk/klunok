@@ -1,8 +1,4 @@
 foreach component: components
-  if component == 'main'
-    continue
-  endif
-
   test_sources = [
     sources[component],
     component + '.c',
@@ -10,14 +6,20 @@ foreach component: components
   c_args = []
   dependencies = []
 
-  if component in ['config', 'store']
+  if component == 'config-lua' and not lua.found()
+    continue
+  endif
+  if component in ['config-lua', 'store']
     c_args += '-DTEST_ROOT="' + meson.current_source_dir() + '"'
   endif
-  if component == 'config'
-    dependencies += lua
-    test_sources += lua_sources
+  if component in ['config-lua', 'config-static']
     test_sources += sources['set']
     test_sources += sources['store']
+    test_sources += 'config.c'
+  endif
+  if component == 'config-lua'
+    dependencies += lua
+    test_sources += lua_sources
   endif
 
   test(component, executable(

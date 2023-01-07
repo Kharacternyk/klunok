@@ -2,10 +2,8 @@
 #include <errno.h>
 #include <lauxlib.h>
 #include <lualib.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 
 extern const char _binary_lua_config_lua_start;
 extern const char _binary_lua_config_lua_end;

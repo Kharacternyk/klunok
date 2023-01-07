@@ -4,16 +4,26 @@ components = [
   'deref',
   'store',
   'timestamp',
-  'config',
-  'main',
+  'config-lua',
+  'config-static',
 ]
 
 sources = {}
-sources_list = lua_sources
+main_sources = ['main.c']
+
 foreach component: components
-  file = files(component + '.c')[0]
+  file = files(component + '.c')
   sources += {component: file}
-  sources_list += [file]
+  if not component.startswith('config-')
+    main_sources += file
+  endif
 endforeach
 
-executable('klunok', sources_list, dependencies: lua, include_directories: inc, install: true)
+if lua.found()
+  main_sources += lua_sources
+  main_sources += sources['config-lua']
+else
+  main_sources += sources['config-static']
+endif
+
+executable('klunok', main_sources, dependencies: lua, include_directories: inc, install: true)
