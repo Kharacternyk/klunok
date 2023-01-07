@@ -6,19 +6,25 @@
 
 char *deref_fd(int fd, size_t length_guess, int *error_code) {
   size_t max_size = length_guess + 1;
+  char *link = NULL;
+  char *target = NULL;
 
   for (;;) {
     char *link = malloc(max_size);
+    if (!link) {
+      goto fail;
+    }
+
     char *target = malloc(max_size);
+    if (!target) {
+      goto fail;
+    }
 
     if (snprintf(link, max_size, "/proc/self/fd/%d", fd) <= max_size) {
       int length = readlink(link, target, max_size);
 
       if (length < 0) {
-        *error_code = errno;
-        free(link);
-        free(target);
-        return NULL;
+        goto fail;
       }
       if (length < max_size) {
         free(link);
@@ -31,4 +37,10 @@ char *deref_fd(int fd, size_t length_guess, int *error_code) {
     free(target);
     max_size *= 2;
   }
+
+fail:
+  *error_code = errno;
+  free(link);
+  free(target);
+  return NULL;
 }

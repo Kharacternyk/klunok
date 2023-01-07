@@ -105,6 +105,7 @@ int main(int argc, const char **argv) {
         event.fd, get_configured_path_length_guess(config), &error_code);
     if (error_code) {
       report(error_code, "Cannot dereference file path", NULL);
+      goto cleanup;
     }
 
     if (event.mask & FAN_OPEN_EXEC) {
