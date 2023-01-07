@@ -34,12 +34,4 @@ int main() {
   assert(!access(NEW_STORE_ROOT, F_OK));
 
   free_store(store);
-
-  struct store *new_store = create_store(NEW_STORE_ROOT, &error_code);
-  assert(!error_code);
-  assert(get_store_uid(new_store) == geteuid());
-  assert(get_store_gid(new_store) == getegid());
-
-  rmdir(NEW_STORE_ROOT);
-  free_store(new_store);
 }

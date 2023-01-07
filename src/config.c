@@ -13,6 +13,7 @@ extern const char _binary_lua_validation_lua_start;
 extern const char _binary_lua_validation_lua_end;
 
 struct config {
+  struct store *store;
   struct set *editors;
   char *version_pattern;
   size_t version_max_length;
@@ -86,9 +87,20 @@ struct config *load_config(const char *path, int *error_code,
     goto config_cleanup;
   }
 
-  config->editors = read_lua_set(lua, "editors", error_code);
+  char *store_path = read_lua_string(lua, "store", error_code);
   if (*error_code) {
     goto config_cleanup;
+  }
+  config->store = create_store(store_path, error_code);
+  if (*error_code) {
+    free(store_path);
+    goto config_cleanup;
+  }
+  free(store_path);
+
+  config->editors = read_lua_set(lua, "editors", error_code);
+  if (*error_code) {
+    goto store_cleanup;
   }
 
   config->version_pattern = read_lua_string(lua, "version_pattern", error_code);
@@ -105,10 +117,16 @@ struct config *load_config(const char *path, int *error_code,
 
 editors_cleanup:
   free_set(config->editors);
+store_cleanup:
+  free_store(config->store);
 config_cleanup:
   free(config);
   lua_close(lua);
   return NULL;
+}
+
+const struct store *get_configured_store(const struct config *config) {
+  return config->store;
 }
 
 const struct set *get_configured_editors(const struct config *config) {
@@ -133,6 +151,7 @@ pid_t get_configured_max_pid_guess(const struct config *config) {
 
 void free_config(struct config *config) {
   if (config) {
+    free_store(config->store);
     free_set(config->editors);
     free(config->version_pattern);
     free(config);

@@ -1,3 +1,4 @@
+assert(type(store) == 'string', 'store must be a string')
 assert(type(version_pattern) == 'string', 'version_pattern must be a string')
 
 function assert_is_size(value, name)

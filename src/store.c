@@ -12,21 +12,12 @@
 struct store {
   char *root;
   size_t root_length;
-  uid_t uid;
-  gid_t gid;
 };
 
 struct store *create_store(const char *root, int *error_code) {
   struct store *store = malloc(sizeof(struct store));
   if (!store) {
     *error_code = errno;
-    return NULL;
-  }
-
-  struct stat root_stat;
-  if (stat(root, &root_stat) < 0) {
-    *error_code = errno;
-    free(store);
     return NULL;
   }
 
@@ -38,8 +29,6 @@ struct store *create_store(const char *root, int *error_code) {
   }
 
   store->root_length = strlen(root);
-  store->uid = root_stat.st_uid;
-  store->gid = root_stat.st_gid;
   return store;
 }
 
@@ -150,9 +139,6 @@ in_fd_cleanup:
 path_cleanup:
   free(store_path);
 }
-
-uid_t get_store_uid(const struct store *store) { return store->uid; }
-gid_t get_store_gid(const struct store *store) { return store->gid; }
 
 void free_store(struct store *store) {
   if (store) {

@@ -1,8 +1,6 @@
 #include "bitmap.h"
 #include "config.h"
 #include "deref.h"
-#include "set.h"
-#include "store.h"
 #include "timestamp.h"
 
 #include <errno.h>
@@ -12,11 +10,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/fanotify.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 enum exit_code {
   CODE_SUCCESS,
-  CODE_STORE,
   CODE_FANOTIFY,
   CODE_PROC,
   CODE_TIME,
@@ -45,40 +43,50 @@ int main(int argc, const char **argv) {
     return CODE_FANOTIFY;
   }
 
+  if (argc < 2) {
+    report(0, "No configuration file provided", "Usage: klunok CONFIG");
+    return CODE_CONFIG;
+  }
+
+  char *config_path = realpath(argv[1], NULL);
+  if (!config_path) {
+    report(errno, "Cannot canonicalize path of configuration file", argv[1]);
+    return CODE_CONFIG;
+  }
+
   if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
-                    FAN_OPEN_EXEC | FAN_CLOSE_WRITE, 0, "/home") < 0) {
-    report(errno, "Cannot mark /home", NULL);
+                    FAN_OPEN_EXEC | FAN_CLOSE_WRITE, 0, config_path) < 0) {
+    report(errno, "Cannot watch mount point of configuration file",
+           config_path);
     return CODE_FANOTIFY;
   }
 
-  int error_code = 0;
-
-  const char *store_root = argc > 1 ? argv[1] : ".";
-  struct store *store = create_store(store_root, &error_code);
-  if (error_code) {
-    report(error_code, "Cannot create store", store_root);
-    return CODE_STORE;
+  struct stat config_stat;
+  if (stat(config_path, &config_stat) < 0) {
+    report(errno, "Cannot stat configuration file", config_path);
+    return CODE_CONFIG;
   }
-
-  if (!get_store_gid(store)) {
-    report(0, "Group ID of the store must not be root", store_root);
-    return CODE_STORE;
-  } else if (setgid(get_store_gid(store)) < 0) {
+  if (config_stat.st_uid == 0) {
+    report(0, "Configuration file must not be owned by root", config_path);
+    return CODE_CONFIG;
+  }
+  if (config_stat.st_gid == 0) {
+    report(0, "Configuration file must not be owned by the root group",
+           config_path);
+    return CODE_CONFIG;
+  }
+  if (setgid(config_stat.st_gid) < 0) {
     report(errno, "Cannot drop privileged group ID", NULL);
     return CODE_UID_GID;
   }
-
-  if (!get_store_uid(store)) {
-    report(0, "User ID of the store must not be root", store_root);
-    return CODE_STORE;
-  } else if (setuid(get_store_uid(store)) < 0) {
+  if (setuid(config_stat.st_uid) < 0) {
     report(errno, "Cannot drop privileged user ID", NULL);
     return CODE_UID_GID;
   }
 
+  int error_code = 0;
   char *error_message = NULL;
 
-  const char *config_path = argc > 2 ? argv[2] : "/dev/null";
   struct config *config = load_config(config_path, &error_code, &error_message);
   if (error_message || error_code) {
     report(error_code, "Cannot load configuration", error_message);
@@ -149,8 +157,8 @@ int main(int argc, const char **argv) {
         }
 
         int cleanup_error_code = 0;
-        copy_to_store(file_path, version, store, &error_code,
-                      &cleanup_error_code);
+        copy_to_store(file_path, version, get_configured_store(config),
+                      &error_code, &cleanup_error_code);
         if (error_code) {
           report(error_code, "Cannot copy file to store", file_path);
           if (cleanup_error_code) {
