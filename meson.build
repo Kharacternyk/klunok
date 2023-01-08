@@ -3,6 +3,7 @@ project('klunok', 'c')
 lua = dependency('lua', required: false)
 
 subdir('lua')
-subdir('inc')
+subdir('include')
 subdir('src')
 subdir('tests')
+subdir('scripts')
