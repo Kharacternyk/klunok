@@ -12,7 +12,10 @@ foreach component: components
   if component in ['config-lua', 'store', 'parents', 'linq']
     c_args += '-DTEST_ROOT="' + meson.current_source_dir() + '"'
   endif
-  if component in ['config-lua', 'config-static']
+  if component.startswith('config-') or component in ['store', 'linq']
+    test_sources += sources['parents']
+  endif
+  if component.startswith('config-')
     test_sources += sources['parents']
     test_sources += sources['set']
     test_sources += sources['store']
@@ -21,9 +24,6 @@ foreach component: components
   if component == 'config-lua'
     dependencies += lua
     test_sources += lua_sources
-  endif
-  if component in ['store', 'linq']
-    test_sources += sources['parents']
   endif
   if component == 'linq'
     test_sources += sources['base16']
