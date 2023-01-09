@@ -16,7 +16,6 @@
 enum exit_code {
   CODE_SUCCESS,
   CODE_FANOTIFY,
-  CODE_PROC,
   CODE_TIME,
   CODE_MEMORY,
   CODE_CONFIG,
@@ -106,6 +105,10 @@ int main(int argc, const char **argv) {
     struct fanotify_event_metadata event;
     if (read(fanotify_fd, &event, sizeof event) < sizeof event) {
       report(errno, "Cannot read a fanotify event", NULL);
+      return CODE_FANOTIFY;
+    }
+    if (event.vers != FANOTIFY_METADATA_VERSION) {
+      report(0, "Kernel fanotify version does not match headers", NULL);
       return CODE_FANOTIFY;
     }
 
