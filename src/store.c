@@ -1,4 +1,5 @@
 #include "store.h"
+#include "parents.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -45,45 +46,6 @@ static char *get_store_path(const char *filesystem_path, const char *version,
   return store_path;
 }
 
-static void create_dirs(char *path, int *error_code) {
-  char *slash = strchr(path, '/');
-
-  if (slash == path) {
-    slash = strchr(slash + 1, '/');
-  }
-
-  while (slash) {
-    *slash = 0;
-    if (mkdir(path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) < 0 &&
-        errno != EEXIST) {
-      *error_code = errno;
-      *slash = '/';
-      return;
-    }
-    *slash = '/';
-    ++slash;
-    slash = strchr(slash, '/');
-  }
-}
-
-static void remove_dirs(char *path, int *error_code) {
-  char *slash = strrchr(path, '/');
-
-  while (slash && slash != path) {
-    *slash = 0;
-    if (rmdir(path) < 0) {
-      if (errno != ENOTEMPTY) {
-        *error_code = errno;
-      }
-      *slash = '/';
-      return;
-    }
-    char *old_slash = slash;
-    slash = strrchr(path, '/');
-    *old_slash = '/';
-  }
-}
-
 void copy_to_store(const char *filesystem_path, const char *version,
                    const struct store *store, int *error_code,
                    int *cleanup_error_code) {
@@ -93,16 +55,17 @@ void copy_to_store(const char *filesystem_path, const char *version,
     return;
   }
 
-  create_dirs(store_path, error_code);
+  create_parents(store_path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH,
+                 error_code);
   if (*error_code) {
-    remove_dirs(store_path, cleanup_error_code);
+    remove_empty_parents(store_path, cleanup_error_code);
     goto path_cleanup;
   }
 
   int in_fd = open(filesystem_path, O_RDONLY);
   if (in_fd < 0) {
     *error_code = errno;
-    remove_dirs(store_path, cleanup_error_code);
+    remove_empty_parents(store_path, cleanup_error_code);
     goto path_cleanup;
   }
 
@@ -110,14 +73,14 @@ void copy_to_store(const char *filesystem_path, const char *version,
                     S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
   if (out_fd < 0) {
     *error_code = errno;
-    remove_dirs(store_path, cleanup_error_code);
+    remove_empty_parents(store_path, cleanup_error_code);
     goto in_fd_cleanup;
   }
 
   struct stat in_fd_stat;
   if (fstat(in_fd, &in_fd_stat) < 0) {
     *error_code = errno;
-    remove_dirs(store_path, cleanup_error_code);
+    remove_empty_parents(store_path, cleanup_error_code);
     goto out_fd_cleanup;
   }
 
@@ -127,7 +90,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
       in_fd_stat.st_size -= written_size;
     } else {
       *error_code = errno;
-      remove_dirs(store_path, cleanup_error_code);
+      remove_empty_parents(store_path, cleanup_error_code);
       goto out_fd_cleanup;
     }
   }
