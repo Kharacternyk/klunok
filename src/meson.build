@@ -4,6 +4,9 @@ components = [
   'deref',
   'store',
   'timestamp',
+  'parents',
+  'base16',
+  'linq',
   'config-lua',
   'config-static',
 ]
