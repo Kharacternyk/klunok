@@ -2,13 +2,14 @@
 #include <errno.h>
 #include <stdlib.h>
 
-const char *const store = "./klunok/store";
-const char *const queue = "./klunok/queue";
-const char *const version_pattern = "v%Y-%m-%d-%H-%M";
-const size_t version_max_length = 80;
-const size_t path_length_guess = 1024;
-const pid_t max_pid_guess = 1 << 16;
-const char *const editors[] = {
+static const char *const store = "./klunok/store";
+static const char *const queue = "./klunok/queue";
+static const char *const version_pattern = "v%Y-%m-%d-%H-%M";
+static const size_t debounce_seconds = 60;
+static const size_t version_max_length = 80;
+static const size_t path_length_guess = 1024;
+static const pid_t max_pid_guess = 1 << 16;
+static const char *const editors[] = {
     "vi",
     "vim",
     "nvim",
@@ -75,6 +76,10 @@ const struct set *get_configured_editors(const struct config *config) {
 
 const char *get_configured_version_pattern(const struct config *config) {
   return version_pattern;
+}
+
+size_t get_configured_debounce_seconds(const struct config *config) {
+  return debounce_seconds;
 }
 
 size_t get_configured_version_max_length(const struct config *config) {

@@ -15,6 +15,7 @@ assert_is_string('store')
 assert_is_string('queue')
 assert_is_string('version_pattern')
 
+assert_is_size('debounce_seconds')
 assert_is_size('version_max_length')
 assert_is_size('path_length_guess')
 assert_is_size('max_pid_guess')

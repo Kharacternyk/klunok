@@ -15,6 +15,7 @@ struct config {
   struct linq *queue;
   struct set *editors;
   char *version_pattern;
+  size_t debounce_seconds;
   size_t version_max_length;
   size_t path_length_guess;
   pid_t max_pid_guess;
@@ -118,6 +119,7 @@ struct config *load_config(const char *path, int *error_code,
     goto editors_cleanup;
   }
 
+  config->debounce_seconds = read_lua_size(lua, "debounce_seconds");
   config->version_max_length = read_lua_size(lua, "version_max_length");
   config->path_length_guess = read_lua_size(lua, "path_length_guess");
   config->max_pid_guess = read_lua_size(lua, "max_pid_guess");
@@ -151,6 +153,10 @@ const struct set *get_configured_editors(const struct config *config) {
 
 const char *get_configured_version_pattern(const struct config *config) {
   return config->version_pattern;
+}
+
+size_t get_configured_debounce_seconds(const struct config *config) {
+  return config->debounce_seconds;
 }
 
 size_t get_configured_version_max_length(const struct config *config) {
