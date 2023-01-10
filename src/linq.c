@@ -1,10 +1,10 @@
 #include "linq.h"
-#include "base16.h"
 #include "parents.h"
 #include <dirent.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -20,6 +20,23 @@ static int dot_filter(const struct dirent *dirent) {
   const char *name = dirent->d_name;
   return !(name[0] == '.' &&
            (name[1] == 0 || (name[1] == '.' && name[2] == 0)));
+}
+
+static int compare(const struct dirent **first, const struct dirent **second) {
+  return strtol((*first)->d_name, NULL, 10) -
+         strtol((*second)->d_name, NULL, 10);
+}
+
+static char *stringify(size_t value, int *error_code) {
+  size_t length = snprintf(NULL, 0, "%zd", value);
+  size_t size = length + 1;
+  char *result = malloc(size);
+  if (!result) {
+    *error_code = errno;
+    return NULL;
+  }
+  snprintf(result, size, "%zd", value);
+  return result;
 }
 
 static void create_linq_path(const char *path, int *error_code) {
@@ -41,16 +58,16 @@ static void free_entries(struct dirent **entries, size_t entry_count) {
 }
 
 static struct linq *load_or_create_linq(const char *path, bool try_to_create,
-                                        int *error_code, bool *is_corrupted) {
+                                        int *error_code) {
   struct dirent **entries;
-  int entry_count = scandir(path, &entries, dot_filter, alphasort);
+  int entry_count = scandir(path, &entries, dot_filter, compare);
   if (entry_count < 0) {
     if (errno == ENOENT && try_to_create) {
       create_linq_path(path, error_code);
       if (*error_code) {
         return NULL;
       }
-      return load_or_create_linq(path, false, error_code, is_corrupted);
+      return load_or_create_linq(path, false, error_code);
     }
     *error_code = errno;
     return NULL;
@@ -64,12 +81,7 @@ static struct linq *load_or_create_linq(const char *path, bool try_to_create,
   }
 
   if (entry_count > 0) {
-    linq->head_index = decode_from_base16(entries[0]->d_name, is_corrupted);
-    if (*is_corrupted) {
-      free(linq);
-      free_entries(entries, entry_count);
-      return NULL;
-    }
+    linq->head_index = strtol(entries[0]->d_name, NULL, 10);
   } else {
     linq->head_index = 0;
   }
@@ -87,12 +99,12 @@ static struct linq *load_or_create_linq(const char *path, bool try_to_create,
   return linq;
 }
 
-struct linq *load_linq(const char *path, int *error_code, bool *is_corrupted) {
-  return load_or_create_linq(path, true, error_code, is_corrupted);
+struct linq *load_linq(const char *path, int *error_code) {
+  return load_or_create_linq(path, true, error_code);
 }
 
 void push_to_linq(const char *path, struct linq *linq, int *error_code) {
-  char *filename = encode_to_base16(linq->head_index + linq->size, error_code);
+  char *filename = stringify(linq->head_index + linq->size, error_code);
   if (*error_code) {
     return;
   }
@@ -113,7 +125,7 @@ char *pop_from_linq(struct linq *linq, size_t length_guess, bool *is_empty,
     return NULL;
   }
 
-  char *filename = encode_to_base16(linq->head_index, error_code);
+  char *filename = stringify(linq->head_index, error_code);
   if (*error_code) {
     return NULL;
   }

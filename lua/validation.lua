@@ -1,5 +1,7 @@
-assert(type(store) == 'string', 'store must be a string')
-assert(type(version_pattern) == 'string', 'version_pattern must be a string')
+function assert_is_string(name)
+  local value = _G[name]
+  assert(type(value) == 'string', value .. ' must be a string')
+end
 
 function assert_is_size(name)
   local value = _G[name]
@@ -8,6 +10,10 @@ function assert_is_size(name)
     name .. ' must be a positive integer'
   )
 end
+
+assert_is_string('store')
+assert_is_string('queue')
+assert_is_string('version_pattern')
 
 assert_is_size('version_max_length')
 assert_is_size('path_length_guess')

@@ -16,17 +16,14 @@ foreach component: components
     test_sources += sources['parents']
   endif
   if component.startswith('config-')
-    test_sources += sources['parents']
     test_sources += sources['set']
     test_sources += sources['store']
+    test_sources += sources['linq']
     test_sources += 'config.c'
   endif
   if component == 'config-lua'
     dependencies += lua
     test_sources += lua_sources
-  endif
-  if component == 'linq'
-    test_sources += sources['base16']
   endif
 
   test(component, executable(

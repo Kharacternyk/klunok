@@ -9,10 +9,8 @@
 
 int main() {
   int error_code = 0;
-  bool is_corrupted = false;
-  struct linq *linq = load_linq(LINQ_PATH, &error_code, &is_corrupted);
+  struct linq *linq = load_linq(LINQ_PATH, &error_code);
   assert(!error_code);
-  assert(!is_corrupted);
 
   push_to_linq(F1, linq, &error_code);
   assert(!error_code);

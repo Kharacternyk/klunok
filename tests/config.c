@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <string.h>
 
+/*FIXME check linq path*/
+
 void check_default_config(struct config *config) {
   const struct set *editors = get_configured_editors(config);
   assert(is_in_set("vi", editors));

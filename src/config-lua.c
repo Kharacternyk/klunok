@@ -12,6 +12,7 @@ extern const char _binary_lua_validation_lua_end;
 
 struct config {
   struct store *store;
+  struct linq *queue;
   struct set *editors;
   char *version_pattern;
   size_t version_max_length;
@@ -96,9 +97,20 @@ struct config *load_config(const char *path, int *error_code,
   }
   free(store_path);
 
-  config->editors = read_lua_set(lua, "editors", error_code);
+  char *queue_path = read_lua_string(lua, "queue", error_code);
   if (*error_code) {
     goto store_cleanup;
+  }
+  config->queue = load_linq(queue_path, error_code);
+  if (*error_code) {
+    free(queue_path);
+    goto store_cleanup;
+  }
+  free(queue_path);
+
+  config->editors = read_lua_set(lua, "editors", error_code);
+  if (*error_code) {
+    goto queue_cleanup;
   }
 
   config->version_pattern = read_lua_string(lua, "version_pattern", error_code);
@@ -115,6 +127,8 @@ struct config *load_config(const char *path, int *error_code,
 
 editors_cleanup:
   free_set(config->editors);
+queue_cleanup:
+  free_linq(config->queue);
 store_cleanup:
   free_store(config->store);
 config_cleanup:
@@ -125,6 +139,10 @@ config_cleanup:
 
 const struct store *get_configured_store(const struct config *config) {
   return config->store;
+}
+
+const struct linq *get_configured_queue(const struct config *config) {
+  return config->queue;
 }
 
 const struct set *get_configured_editors(const struct config *config) {
@@ -150,6 +168,7 @@ pid_t get_configured_max_pid_guess(const struct config *config) {
 void free_config(struct config *config) {
   if (config) {
     free_store(config->store);
+    free_linq(config->queue);
     free_set(config->editors);
     free(config->version_pattern);
     free(config);
