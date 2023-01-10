@@ -1,3 +1,10 @@
+add_test_setup('fast')
+add_test_setup(
+  'valgrind',
+  exe_wrapper: ['valgrind', '--error-exitcode=1', '--leak-check=full'],
+  is_default: true
+)
+
 foreach component: components
   test_sources = [
     sources[component],

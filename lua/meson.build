@@ -1,5 +1,4 @@
 if lua.found()
-  ld = find_program('ld')
   lua_sources = []
   foreach file: ['config.lua', 'validation.lua']
     copy = custom_target(
@@ -14,7 +13,7 @@ if lua.found()
       output: file + '.o',
       input: copy,
       command: [
-        ld, '-z', 'noexecstack', '-r', '-b', 'binary', '-o', '@OUTPUT@', '@INPUT@'
+        'ld', '-z', 'noexecstack', '-r', '-b', 'binary', '-o', '@OUTPUT@', '@INPUT@'
       ]
     )
   endforeach
