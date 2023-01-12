@@ -6,9 +6,9 @@
 
 #define STORE_ROOT TEST_ROOT "/store"
 #define COPYIED_FILE TEST_ROOT "/meson.build"
+#define MISSING_FILE TEST_ROOT "/foobar"
 #define FILE_VERSION "v123"
 #define FILE_COPY STORE_ROOT COPYIED_FILE "/" FILE_VERSION
-#define NEW_STORE_ROOT TEST_ROOT "/tmp-store"
 
 int main() {
   int error_code = 0;
@@ -18,20 +18,22 @@ int main() {
   unlink(FILE_COPY);
   assert(access(FILE_COPY, F_OK));
 
+  bool is_not_found = false;
   int rollback_error_code = 0;
   copy_to_store(COPYIED_FILE, FILE_VERSION, store, &error_code,
-                &rollback_error_code);
+                &rollback_error_code, &is_not_found);
   assert(!error_code);
   assert(!rollback_error_code);
+  assert(!is_not_found);
 
   assert(!access(FILE_COPY, F_OK));
   unlink(FILE_COPY);
 
-  rmdir(NEW_STORE_ROOT);
-  assert(access(FILE_COPY, F_OK));
-
-  mkdir(NEW_STORE_ROOT, S_IRWXU);
-  assert(!access(NEW_STORE_ROOT, F_OK));
+  copy_to_store(MISSING_FILE, FILE_VERSION, store, &error_code,
+                &rollback_error_code, &is_not_found);
+  assert(!error_code);
+  assert(!rollback_error_code);
+  assert(is_not_found);
 
   free_store(store);
 }

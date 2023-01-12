@@ -229,13 +229,18 @@ int main(int argc, const char **argv) {
       }
 
       int cleanup_error_code = 0;
-      copy_to_store(path, version, store, &error_code, &cleanup_error_code);
+      bool is_not_found = false;
+      copy_to_store(path, version, store, &error_code, &cleanup_error_code,
+                    &is_not_found);
       if (error_code) {
         report(error_code, "Cannot copy file to store", path);
         if (cleanup_error_code) {
           report(cleanup_error_code,
-                 "Cannot cleanup after unsuccessful copy to store", path);
+                 "Cannot clean up after unsuccessful copy to store", path);
         }
+      } else if (is_not_found && cleanup_error_code) {
+        report(cleanup_error_code,
+               "Cannot clean up after an attempt to copy missing file", path);
       }
       free(path);
       free(version);

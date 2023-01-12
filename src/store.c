@@ -48,7 +48,7 @@ static char *get_store_path(const char *filesystem_path, const char *version,
 
 void copy_to_store(const char *filesystem_path, const char *version,
                    const struct store *store, int *error_code,
-                   int *cleanup_error_code) {
+                   int *cleanup_error_code, bool *is_not_found) {
   char *store_path = get_store_path(filesystem_path, version, store);
   if (!store_path) {
     *error_code = errno;
@@ -64,7 +64,11 @@ void copy_to_store(const char *filesystem_path, const char *version,
 
   int in_fd = open(filesystem_path, O_RDONLY);
   if (in_fd < 0) {
-    *error_code = errno;
+    if (errno == ENOENT) {
+      *is_not_found = true;
+    } else {
+      *error_code = errno;
+    }
     remove_empty_parents(store_path, cleanup_error_code);
     goto path_cleanup;
   }
