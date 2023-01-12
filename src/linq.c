@@ -12,6 +12,7 @@
 
 struct linq {
   int dirfd;
+  time_t debounce_seconds;
   size_t head_index;
   size_t size;
 };
@@ -57,8 +58,9 @@ static void free_entries(struct dirent **entries, size_t entry_count) {
   free(entries);
 }
 
-static struct linq *load_or_create_linq(const char *path, bool try_to_create,
-                                        int *error_code) {
+static struct linq *load_or_create_linq(const char *path,
+                                        time_t debounce_seconds,
+                                        bool try_to_create, int *error_code) {
   struct dirent **entries;
   int entry_count = scandir(path, &entries, dot_filter, compare);
   if (entry_count < 0) {
@@ -67,7 +69,7 @@ static struct linq *load_or_create_linq(const char *path, bool try_to_create,
       if (*error_code) {
         return NULL;
       }
-      return load_or_create_linq(path, false, error_code);
+      return load_or_create_linq(path, debounce_seconds, false, error_code);
     }
     *error_code = errno;
     return NULL;
@@ -87,6 +89,7 @@ static struct linq *load_or_create_linq(const char *path, bool try_to_create,
   }
 
   linq->size = entry_count;
+  linq->debounce_seconds = debounce_seconds;
 
   linq->dirfd = open(path, O_DIRECTORY);
   if (linq->dirfd < 0) {
@@ -99,34 +102,48 @@ static struct linq *load_or_create_linq(const char *path, bool try_to_create,
   return linq;
 }
 
-struct linq *load_linq(const char *path, int *error_code) {
-  return load_or_create_linq(path, true, error_code);
+struct linq *load_linq(const char *path, time_t debounce_seconds,
+                       int *error_code) {
+  return load_or_create_linq(path, debounce_seconds, true, error_code);
 }
 
 void push_to_linq(const char *path, struct linq *linq, int *error_code) {
-  char *filename = stringify(linq->head_index + linq->size, error_code);
+  char *link_name = stringify(linq->head_index + linq->size, error_code);
   if (*error_code) {
     return;
   }
 
-  if (symlinkat(path, linq->dirfd, filename) < 0) {
+  if (symlinkat(path, linq->dirfd, link_name) < 0) {
     *error_code = errno;
   } else {
     ++linq->size;
   }
 
-  free(filename);
+  free(link_name);
 }
 
-char *pop_from_linq(struct linq *linq, size_t length_guess, bool *is_empty,
-                    int *error_code) {
+char *pop_from_linq(struct linq *linq, size_t length_guess,
+                    time_t *retry_after_seconds, int *error_code) {
   if (!linq->size) {
-    *is_empty = true;
+    *retry_after_seconds = -1;
     return NULL;
   }
 
-  char *filename = stringify(linq->head_index, error_code);
+  char *link_name = stringify(linq->head_index, error_code);
   if (*error_code) {
+    return NULL;
+  }
+
+  struct stat link_stat;
+  if (fstatat(linq->dirfd, link_name, &link_stat, AT_SYMLINK_NOFOLLOW) < 0) {
+    *error_code = errno;
+    free(link_name);
+    return NULL;
+  }
+  time_t link_age = time(NULL) - link_stat.st_mtime;
+  if (link_age < linq->debounce_seconds) {
+    *retry_after_seconds = linq->debounce_seconds - link_age;
+    free(link_name);
     return NULL;
   }
 
@@ -135,28 +152,28 @@ char *pop_from_linq(struct linq *linq, size_t length_guess, bool *is_empty,
     char *path = malloc(max_size);
     if (!path) {
       *error_code = errno;
-      free(filename);
+      free(link_name);
       return NULL;
     }
 
-    int length = readlinkat(linq->dirfd, filename, path, max_size);
+    int length = readlinkat(linq->dirfd, link_name, path, max_size);
 
     if (length < 0) {
       *error_code = errno;
-      free(filename);
+      free(link_name);
       free(path);
       return NULL;
     }
     if (length < max_size) {
-      if (unlinkat(linq->dirfd, filename, 0) < 0) {
+      if (unlinkat(linq->dirfd, link_name, 0) < 0) {
         *error_code = errno;
-        free(filename);
+        free(link_name);
         free(path);
         return NULL;
       }
       ++linq->head_index;
       --linq->size;
-      free(filename);
+      free(link_name);
       path[length] = 0;
       return path;
     }
