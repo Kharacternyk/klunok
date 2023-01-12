@@ -1,5 +1,5 @@
-store = './klunok/store'
-queue = './klunok/queue'
+store_root = './klunok/store'
+queue_path = './klunok/queue'
 version_pattern = 'v%Y-%m-%d-%H-%M'
 debounce_seconds = 60
 version_max_length = 80

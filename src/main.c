@@ -1,6 +1,8 @@
 #include "bitmap.h"
 #include "config.h"
 #include "deref.h"
+#include "linq.h"
+#include "store.h"
 #include "timestamp.h"
 
 #include <errno.h>
@@ -77,6 +79,21 @@ int main(int argc, const char **argv) {
     return report(error_code, "Cannot load configuration", error_message);
   }
 
+  struct store *store =
+      create_store(get_configured_store_root(config), &error_code);
+  if (error_code) {
+    return report(error_code, "Cannot create store",
+                  get_configured_store_root(config));
+  }
+
+  struct linq *linq =
+      load_linq(get_configured_queue_path(config),
+                get_configured_debounce_seconds(config), &error_code);
+  if (error_code) {
+    return report(error_code, "Cannot load queue",
+                  get_configured_queue_path(config));
+  }
+
   struct bitmap *editor_pid_bitmap =
       create_bitmap(get_configured_max_pid_guess(config), &error_code);
   if (error_code) {
@@ -138,7 +155,7 @@ int main(int argc, const char **argv) {
       } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
         if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
             strstr(file_path, "/.") == NULL) {
-          push_to_linq(file_path, get_configured_queue(config), &error_code);
+          push_to_linq(file_path, linq, &error_code);
           if (error_code) {
             return report(error_code, "Cannot push to queue", NULL);
           }
@@ -146,14 +163,37 @@ int main(int argc, const char **argv) {
         if (!strcmp(file_path, config_path)) {
           struct config *new_config =
               load_config(config_path, &error_code, &error_message);
-          if (!error_message && !error_code) {
-            free_config(config);
-            config = new_config;
-          } else {
+          if (error_message || error_code) {
             report(error_code, "Cannot reload configuration", error_message);
             free(error_message);
             error_code = 0;
             error_message = NULL;
+          } else {
+            free_config(config);
+            config = new_config;
+
+            struct linq *new_linq =
+                load_linq(get_configured_queue_path(config),
+                          get_configured_debounce_seconds(config), &error_code);
+            if (error_code) {
+              report(error_code, "Cannot reload queue",
+                     get_configured_queue_path(config));
+              error_code = 0;
+            } else {
+              free_linq(linq);
+              linq = new_linq;
+            }
+
+            struct store *new_store =
+                create_store(get_configured_store_root(config), &error_code);
+            if (error_code) {
+              report(error_code, "Cannot recreate store",
+                     get_configured_store_root(config));
+              error_code = 0;
+            } else {
+              free_store(store);
+              store = new_store;
+            }
           }
         }
       }
@@ -166,8 +206,7 @@ int main(int argc, const char **argv) {
     wake_after_seconds = 0;
     for (;;) {
       /*FIXME qualifiers*/
-      char *path = pop_from_linq(get_configured_queue(config),
-                                 get_configured_path_length_guess(config),
+      char *path = pop_from_linq(linq, get_configured_path_length_guess(config),
                                  &wake_after_seconds, &error_code);
       if (error_code) {
         return report(error_code, "Cannot pop from queue", NULL);
@@ -184,7 +223,7 @@ int main(int argc, const char **argv) {
 
       if (time(NULL) - path_stat.st_mtime <
           get_configured_debounce_seconds(config)) {
-        push_to_linq(path, get_configured_queue(config), &error_code);
+        push_to_linq(path, linq, &error_code);
         if (error_code) {
           return report(error_code, "Cannot push to queue", NULL);
         }
@@ -205,8 +244,7 @@ int main(int argc, const char **argv) {
       }
 
       int cleanup_error_code = 0;
-      copy_to_store(path, version, get_configured_store(config), &error_code,
-                    &cleanup_error_code);
+      copy_to_store(path, version, store, &error_code, &cleanup_error_code);
       if (error_code) {
         report(error_code, "Cannot copy file to store", path);
         if (cleanup_error_code) {

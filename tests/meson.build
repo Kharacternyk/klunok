@@ -24,8 +24,6 @@ foreach component: components
   endif
   if component.startswith('config-')
     test_sources += sources['set']
-    test_sources += sources['store']
-    test_sources += sources['linq']
     test_sources += 'config.c'
   endif
   if component == 'config-lua'

@@ -2,8 +2,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
-static const char *const store = "./klunok/store";
-static const char *const queue = "./klunok/queue";
+static const char *const store_root = "./klunok/store";
+static const char *const queue_path = "./klunok/queue";
 static const char *const version_pattern = "v%Y-%m-%d-%H-%M";
 static const size_t debounce_seconds = 60;
 static const size_t version_max_length = 80;
@@ -17,8 +17,6 @@ static const char *const editors[] = {
 };
 
 struct config {
-  struct store *store;
-  struct linq *queue;
   struct set *editors;
 };
 
@@ -30,20 +28,10 @@ struct config *load_config(const char *path, int *error_code,
     return NULL;
   }
 
-  config->store = create_store(store, error_code);
-  if (*error_code) {
-    goto config_cleanup;
-  }
-
-  config->queue = load_linq(queue, debounce_seconds, error_code);
-  if (*error_code) {
-    goto store_cleanup;
-  }
-
   size_t editors_length = sizeof editors / sizeof editors[0];
   config->editors = create_set(editors_length, error_code);
   if (*error_code) {
-    goto queue_cleanup;
+    goto config_cleanup;
   }
 
   for (size_t i = 0; i < editors_length; ++i) {
@@ -57,21 +45,21 @@ struct config *load_config(const char *path, int *error_code,
 
 editors_cleanup:
   free_set(config->editors);
-queue_cleanup:
-  free_linq(config->queue);
-store_cleanup:
-  free_store(config->store);
 config_cleanup:
   free(config);
   return NULL;
 }
 
-const struct store *get_configured_store(const struct config *config) {
-  return config->store;
-}
-
 const struct set *get_configured_editors(const struct config *config) {
   return config->editors;
+}
+
+const char *get_configured_store_root(const struct config *config) {
+  return store_root;
+}
+
+const char *get_configured_queue_path(const struct config *config) {
+  return queue_path;
 }
 
 const char *get_configured_version_pattern(const struct config *config) {
@@ -96,8 +84,6 @@ pid_t get_configured_max_pid_guess(const struct config *config) {
 
 void free_config(struct config *config) {
   if (config) {
-    free_store(config->store);
-    free_linq(config->queue);
     free_set(config->editors);
     free(config);
   }

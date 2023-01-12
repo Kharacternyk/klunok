@@ -2,8 +2,6 @@
 #include <assert.h>
 #include <string.h>
 
-/*FIXME check linq path*/
-
 void check_default_config(struct config *config) {
   const struct set *editors = get_configured_editors(config);
   assert(is_in_set("vi", editors));
@@ -12,8 +10,9 @@ void check_default_config(struct config *config) {
   assert(is_in_set("rstudio", editors));
   assert(!is_in_set("cat", editors));
 
-  const char *version_pattern = get_configured_version_pattern(config);
-  assert(!strcmp(version_pattern, "v%Y-%m-%d-%H-%M"));
+  assert(!strcmp(get_configured_store_root(config), "./klunok/store"));
+  assert(!strcmp(get_configured_queue_path(config), "./klunok/queue"));
+  assert(!strcmp(get_configured_version_pattern(config), "v%Y-%m-%d-%H-%M"));
 
   assert(get_configured_debounce_seconds(config) == 60);
   assert(get_configured_version_max_length(config) == 80);

@@ -11,9 +11,9 @@ extern const char _binary_lua_validation_lua_start;
 extern const char _binary_lua_validation_lua_end;
 
 struct config {
-  struct store *store;
-  struct linq *queue;
   struct set *editors;
+  char *store_root;
+  char *queue_path;
   char *version_pattern;
   size_t debounce_seconds;
   size_t version_max_length;
@@ -87,39 +87,27 @@ struct config *load_config(const char *path, int *error_code,
     goto config_cleanup;
   }
 
-  char *store_path = read_lua_string(lua, "store", error_code);
-  if (*error_code) {
-    goto config_cleanup;
-  }
-  config->store = create_store(store_path, error_code);
-  if (*error_code) {
-    free(store_path);
-    goto config_cleanup;
-  }
-  free(store_path);
-
-  config->debounce_seconds = read_lua_size(lua, "debounce_seconds");
-  char *queue_path = read_lua_string(lua, "queue", error_code);
-  if (*error_code) {
-    goto store_cleanup;
-  }
-  config->queue = load_linq(queue_path, config->debounce_seconds, error_code);
-  if (*error_code) {
-    free(queue_path);
-    goto store_cleanup;
-  }
-  free(queue_path);
-
   config->editors = read_lua_set(lua, "editors", error_code);
   if (*error_code) {
-    goto queue_cleanup;
+    goto config_cleanup;
   }
 
-  config->version_pattern = read_lua_string(lua, "version_pattern", error_code);
+  config->store_root = read_lua_string(lua, "store_root", error_code);
   if (*error_code) {
     goto editors_cleanup;
   }
 
+  config->queue_path = read_lua_string(lua, "queue_path", error_code);
+  if (*error_code) {
+    goto store_cleanup;
+  }
+
+  config->version_pattern = read_lua_string(lua, "version_pattern", error_code);
+  if (*error_code) {
+    goto queue_cleanup;
+  }
+
+  config->debounce_seconds = read_lua_size(lua, "debounce_seconds");
   config->version_max_length = read_lua_size(lua, "version_max_length");
   config->path_length_guess = read_lua_size(lua, "path_length_guess");
   config->max_pid_guess = read_lua_size(lua, "max_pid_guess");
@@ -127,28 +115,28 @@ struct config *load_config(const char *path, int *error_code,
   lua_close(lua);
   return config;
 
+queue_cleanup:
+  free(config->queue_path);
+store_cleanup:
+  free(config->store_root);
 editors_cleanup:
   free_set(config->editors);
-queue_cleanup:
-  free_linq(config->queue);
-store_cleanup:
-  free_store(config->store);
 config_cleanup:
   free(config);
   lua_close(lua);
   return NULL;
 }
 
-const struct store *get_configured_store(const struct config *config) {
-  return config->store;
-}
-
-const struct linq *get_configured_queue(const struct config *config) {
-  return config->queue;
-}
-
 const struct set *get_configured_editors(const struct config *config) {
   return config->editors;
+}
+
+const char *get_configured_store_root(const struct config *config) {
+  return config->store_root;
+}
+
+const char *get_configured_queue_path(const struct config *config) {
+  return config->queue_path;
 }
 
 const char *get_configured_version_pattern(const struct config *config) {
@@ -173,9 +161,9 @@ pid_t get_configured_max_pid_guess(const struct config *config) {
 
 void free_config(struct config *config) {
   if (config) {
-    free_store(config->store);
-    free_linq(config->queue);
     free_set(config->editors);
+    free(config->store_root);
+    free(config->queue_path);
     free(config->version_pattern);
     free(config);
   }

@@ -11,8 +11,8 @@ function assert_is_positive(name)
   )
 end
 
-assert_is_string('store')
-assert_is_string('queue')
+assert_is_string('store_root')
+assert_is_string('queue_path')
 assert_is_string('version_pattern')
 
 assert_is_positive('debounce_seconds')
