@@ -213,20 +213,6 @@ int main(int argc, const char **argv) {
       if (wake_after_seconds) {
         break;
       }
-      struct stat path_stat;
-      if (stat(path, &path_stat) < 0) {
-        report(errno, "Cannot stat head of queue", NULL);
-        free(path);
-        continue;
-      }
-
-      if (time(NULL) - path_stat.st_mtime <
-          get_configured_debounce_seconds(config)) {
-        push_to_linq(path, linq, &error_code);
-        if (error_code) {
-          return report(error_code, "Cannot push to queue", NULL);
-        }
-      }
 
       bool is_overflow = false;
       char *version = get_timestamp(get_configured_version_pattern(config),

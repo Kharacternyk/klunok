@@ -147,38 +147,52 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
     return NULL;
   }
 
+  struct stat target_stat;
+  if (fstatat(linq->dirfd, link_name, &target_stat, 0) < 0 ||
+      target_stat.st_mtime > link_stat.st_mtime) {
+    if (unlinkat(linq->dirfd, link_name, 0) < 0) {
+      *error_code = errno;
+      free(link_name);
+      return NULL;
+    }
+    ++linq->head_index;
+    --linq->size;
+    free(link_name);
+    return pop_from_linq(linq, length_guess, retry_after_seconds, error_code);
+  }
+
   size_t max_size = length_guess + 1;
   for (;;) {
-    char *path = malloc(max_size);
-    if (!path) {
+    char *target = malloc(max_size);
+    if (!target) {
       *error_code = errno;
       free(link_name);
       return NULL;
     }
 
-    int length = readlinkat(linq->dirfd, link_name, path, max_size);
+    int length = readlinkat(linq->dirfd, link_name, target, max_size);
 
     if (length < 0) {
       *error_code = errno;
       free(link_name);
-      free(path);
+      free(target);
       return NULL;
     }
     if (length < max_size) {
       if (unlinkat(linq->dirfd, link_name, 0) < 0) {
         *error_code = errno;
         free(link_name);
-        free(path);
+        free(target);
         return NULL;
       }
       ++linq->head_index;
       --linq->size;
       free(link_name);
-      path[length] = 0;
-      return path;
+      target[length] = 0;
+      return target;
     }
 
-    free(path);
+    free(target);
     max_size *= 2;
   }
 }
