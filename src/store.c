@@ -70,7 +70,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
   }
 
   int out_fd = open(store_path, O_CREAT | O_WRONLY | O_TRUNC,
-                    S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+                    S_IRUSR | S_IRGRP | S_IROTH);
   if (out_fd < 0) {
     *error_code = errno;
     remove_empty_parents(store_path, cleanup_error_code);
