@@ -109,7 +109,7 @@ int main(int argc, const char **argv) {
   };
 
   for (;;) {
-    int status = poll(&pollfd, 1, wake_after_seconds);
+    int status = poll(&pollfd, 1, wake_after_seconds * 1000);
     if (status < 0) {
       return report(errno, "Cannot poll fanotify file descriptor", NULL);
     }
@@ -205,7 +205,6 @@ int main(int argc, const char **argv) {
 
     wake_after_seconds = 0;
     for (;;) {
-      /*FIXME qualifiers*/
       char *path = pop_from_linq(linq, get_configured_path_length_guess(config),
                                  &wake_after_seconds, &error_code);
       if (error_code) {
@@ -218,7 +217,7 @@ int main(int argc, const char **argv) {
       if (stat(path, &path_stat) < 0) {
         report(errno, "Cannot stat head of queue", NULL);
         free(path);
-        break;
+        continue;
       }
 
       if (time(NULL) - path_stat.st_mtime <
