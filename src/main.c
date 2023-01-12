@@ -129,15 +129,13 @@ int main(int argc, const char **argv) {
       char *file_path = deref_fd(
           event.fd, get_configured_path_length_guess(config), &error_code);
       if (error_code) {
-        report(error_code, "Cannot dereference file path", NULL);
-        goto cleanup;
+        return report(error_code, "Cannot dereference file path", NULL);
       }
 
       if (event.mask & FAN_OPEN_EXEC) {
         char *exe_filename = strrchr(file_path, '/');
         if (!exe_filename) {
-          report(0, "Cannot get executable name", file_path);
-          goto cleanup;
+          return report(0, "Cannot get executable name", file_path);
         }
         ++exe_filename;
 
@@ -198,7 +196,6 @@ int main(int argc, const char **argv) {
         }
       }
 
-    cleanup:
       free(file_path);
       close(event.fd);
     }
