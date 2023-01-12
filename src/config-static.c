@@ -35,7 +35,7 @@ struct config *load_config(const char *path, int *error_code,
     goto config_cleanup;
   }
 
-  config->queue = load_linq(queue, error_code);
+  config->queue = load_linq(queue, debounce_seconds, error_code);
   if (*error_code) {
     goto store_cleanup;
   }

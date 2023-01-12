@@ -98,11 +98,12 @@ struct config *load_config(const char *path, int *error_code,
   }
   free(store_path);
 
+  config->debounce_seconds = read_lua_size(lua, "debounce_seconds");
   char *queue_path = read_lua_string(lua, "queue", error_code);
   if (*error_code) {
     goto store_cleanup;
   }
-  config->queue = load_linq(queue_path, error_code);
+  config->queue = load_linq(queue_path, config->debounce_seconds, error_code);
   if (*error_code) {
     free(queue_path);
     goto store_cleanup;
@@ -119,7 +120,6 @@ struct config *load_config(const char *path, int *error_code,
     goto editors_cleanup;
   }
 
-  config->debounce_seconds = read_lua_size(lua, "debounce_seconds");
   config->version_max_length = read_lua_size(lua, "version_max_length");
   config->path_length_guess = read_lua_size(lua, "path_length_guess");
   config->max_pid_guess = read_lua_size(lua, "max_pid_guess");

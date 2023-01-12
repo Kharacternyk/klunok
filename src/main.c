@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <fnmatch.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -99,97 +100,150 @@ int main(int argc, const char **argv) {
     return CODE_MEMORY;
   }
 
-  const pid_t self = getpid();
+  pid_t self = getpid();
+  time_t wake_after_seconds = -1;
+  struct pollfd pollfd = {
+      .fd = fanotify_fd,
+      .events = POLLIN,
+      .revents = 0,
+  };
 
   for (;;) {
-    struct fanotify_event_metadata event;
-    if (read(fanotify_fd, &event, sizeof event) < sizeof event) {
-      report(errno, "Cannot read a fanotify event", NULL);
+    int status = poll(&pollfd, 1, wake_after_seconds);
+    if (status < 0) {
+      report(errno, "Cannot poll fanotify file descriptor", NULL);
       return CODE_FANOTIFY;
     }
-    if (event.vers != FANOTIFY_METADATA_VERSION) {
-      report(0, "Kernel fanotify version does not match headers", NULL);
+    if (status > 0 && pollfd.revents ^ POLLIN) {
+      report(0, "Cannot poll fanotify file descriptor", NULL);
       return CODE_FANOTIFY;
     }
+    if (status > 0) {
+      struct fanotify_event_metadata event;
+      if (read(fanotify_fd, &event, sizeof event) < sizeof event) {
+        report(errno, "Cannot read a fanotify event", NULL);
+        return CODE_FANOTIFY;
+      }
+      if (event.vers != FANOTIFY_METADATA_VERSION) {
+        report(0, "Kernel fanotify version does not match headers", NULL);
+        return CODE_FANOTIFY;
+      }
 
-    char *file_path = deref_fd(
-        event.fd, get_configured_path_length_guess(config), &error_code);
-    if (error_code) {
-      report(error_code, "Cannot dereference file path", NULL);
-      goto cleanup;
-    }
-
-    if (event.mask & FAN_OPEN_EXEC) {
-      char *exe_filename = strrchr(file_path, '/');
-      if (!exe_filename) {
-        report(0, "Cannot get executable name", file_path);
+      char *file_path = deref_fd(
+          event.fd, get_configured_path_length_guess(config), &error_code);
+      if (error_code) {
+        report(error_code, "Cannot dereference file path", NULL);
         goto cleanup;
       }
-      ++exe_filename;
 
-      /*FIXME*/
-      if (fnmatch("ld-linux*.so*", exe_filename, 0)) {
-        if (is_in_set(exe_filename, get_configured_editors(config))) {
-          set_bit_in_bitmap(event.pid, editor_pid_bitmap, &error_code);
+      if (event.mask & FAN_OPEN_EXEC) {
+        char *exe_filename = strrchr(file_path, '/');
+        if (!exe_filename) {
+          report(0, "Cannot get executable name", file_path);
+          goto cleanup;
+        }
+        ++exe_filename;
+
+        /*FIXME*/
+        if (fnmatch("ld-linux*.so*", exe_filename, 0)) {
+          if (is_in_set(exe_filename, get_configured_editors(config))) {
+            set_bit_in_bitmap(event.pid, editor_pid_bitmap, &error_code);
+            if (error_code) {
+              report(error_code, "Cannot set bit in pid bitmap", NULL);
+              return CODE_MEMORY;
+            }
+          } else {
+            unset_bit_in_bitmap(event.pid, editor_pid_bitmap);
+          }
+        }
+      } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
+        if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
+            strstr(file_path, "/.") == NULL) {
+          push_to_linq(file_path, get_configured_queue(config), &error_code);
           if (error_code) {
-            report(error_code, "Cannot set bit in pid bitmap", NULL);
-            return CODE_MEMORY;
+            report(error_code, "Cannot push to queue", NULL);
+            return CODE_CONFIG;
           }
-        } else {
-          unset_bit_in_bitmap(event.pid, editor_pid_bitmap);
+        }
+        if (!strcmp(file_path, config_path)) {
+          struct config *new_config =
+              load_config(config_path, &error_code, &error_message);
+          if (!error_message && !error_code) {
+            free_config(config);
+            config = new_config;
+          } else {
+            report(error_code, "Cannot reload configuration", error_message);
+            free(error_message);
+            error_code = 0;
+            error_message = NULL;
+          }
         }
       }
-    } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
-      if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
-          strstr(file_path, "/.") == NULL) {
-        bool is_overflow = false;
-        char *version = get_timestamp(get_configured_version_pattern(config),
-                                      get_configured_version_max_length(config),
-                                      &error_code, &is_overflow);
-        if (error_code) {
-          report(error_code, "Cannot create date-based version", NULL);
-          return CODE_TIME;
-        }
-        if (is_overflow) {
-          report(0, "Date-based version is too long", NULL);
-          return CODE_TIME;
-        }
-        if (strchr(version, '/')) {
-          report(0, "Versions must not contain slashes", version);
-          return CODE_CONFIG;
-        }
 
-        int cleanup_error_code = 0;
-        copy_to_store(file_path, version, get_configured_store(config),
-                      &error_code, &cleanup_error_code);
-        if (error_code) {
-          report(error_code, "Cannot copy file to store", file_path);
-          if (cleanup_error_code) {
-            report(cleanup_error_code,
-                   "Cannot cleanup after unsuccessful copy to store",
-                   file_path);
-          }
-        }
-        free(version);
-        error_code = 0;
-      }
-      if (!strcmp(file_path, config_path)) {
-        struct config *new_config =
-            load_config(config_path, &error_code, &error_message);
-        if (!error_message && !error_code) {
-          free_config(config);
-          config = new_config;
-        } else {
-          report(error_code, "Cannot reload configuration", error_message);
-          free(error_message);
-          error_code = 0;
-          error_message = NULL;
-        }
-      }
+    cleanup:
+      free(file_path);
+      close(event.fd);
     }
 
-  cleanup:
-    free(file_path);
-    close(event.fd);
+    wake_after_seconds = 0;
+    for (;;) {
+      /*FIXME qualifiers*/
+      char *path = pop_from_linq(get_configured_queue(config),
+                                 get_configured_path_length_guess(config),
+                                 &wake_after_seconds, &error_code);
+      if (error_code) {
+        report(error_code, "Cannot pop from queue", NULL);
+        return CODE_CONFIG;
+      }
+      if (wake_after_seconds) {
+        break;
+      }
+      struct stat path_stat;
+      if (stat(path, &path_stat) < 0) {
+        report(errno, "Cannot stat head of queue", NULL);
+        free(path);
+        break;
+      }
+
+      if (time(NULL) - path_stat.st_mtime <
+          get_configured_debounce_seconds(config)) {
+        push_to_linq(path, get_configured_queue(config), &error_code);
+        if (error_code) {
+          report(error_code, "Cannot push to queue", NULL);
+          return CODE_CONFIG;
+        }
+      }
+
+      bool is_overflow = false;
+      char *version = get_timestamp(get_configured_version_pattern(config),
+                                    get_configured_version_max_length(config),
+                                    &error_code, &is_overflow);
+      if (error_code) {
+        report(error_code, "Cannot create date-based version", NULL);
+        return CODE_TIME;
+      }
+      if (is_overflow) {
+        report(0, "Date-based version is too long", NULL);
+        return CODE_TIME;
+      }
+      if (strchr(version, '/')) {
+        report(0, "Versions must not contain slashes", version);
+        return CODE_CONFIG;
+      }
+
+      int cleanup_error_code = 0;
+      copy_to_store(path, version, get_configured_store(config), &error_code,
+                    &cleanup_error_code);
+      if (error_code) {
+        report(error_code, "Cannot copy file to store", path);
+        if (cleanup_error_code) {
+          report(cleanup_error_code,
+                 "Cannot cleanup after unsuccessful copy to store", path);
+        }
+      }
+      free(path);
+      free(version);
+      error_code = 0;
+    }
   }
 }
