@@ -6,6 +6,7 @@ components = [
   'timestamp',
   'parents',
   'linq',
+  'handler',
   'config-lua',
   'config-static',
 ]

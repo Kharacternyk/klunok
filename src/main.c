@@ -1,10 +1,4 @@
-#include "bitmap.h"
-#include "config.h"
-#include "deref.h"
-#include "linq.h"
-#include "store.h"
-#include "timestamp.h"
-
+#include "handler.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <fnmatch.h>
@@ -15,6 +9,9 @@
 #include <sys/fanotify.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+/* TODO error reporting is awful, we need to come up with a way for low-level
+ * functions to return contextful errors */
 
 static int report(int error_code, const char *error_message,
                   const char *error_context) {
@@ -74,30 +71,11 @@ int main(int argc, const char **argv) {
   int error_code = 0;
   char *error_message = NULL;
 
-  struct config *config = load_config(config_path, &error_code, &error_message);
-  if (error_message || error_code) {
-    return report(error_code, "Cannot load configuration", error_message);
-  }
-
-  struct store *store =
-      create_store(get_configured_store_root(config), &error_code);
+  struct handler *handler =
+      load_handler(config_path, &error_code, &error_message);
   if (error_code) {
-    return report(error_code, "Cannot create store",
-                  get_configured_store_root(config));
-  }
-
-  struct linq *linq =
-      load_linq(get_configured_queue_path(config),
-                get_configured_debounce_seconds(config), &error_code);
-  if (error_code) {
-    return report(error_code, "Cannot load queue",
-                  get_configured_queue_path(config));
-  }
-
-  struct bitmap *editor_pid_bitmap =
-      create_bitmap(get_configured_max_pid_guess(config), &error_code);
-  if (error_code) {
-    return report(error_code, "Cannot create PID bitmap", NULL);
+    return report(error_code, "Cannot load configuration or application state",
+                  error_message);
   }
 
   pid_t self = getpid();
@@ -126,122 +104,47 @@ int main(int argc, const char **argv) {
                       NULL);
       }
 
-      char *file_path = deref_fd(
-          event.fd, get_configured_path_length_guess(config), &error_code);
-      if (error_code) {
-        return report(error_code, "Cannot dereference file path", NULL);
-      }
+      char *error_message = NULL;
+      int error_code = 0;
 
       if (event.mask & FAN_OPEN_EXEC) {
-        char *exe_filename = strrchr(file_path, '/');
-        if (!exe_filename) {
-          return report(0, "Cannot get executable name", file_path);
-        }
-        ++exe_filename;
-
-        /*FIXME*/
-        if (fnmatch("ld-linux*.so*", exe_filename, 0)) {
-          if (is_in_set(exe_filename, get_configured_editors(config))) {
-            set_bit_in_bitmap(event.pid, editor_pid_bitmap, &error_code);
-            if (error_code) {
-              return report(error_code, "Cannot set bit in pid bitmap", NULL);
-            }
-          } else {
-            unset_bit_in_bitmap(event.pid, editor_pid_bitmap);
-          }
+        handle_open_exec(event.pid, event.fd, handler, &error_code);
+        if (error_code) {
+          report(error_code, "Cannot handle FAN_OPEN_EXEC", NULL);
         }
       } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
-        if (get_bit_in_bitmap(event.pid, editor_pid_bitmap) &&
-            strstr(file_path, "/.") == NULL) {
-          push_to_linq(file_path, linq, &error_code);
-          if (error_code) {
-            return report(error_code, "Cannot push to queue", NULL);
-          }
-        }
-        if (!strcmp(file_path, config_path)) {
-          struct config *new_config =
-              load_config(config_path, &error_code, &error_message);
-          if (error_message || error_code) {
-            report(error_code, "Cannot reload configuration", error_message);
-            free(error_message);
-            error_code = 0;
-            error_message = NULL;
+        bool is_config_changed = false;
+        handle_close_write(event.pid, event.fd, handler, &is_config_changed,
+                           &error_code, &error_message);
+        if (error_code || error_message) {
+          if (is_config_changed) {
+            report(error_code,
+                   "Cannot reload configuration or application state",
+                   error_message);
           } else {
-            free_config(config);
-            config = new_config;
-
-            struct linq *new_linq =
-                load_linq(get_configured_queue_path(config),
-                          get_configured_debounce_seconds(config), &error_code);
-            if (error_code) {
-              report(error_code, "Cannot reload queue",
-                     get_configured_queue_path(config));
-              error_code = 0;
-            } else {
-              free_linq(linq);
-              linq = new_linq;
-            }
-
-            struct store *new_store =
-                create_store(get_configured_store_root(config), &error_code);
-            if (error_code) {
-              report(error_code, "Cannot recreate store",
-                     get_configured_store_root(config));
-              error_code = 0;
-            } else {
-              free_store(store);
-              store = new_store;
-            }
+            report(error_code, "Cannot handle FAN_CLOSE_WRITE", error_message);
           }
         }
       }
 
-      free(file_path);
+      free(error_message);
       close(event.fd);
     }
 
-    wake_after_seconds = 0;
-    for (;;) {
-      char *path = pop_from_linq(linq, get_configured_path_length_guess(config),
-                                 &wake_after_seconds, &error_code);
-      if (error_code) {
-        return report(error_code, "Cannot pop from queue", NULL);
-      }
-      if (wake_after_seconds) {
-        break;
-      }
-
-      bool is_overflow = false;
-      char *version = get_timestamp(get_configured_version_pattern(config),
-                                    get_configured_version_max_length(config),
-                                    &error_code, &is_overflow);
-      if (error_code) {
-        return report(error_code, "Cannot create date-based version", NULL);
-      }
-      if (is_overflow) {
-        return report(0, "Date-based version is too long", NULL);
-      }
-      if (strchr(version, '/')) {
-        return report(0, "Versions must not contain slashes", version);
-      }
-
-      int cleanup_error_code = 0;
-      bool is_not_found = false;
-      copy_to_store(path, version, store, &error_code, &cleanup_error_code,
-                    &is_not_found);
-      if (error_code) {
-        report(error_code, "Cannot copy file to store", path);
-        if (cleanup_error_code) {
-          report(cleanup_error_code,
-                 "Cannot clean up after unsuccessful copy to store", path);
-        }
-      } else if (is_not_found && cleanup_error_code) {
-        report(cleanup_error_code,
-               "Cannot clean up after an attempt to copy missing file", path);
-      }
-      free(path);
-      free(version);
-      error_code = 0;
+    int error_code = 0;
+    int cleanup_error_code = 0;
+    bool is_version_invalid = false;
+    handle_timeout(handler, &wake_after_seconds, &is_version_invalid,
+                   &error_code, &cleanup_error_code);
+    if (is_version_invalid) {
+      report(error_code, "Version pattern produced an invalid version", NULL);
+    }
+    if (error_code) {
+      report(error_code, "Cannot handle timeout", NULL);
+    }
+    if (cleanup_error_code) {
+      report(cleanup_error_code,
+             "Cannot clean up after unsuccessful copy to store", NULL);
     }
   }
 }
