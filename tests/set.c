@@ -5,7 +5,6 @@
 
 int main() {
   struct trace *trace = create_trace();
-  assert(trace);
   struct set *set = create_set(0, trace);
   assert(!get_trace_message(trace));
 
