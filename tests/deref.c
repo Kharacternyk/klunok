@@ -4,16 +4,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PATH "/dev/null"
-
 int main() {
-  int fd = open(PATH, O_RDONLY);
-  int error_code = 0;
-  char *path = deref_fd(fd, 0, &error_code);
+  struct trace *trace = create_trace();
+  const char *path = "/dev/null";
+  int fd = open(path, O_RDONLY);
+  char *deref_path = deref_fd(fd, 0, trace);
 
-  assert(!error_code);
+  assert(!get_trace_message(trace));
   assert(path);
-  assert(!strcmp(path, PATH));
+  assert(!strcmp(deref_path, path));
 
-  free(path);
+  free(deref_path);
+  free(trace);
 }

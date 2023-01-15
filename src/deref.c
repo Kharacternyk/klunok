@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-char *deref_fd(int fd, size_t length_guess, int *error_code) {
+char *deref_fd(int fd, size_t length_guess, struct trace *trace) {
   size_t max_size = length_guess + 1;
   char *link = NULL;
   char *target = NULL;
@@ -39,7 +39,7 @@ char *deref_fd(int fd, size_t length_guess, int *error_code) {
   }
 
 fail:
-  *error_code = errno;
+  trace_errno(trace);
   free(link);
   free(target);
   return NULL;
