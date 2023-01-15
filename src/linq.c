@@ -1,4 +1,5 @@
 #include "linq.h"
+#include "messages.h"
 #include "parents.h"
 #include <dirent.h>
 #include <errno.h>
@@ -28,26 +29,26 @@ static int compare(const struct dirent **first, const struct dirent **second) {
          strtol((*second)->d_name, NULL, 10);
 }
 
-static char *stringify(size_t value, int *error_code) {
+static char *stringify(size_t value, struct trace *trace) {
   size_t length = snprintf(NULL, 0, "%zd", value);
   size_t size = length + 1;
   char *result = malloc(size);
   if (!result) {
-    *error_code = errno;
+    trace_errno(trace);
     return NULL;
   }
   snprintf(result, size, "%zd", value);
   return result;
 }
 
-static void create_linq_path(const char *path, int *error_code) {
+static void create_linq_path(const char *path, struct trace *trace) {
   mode_t mode = S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH;
-  create_parents(path, mode, error_code);
-  if (*error_code) {
+  create_parents(path, mode, trace);
+  if (get_trace_message(trace)) {
     return;
   }
   if (mkdir(path, mode) < 0) {
-    *error_code = errno;
+    trace_errno(trace);
   }
 }
 
@@ -60,24 +61,25 @@ static void free_entries(struct dirent **entries, size_t entry_count) {
 
 static struct linq *load_or_create_linq(const char *path,
                                         time_t debounce_seconds,
-                                        bool try_to_create, int *error_code) {
+                                        bool try_to_create,
+                                        struct trace *trace) {
   struct dirent **entries;
   int entry_count = scandir(path, &entries, dot_filter, compare);
   if (entry_count < 0) {
     if (errno == ENOENT && try_to_create) {
-      create_linq_path(path, error_code);
-      if (*error_code) {
+      create_linq_path(path, trace);
+      if (get_trace_message(trace)) {
         return NULL;
       }
-      return load_or_create_linq(path, debounce_seconds, false, error_code);
+      return load_or_create_linq(path, debounce_seconds, false, trace);
     }
-    *error_code = errno;
+    trace_errno(trace);
     return NULL;
   }
 
   struct linq *linq = malloc(sizeof(struct linq));
   if (!linq) {
-    *error_code = errno;
+    trace_errno(trace);
     free_entries(entries, entry_count);
     return NULL;
   }
@@ -93,7 +95,7 @@ static struct linq *load_or_create_linq(const char *path,
 
   linq->dirfd = open(path, O_DIRECTORY);
   if (linq->dirfd < 0) {
-    *error_code = errno;
+    trace_errno(trace);
     free(linq);
     free_entries(entries, entry_count);
     return NULL;
@@ -103,18 +105,18 @@ static struct linq *load_or_create_linq(const char *path,
 }
 
 struct linq *load_linq(const char *path, time_t debounce_seconds,
-                       int *error_code) {
-  return load_or_create_linq(path, debounce_seconds, true, error_code);
+                       struct trace *trace) {
+  return load_or_create_linq(path, debounce_seconds, true, trace);
 }
 
-void push_to_linq(const char *path, struct linq *linq, int *error_code) {
-  char *link_name = stringify(linq->head_index + linq->size, error_code);
-  if (*error_code) {
+void push_to_linq(const char *path, struct linq *linq, struct trace *trace) {
+  char *link_name = stringify(linq->head_index + linq->size, trace);
+  if (get_trace_message(trace)) {
     return;
   }
 
   if (symlinkat(path, linq->dirfd, link_name) < 0) {
-    *error_code = errno;
+    trace_errno(trace);
   } else {
     ++linq->size;
   }
@@ -123,20 +125,20 @@ void push_to_linq(const char *path, struct linq *linq, int *error_code) {
 }
 
 char *pop_from_linq(struct linq *linq, size_t length_guess,
-                    time_t *retry_after_seconds, int *error_code) {
+                    time_t *retry_after_seconds, struct trace *trace) {
   if (!linq->size) {
     *retry_after_seconds = -1;
     return NULL;
   }
 
-  char *link_name = stringify(linq->head_index, error_code);
-  if (*error_code) {
+  char *link_name = stringify(linq->head_index, trace);
+  if (get_trace_message(trace)) {
     return NULL;
   }
 
   struct stat link_stat;
   if (fstatat(linq->dirfd, link_name, &link_stat, AT_SYMLINK_NOFOLLOW) < 0) {
-    *error_code = errno;
+    trace_errno(trace);
     free(link_name);
     return NULL;
   }
@@ -151,21 +153,21 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
   if (fstatat(linq->dirfd, link_name, &target_stat, 0) < 0 ||
       target_stat.st_mtime > link_stat.st_mtime) {
     if (unlinkat(linq->dirfd, link_name, 0) < 0) {
-      *error_code = errno;
+      trace_errno(trace);
       free(link_name);
       return NULL;
     }
     ++linq->head_index;
     --linq->size;
     free(link_name);
-    return pop_from_linq(linq, length_guess, retry_after_seconds, error_code);
+    return pop_from_linq(linq, length_guess, retry_after_seconds, trace);
   }
 
   size_t max_size = length_guess + 1;
   for (;;) {
     char *target = malloc(max_size);
     if (!target) {
-      *error_code = errno;
+      trace_errno(trace);
       free(link_name);
       return NULL;
     }
@@ -173,14 +175,14 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
     int length = readlinkat(linq->dirfd, link_name, target, max_size);
 
     if (length < 0) {
-      *error_code = errno;
+      trace_errno(trace);
       free(link_name);
       free(target);
       return NULL;
     }
     if (length < max_size) {
       if (unlinkat(linq->dirfd, link_name, 0) < 0) {
-        *error_code = errno;
+        trace_errno(trace);
         free(link_name);
         free(target);
         return NULL;

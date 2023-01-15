@@ -10,52 +10,53 @@
 #define F2 TEST_ROOT "/linq.c"
 
 int main() {
-  int error_code = 0;
-  struct linq *linq = load_linq(INSTANT_LINQ_PATH, 0, &error_code);
-  assert(!error_code);
+  struct trace *trace = create_trace();
+  struct linq *linq = load_linq(INSTANT_LINQ_PATH, 0, trace);
+  assert(!get_trace_message(trace));
 
   time_t retry_after_seconds = 0;
-  char *path = pop_from_linq(linq, 0, &retry_after_seconds, &error_code);
-  assert(!error_code);
+  char *path = pop_from_linq(linq, 0, &retry_after_seconds, trace);
+  assert(!get_trace_message(trace));
   assert(retry_after_seconds < 0);
   retry_after_seconds = 0;
 
-  push_to_linq(F1, linq, &error_code);
-  assert(!error_code);
-  path = pop_from_linq(linq, 0, &retry_after_seconds, &error_code);
+  push_to_linq(F1, linq, trace);
+  assert(!get_trace_message(trace));
+  path = pop_from_linq(linq, 0, &retry_after_seconds, trace);
   assert(!retry_after_seconds);
-  assert(!error_code);
+  assert(!get_trace_message(trace));
   assert(!strcmp(path, F1));
 
   free(path);
 
-  push_to_linq(F1, linq, &error_code);
-  assert(!error_code);
-  push_to_linq(F2, linq, &error_code);
-  assert(!error_code);
+  push_to_linq(F1, linq, trace);
+  assert(!get_trace_message(trace));
+  push_to_linq(F2, linq, trace);
+  assert(!get_trace_message(trace));
 
-  path = pop_from_linq(linq, 0, &retry_after_seconds, &error_code);
+  path = pop_from_linq(linq, 0, &retry_after_seconds, trace);
   assert(!retry_after_seconds);
-  assert(!error_code);
+  assert(!get_trace_message(trace));
   assert(!strcmp(path, F1));
   free(path);
 
-  path = pop_from_linq(linq, 0, &retry_after_seconds, &error_code);
+  path = pop_from_linq(linq, 0, &retry_after_seconds, trace);
   assert(!retry_after_seconds);
-  assert(!error_code);
+  assert(!get_trace_message(trace));
   assert(!strcmp(path, F2));
   free(path);
 
   free_linq(linq);
 
   unlink(LAGGED_LINQ_PATH "/0");
-  linq = load_linq(LAGGED_LINQ_PATH, 3600, &error_code);
-  push_to_linq(F1, linq, &error_code);
-  assert(!error_code);
-  path = pop_from_linq(linq, 0, &retry_after_seconds, &error_code);
-  assert(!error_code);
+  linq = load_linq(LAGGED_LINQ_PATH, 3600, trace);
+  push_to_linq(F1, linq, trace);
+  assert(!get_trace_message(trace));
+  path = pop_from_linq(linq, 0, &retry_after_seconds, trace);
+  assert(!get_trace_message(trace));
   assert(retry_after_seconds > 0);
   unlink(LAGGED_LINQ_PATH "/0");
 
   free_linq(linq);
+  free(trace);
 }

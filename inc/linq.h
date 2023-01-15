@@ -1,3 +1,4 @@
+#include "trace.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <time.h>
@@ -5,8 +6,8 @@
 struct linq;
 
 struct linq *load_linq(const char *path, time_t debounce_seconds,
-                       int *error_code);
-void push_to_linq(const char *path, struct linq *linq, int *error_code);
+                       struct trace *trace);
+void push_to_linq(const char *path, struct linq *linq, struct trace *trace);
 char *pop_from_linq(struct linq *linq, size_t length_guess,
-                    time_t *retry_after_seconds, int *error_code);
+                    time_t *retry_after_seconds, struct trace *trace);
 void free_linq(struct linq *linq);
