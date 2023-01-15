@@ -1,33 +1,38 @@
 #include "set.h"
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
-#define S1 "/home/nazar"
-#define S2 "keynumber1"
-#define S3 "yerkn11ke1" /* hash collision with S2 */
-
 int main() {
-  int error_code = 0;
-  struct set *set = create_set(0, &error_code);
-  assert(!error_code);
+  struct trace *trace = create_trace();
+  assert(trace);
+  struct set *set = create_set(0, trace);
+  assert(!get_trace_message(trace));
 
-  assert(!is_in_set(S1, set));
-  add_to_set(S1, set, &error_code);
-  assert(!error_code);
-  assert(is_in_set(S1, set));
+  const char *s1 = "/home/nazar";
 
-  assert(!is_in_set(S2, set));
-  add_to_set(S2, set, &error_code);
-  assert(!error_code);
-  assert(is_in_set(S2, set));
-  assert(is_in_set(S1, set));
+  assert(!is_in_set(s1, set));
+  add_to_set(s1, set, trace);
+  assert(!get_trace_message(trace));
+  assert(is_in_set(s1, set));
 
-  assert(!is_in_set(S3, set));
-  add_to_set(S3, set, &error_code);
-  assert(!error_code);
-  assert(is_in_set(S3, set));
-  assert(is_in_set(S2, set));
-  assert(is_in_set(S1, set));
+  const char *s2 = "keynumber1";
+
+  assert(!is_in_set(s2, set));
+  add_to_set(s2, set, trace);
+  assert(!get_trace_message(trace));
+  assert(is_in_set(s2, set));
+  assert(is_in_set(s1, set));
+
+  const char *s3 = "yerkn11ke1" /* hash collision with s2 */;
+
+  assert(!is_in_set(s3, set));
+  add_to_set(s3, set, trace);
+  assert(!get_trace_message(trace));
+  assert(is_in_set(s3, set));
+  assert(is_in_set(s2, set));
+  assert(is_in_set(s1, set));
 
   free_set(set);
+  free(trace);
 }
