@@ -8,6 +8,7 @@ components = [
   'linq',
   'handler',
   'trace',
+  'messages',
   'config-lua',
   'config-static',
 ]

@@ -8,11 +8,16 @@ add_test_setup(
 foreach component: components
   test_sources = [
     sources[component],
+    sources['trace'],
+    sources['messages'],
     component + '.c',
   ]
   c_args = []
   dependencies = []
 
+  if component == 'messages'
+    continue
+  endif
   if component == 'config-lua' and not lua.found()
     continue
   endif

@@ -1,14 +1,15 @@
 #include "timestamp.h"
+#include "messages.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 
-char *get_timestamp(const char *format, size_t max_length, int *error_code,
-                    bool *is_overflow) {
+char *get_timestamp(const char *format, size_t max_length,
+                    struct trace *trace) {
   time_t t = time(NULL);
   struct tm *tm = localtime(&t);
   if (!tm) {
-    *error_code = errno;
+    trace_errno(trace);
     return NULL;
   }
 
@@ -18,7 +19,7 @@ char *get_timestamp(const char *format, size_t max_length, int *error_code,
 
   if (actual_length <= 0) {
     if (actual_length == 0) {
-      *is_overflow = true;
+      trace_static(messages.timestamp.overflow, trace);
     }
     free(timestamp);
     return NULL;
