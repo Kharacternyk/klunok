@@ -5,10 +5,11 @@
 #include <string.h>
 #include <sys/stat.h>
 
-void create_parents(const char *original_path, mode_t mode, int *error_code) {
+void create_parents(const char *original_path, mode_t mode,
+                    struct trace *trace) {
   char *path = strdup(original_path);
   if (!path) {
-    *error_code = errno;
+    trace_errno(trace);
     return;
   }
 
@@ -21,7 +22,7 @@ void create_parents(const char *original_path, mode_t mode, int *error_code) {
   while (slash) {
     *slash = 0;
     if (mkdir(path, mode) < 0 && errno != EEXIST) {
-      *error_code = errno;
+      trace_errno(trace);
       free(path);
       return;
     }
@@ -33,10 +34,10 @@ void create_parents(const char *original_path, mode_t mode, int *error_code) {
   free(path);
 }
 
-void remove_empty_parents(const char *original_path, int *error_code) {
+void remove_empty_parents(const char *original_path, struct trace *trace) {
   char *path = strdup(original_path);
   if (!path) {
-    *error_code = errno;
+    trace_errno(trace);
     return;
   }
 
@@ -46,7 +47,7 @@ void remove_empty_parents(const char *original_path, int *error_code) {
     *slash = 0;
     if (rmdir(path) < 0) {
       if (errno != ENOTEMPTY) {
-        *error_code = errno;
+        trace_errno(trace);
       }
       free(path);
       return;
