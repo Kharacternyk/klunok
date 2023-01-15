@@ -7,6 +7,7 @@ components = [
   'parents',
   'linq',
   'handler',
+  'trace',
   'config-lua',
   'config-static',
 ]
