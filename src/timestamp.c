@@ -1,6 +1,5 @@
 #include "timestamp.h"
 #include "messages.h"
-#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 
