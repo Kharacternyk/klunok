@@ -1,4 +1,5 @@
 #include "store.h"
+#include "messages.h"
 #include "parents.h"
 #include <assert.h>
 #include <errno.h>
@@ -15,16 +16,16 @@ struct store {
   size_t root_length;
 };
 
-struct store *create_store(const char *root, int *error_code) {
+struct store *create_store(const char *root, struct trace *trace) {
   struct store *store = malloc(sizeof(struct store));
   if (!store) {
-    *error_code = errno;
+    trace_errno(trace);
     return NULL;
   }
 
   store->root = strdup(root);
   if (!store->root) {
-    *error_code = errno;
+    trace_errno(trace);
     free(store);
     return NULL;
   }
@@ -47,44 +48,43 @@ static char *get_store_path(const char *filesystem_path, const char *version,
 }
 
 void copy_to_store(const char *filesystem_path, const char *version,
-                   const struct store *store, int *error_code,
-                   int *cleanup_error_code, bool *is_not_found) {
+                   const struct store *store, struct trace *trace) {
   char *store_path = get_store_path(filesystem_path, version, store);
   if (!store_path) {
-    *error_code = errno;
+    trace_errno(trace);
     return;
   }
 
   create_parents(store_path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH,
-                 error_code);
-  if (*error_code) {
-    remove_empty_parents(store_path, cleanup_error_code);
+                 trace);
+  if (!ok(trace)) {
+    remove_empty_parents(store_path, trace);
     goto path_cleanup;
   }
 
   int in_fd = open(filesystem_path, O_RDONLY);
   if (in_fd < 0) {
     if (errno == ENOENT) {
-      *is_not_found = true;
+      trace_static(messages.store.copy.file_does_not_exist, trace);
     } else {
-      *error_code = errno;
+      trace_errno(trace);
     }
-    remove_empty_parents(store_path, cleanup_error_code);
+    remove_empty_parents(store_path, trace);
     goto path_cleanup;
   }
 
   int out_fd = open(store_path, O_CREAT | O_WRONLY | O_TRUNC,
                     S_IRUSR | S_IRGRP | S_IROTH);
   if (out_fd < 0) {
-    *error_code = errno;
-    remove_empty_parents(store_path, cleanup_error_code);
+    trace_errno(trace);
+    remove_empty_parents(store_path, trace);
     goto in_fd_cleanup;
   }
 
   struct stat in_fd_stat;
   if (fstat(in_fd, &in_fd_stat) < 0) {
-    *error_code = errno;
-    remove_empty_parents(store_path, cleanup_error_code);
+    trace_errno(trace);
+    remove_empty_parents(store_path, trace);
     goto out_fd_cleanup;
   }
 
@@ -93,8 +93,8 @@ void copy_to_store(const char *filesystem_path, const char *version,
     if (written_size > 0) {
       in_fd_stat.st_size -= written_size;
     } else {
-      *error_code = errno;
-      remove_empty_parents(store_path, cleanup_error_code);
+      trace_errno(trace);
+      remove_empty_parents(store_path, trace);
       goto out_fd_cleanup;
     }
   }
