@@ -1,4 +1,5 @@
 #include "timestamp.h"
+#include "messages.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +28,7 @@ int main() {
 
   timestamp = get_timestamp("%Y", 3, trace);
   assert(!ok(trace));
+  assert(get_trace_message(trace) == messages.timestamp.overflow);
   clear(trace);
   free(trace);
   free(timestamp);
