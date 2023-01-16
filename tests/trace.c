@@ -8,6 +8,7 @@ int main() {
   struct trace *trace = create_trace();
   assert(trace);
   assert(!get_trace_message(trace));
+  assert(ok(trace));
 
   const char *a = "abc";
   const char *b = "XYZ";
@@ -16,6 +17,8 @@ int main() {
   trace_dynamic(b, trace);
   errno = ENOMEM;
   trace_errno(trace);
+
+  assert(!ok(trace));
 
   assert(get_trace_message(trace));
   assert(!strcmp(get_trace_message(trace), strerror(ENOMEM)));

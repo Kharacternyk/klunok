@@ -80,3 +80,8 @@ size_t get_dropped_trace_message_count(const struct trace *trace) {
   assert(trace);
   return trace->dropped_frame_count;
 }
+
+bool ok(const struct trace *trace) {
+  assert(trace);
+  return !trace->head && !trace->dropped_frame_count;
+}

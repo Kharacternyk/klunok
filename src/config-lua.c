@@ -41,14 +41,14 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
   lua_getglobal(lua, name);
 
   struct set *set = create_set(lua_rawlen(lua, -1), trace);
-  if (get_trace_message(trace)) {
+  if (!ok(trace)) {
     return NULL;
   }
 
   lua_pushnil(lua);
   while (lua_next(lua, -2)) {
     add_to_set(lua_tostring(lua, -2), set, trace);
-    if (get_trace_message(trace)) {
+    if (!ok(trace)) {
       free_set(set);
       return NULL;
     }
@@ -84,22 +84,22 @@ struct config *load_config(const char *path, struct trace *trace) {
   }
 
   config->editors = read_lua_set(lua, "editors", trace);
-  if (get_trace_message(trace)) {
+  if (!ok(trace)) {
     goto config_cleanup;
   }
 
   config->store_root = read_lua_string(lua, "store_root", trace);
-  if (get_trace_message(trace)) {
+  if (!ok(trace)) {
     goto editors_cleanup;
   }
 
   config->queue_path = read_lua_string(lua, "queue_path", trace);
-  if (get_trace_message(trace)) {
+  if (!ok(trace)) {
     goto store_cleanup;
   }
 
   config->version_pattern = read_lua_string(lua, "version_pattern", trace);
-  if (get_trace_message(trace)) {
+  if (!ok(trace)) {
     goto queue_cleanup;
   }
 

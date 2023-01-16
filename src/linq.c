@@ -44,7 +44,7 @@ static char *stringify(size_t value, struct trace *trace) {
 static void create_linq_path(const char *path, struct trace *trace) {
   mode_t mode = S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH;
   create_parents(path, mode, trace);
-  if (get_trace_message(trace)) {
+  if (!ok(trace)) {
     return;
   }
   if (mkdir(path, mode) < 0) {
@@ -68,7 +68,7 @@ static struct linq *load_or_create_linq(const char *path,
   if (entry_count < 0) {
     if (errno == ENOENT && try_to_create) {
       create_linq_path(path, trace);
-      if (get_trace_message(trace)) {
+      if (!ok(trace)) {
         return NULL;
       }
       return load_or_create_linq(path, debounce_seconds, false, trace);
@@ -111,7 +111,7 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
 
 void push_to_linq(const char *path, struct linq *linq, struct trace *trace) {
   char *link_name = stringify(linq->head_index + linq->size, trace);
-  if (get_trace_message(trace)) {
+  if (!ok(trace)) {
     return;
   }
 
@@ -132,7 +132,7 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
   }
 
   char *link_name = stringify(linq->head_index, trace);
-  if (get_trace_message(trace)) {
+  if (!ok(trace)) {
     return NULL;
   }
 

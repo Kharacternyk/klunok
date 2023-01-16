@@ -10,7 +10,7 @@ int main() {
   int fd = open(path, O_RDONLY);
   char *deref_path = deref_fd(fd, 0, trace);
 
-  assert(!get_trace_message(trace));
+  assert(ok(trace));
   assert(path);
   assert(!strcmp(deref_path, path));
 

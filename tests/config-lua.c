@@ -8,12 +8,12 @@ void check_default_config(struct config *config);
 int main() {
   struct trace *trace = create_trace();
   struct config *config = load_config(TEST_ROOT "/configs/empty.lua", trace);
-  assert(!get_trace_message(trace));
+  assert(ok(trace));
 
   check_default_config(config);
 
   config = load_config(TEST_ROOT "/configs/override.lua", trace);
-  assert(!get_trace_message(trace));
+  assert(ok(trace));
 
   const struct set *editors = get_configured_editors(config);
   assert(!is_in_set("vi", editors));
@@ -28,13 +28,13 @@ int main() {
   free_config(config);
 
   load_config(TEST_ROOT "/configs/broken-semantics.lua", trace);
-  assert(get_trace_message(trace));
+  assert(!ok(trace));
   while (get_trace_message(trace)) {
     pop_trace_message(trace);
   }
 
   load_config(TEST_ROOT "/configs/broken-syntax.lua", trace);
-  assert(get_trace_message(trace));
+  assert(!ok(trace));
   while (get_trace_message(trace)) {
     pop_trace_message(trace);
   }
