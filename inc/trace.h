@@ -11,3 +11,4 @@ void trace_dynamic(const char *message, struct trace *trace);
 void trace_errno(struct trace *trace);
 size_t get_dropped_trace_message_count(const struct trace *trace);
 bool ok(const struct trace *trace);
+void clear(struct trace *trace);

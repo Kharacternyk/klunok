@@ -31,5 +31,12 @@ int main() {
   pop_trace_message(trace);
   assert(!get_trace_message(trace));
 
+  trace_static(a, trace);
+  trace_static(a, trace);
+  trace_static(a, trace);
+  assert(!ok(trace));
+  clear(trace);
+  assert(ok(trace));
+
   free(trace);
 }

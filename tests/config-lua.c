@@ -29,15 +29,11 @@ int main() {
 
   load_config(TEST_ROOT "/configs/broken-semantics.lua", trace);
   assert(!ok(trace));
-  while (get_trace_message(trace)) {
-    pop_trace_message(trace);
-  }
+  clear(trace);
 
   load_config(TEST_ROOT "/configs/broken-syntax.lua", trace);
   assert(!ok(trace));
-  while (get_trace_message(trace)) {
-    pop_trace_message(trace);
-  }
+  clear(trace);
 
   free(trace);
 }

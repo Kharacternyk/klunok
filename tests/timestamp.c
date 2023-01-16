@@ -27,9 +27,7 @@ int main() {
 
   timestamp = get_timestamp("%Y", 3, trace);
   assert(!ok(trace));
-  while (get_trace_message(trace)) {
-    pop_trace_message(trace);
-  }
+  clear(trace);
   free(trace);
   free(timestamp);
 }
