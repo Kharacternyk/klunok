@@ -27,28 +27,28 @@ static size_t read_lua_size(lua_State *lua, const char *name) {
 }
 
 static char *read_lua_string(lua_State *lua, const char *name,
-                             int *error_code) {
+                             struct trace *trace) {
   lua_getglobal(lua, name);
   char *string = strdup(lua_tostring(lua, -1));
   if (!string) {
-    *error_code = errno;
+    trace_errno(trace);
   }
   return string;
 }
 
 static struct set *read_lua_set(lua_State *lua, const char *name,
-                                int *error_code) {
+                                struct trace *trace) {
   lua_getglobal(lua, name);
 
-  struct set *set = create_set(lua_rawlen(lua, -1), error_code);
-  if (*error_code) {
+  struct set *set = create_set(lua_rawlen(lua, -1), trace);
+  if (get_trace_message(trace)) {
     return NULL;
   }
 
   lua_pushnil(lua);
   while (lua_next(lua, -2)) {
-    add_to_set(lua_tostring(lua, -2), set, error_code);
-    if (*error_code) {
+    add_to_set(lua_tostring(lua, -2), set, trace);
+    if (get_trace_message(trace)) {
       free_set(set);
       return NULL;
     }
@@ -59,11 +59,10 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
   return set;
 }
 
-struct config *load_config(const char *path, int *error_code,
-                           char **error_message) {
+struct config *load_config(const char *path, struct trace *trace) {
   struct config *config = malloc(sizeof(struct config));
   if (!config) {
-    *error_code = errno;
+    trace_errno(trace);
     return NULL;
   }
 
@@ -80,30 +79,27 @@ struct config *load_config(const char *path, int *error_code,
                           &_binary_lua_validation_lua_start,
                       "validation") ||
       lua_pcall(lua, 0, 0, 0)) {
-    *error_message = strdup(lua_tostring(lua, -1));
-    if (!*error_message) {
-      *error_code = errno;
-    }
+    trace_dynamic(lua_tostring(lua, -1), trace);
     goto config_cleanup;
   }
 
-  config->editors = read_lua_set(lua, "editors", error_code);
-  if (*error_code) {
+  config->editors = read_lua_set(lua, "editors", trace);
+  if (get_trace_message(trace)) {
     goto config_cleanup;
   }
 
-  config->store_root = read_lua_string(lua, "store_root", error_code);
-  if (*error_code) {
+  config->store_root = read_lua_string(lua, "store_root", trace);
+  if (get_trace_message(trace)) {
     goto editors_cleanup;
   }
 
-  config->queue_path = read_lua_string(lua, "queue_path", error_code);
-  if (*error_code) {
+  config->queue_path = read_lua_string(lua, "queue_path", trace);
+  if (get_trace_message(trace)) {
     goto store_cleanup;
   }
 
-  config->version_pattern = read_lua_string(lua, "version_pattern", error_code);
-  if (*error_code) {
+  config->version_pattern = read_lua_string(lua, "version_pattern", trace);
+  if (get_trace_message(trace)) {
     goto queue_cleanup;
   }
 

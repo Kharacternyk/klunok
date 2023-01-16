@@ -6,19 +6,14 @@
 void check_default_config(struct config *config);
 
 int main() {
-  int error_code = 0;
-  char *error_message = NULL;
-  struct config *config =
-      load_config(TEST_ROOT "/configs/empty.lua", &error_code, &error_message);
-  assert(!error_code);
-  assert(!error_message);
+  struct trace *trace = create_trace();
+  struct config *config = load_config(TEST_ROOT "/configs/empty.lua", trace);
+  assert(!get_trace_message(trace));
 
   check_default_config(config);
 
-  config = load_config(TEST_ROOT "/configs/override.lua", &error_code,
-                       &error_message);
-  assert(!error_code);
-  assert(!error_message);
+  config = load_config(TEST_ROOT "/configs/override.lua", trace);
+  assert(!get_trace_message(trace));
 
   const struct set *editors = get_configured_editors(config);
   assert(!is_in_set("vi", editors));
@@ -32,17 +27,17 @@ int main() {
 
   free_config(config);
 
-  load_config(TEST_ROOT "/configs/broken-semantics.lua", &error_code,
-              &error_message);
-  assert(error_code || error_message);
+  load_config(TEST_ROOT "/configs/broken-semantics.lua", trace);
+  assert(get_trace_message(trace));
+  while (get_trace_message(trace)) {
+    pop_trace_message(trace);
+  }
 
-  free(error_message);
-  error_code = 0;
-  error_message = NULL;
+  load_config(TEST_ROOT "/configs/broken-syntax.lua", trace);
+  assert(get_trace_message(trace));
+  while (get_trace_message(trace)) {
+    pop_trace_message(trace);
+  }
 
-  load_config(TEST_ROOT "/configs/broken-syntax.lua", &error_code,
-              &error_message);
-  assert(error_code || error_message);
-
-  free(error_message);
+  free(trace);
 }

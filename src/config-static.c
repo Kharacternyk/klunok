@@ -20,23 +20,22 @@ struct config {
   struct set *editors;
 };
 
-struct config *load_config(const char *path, int *error_code,
-                           char **error_message) {
+struct config *load_config(const char *path, struct trace *trace) {
   struct config *config = malloc(sizeof(struct config));
   if (!config) {
-    *error_code = errno;
+    trace_errno(trace);
     return NULL;
   }
 
   size_t editors_length = sizeof editors / sizeof editors[0];
-  config->editors = create_set(editors_length, error_code);
-  if (*error_code) {
+  config->editors = create_set(editors_length, trace);
+  if (get_trace_message(trace)) {
     goto config_cleanup;
   }
 
   for (size_t i = 0; i < editors_length; ++i) {
-    add_to_set(editors[i], config->editors, error_code);
-    if (*error_code) {
+    add_to_set(editors[i], config->editors, trace);
+    if (get_trace_message(trace)) {
       goto editors_cleanup;
     }
   }

@@ -1,15 +1,13 @@
 #include "config.h"
 #include <assert.h>
+#include <stdlib.h>
 
 void check_default_config(struct config *config);
 
 int main() {
-  int error_code = 0;
-  char *error_message = NULL;
-  struct config *config = load_config("", &error_code, &error_message);
-
-  assert(!error_code);
-  assert(!error_message);
-
+  struct trace *trace = create_trace();
+  struct config *config = load_config("", trace);
+  assert(!get_trace_message(trace));
+  free(trace);
   check_default_config(config);
 }
