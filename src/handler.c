@@ -2,6 +2,7 @@
 #include "bitmap.h"
 #include "deref.h"
 #include "linq.h"
+#include "messages.h"
 #include "store.h"
 #include "timestamp.h"
 #include <assert.h>
@@ -18,41 +19,42 @@ struct handler {
   struct bitmap *editor_pid_bitmap;
 };
 
-struct handler *load_handler(const char *config_path, int *error_code,
-                             char **error_message) {
+struct handler *load_handler(const char *config_path, struct trace *trace) {
   struct handler *handler = malloc(sizeof(struct handler));
   if (!handler) {
-    *error_code = errno;
+    trace_errno(trace);
     return NULL;
   }
 
   handler->config_path = strdup(config_path);
   if (!handler->config_path) {
-    *error_code = errno;
+    trace_errno(trace);
     goto handler_cleanup;
   }
 
-  handler->config = load_config(config_path, error_code, error_message);
-  if (*error_code || *error_message) {
+  handler->config = load_config(config_path, trace);
+  if (!ok(trace)) {
+    trace_static(messages.handler.config.cannot_load, trace);
     goto path_cleanup;
   }
 
   handler->store =
-      create_store(get_configured_store_root(handler->config), error_code);
-  if (*error_code) {
+      create_store(get_configured_store_root(handler->config), trace);
+  if (!ok(trace)) {
     goto config_cleanup;
   }
 
   handler->linq =
       load_linq(get_configured_queue_path(handler->config),
-                get_configured_debounce_seconds(handler->config), error_code);
-  if (*error_code) {
+                get_configured_debounce_seconds(handler->config), trace);
+  if (!ok(trace)) {
+    trace_static(messages.handler.linq.cannot_load, trace);
     goto store_cleanup;
   }
 
   handler->editor_pid_bitmap =
-      create_bitmap(get_configured_max_pid_guess(handler->config), error_code);
-  if (*error_code) {
+      create_bitmap(get_configured_max_pid_guess(handler->config), trace);
+  if (!ok(trace)) {
     goto linq_cleanup;
   }
 
@@ -72,10 +74,10 @@ handler_cleanup:
 }
 
 void handle_open_exec(pid_t pid, int fd, struct handler *handler,
-                      int *error_code) {
-  char *file_path = deref_fd(
-      fd, get_configured_path_length_guess(handler->config), error_code);
-  if (*error_code) {
+                      struct trace *trace) {
+  char *file_path =
+      deref_fd(fd, get_configured_path_length_guess(handler->config), trace);
+  if (!ok(trace)) {
     return;
   }
   char *exe_filename = strrchr(file_path, '/');
@@ -84,7 +86,7 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   /*FIXME*/
   if (fnmatch("ld-linux*.so*", exe_filename, 0)) {
     if (is_in_set(exe_filename, get_configured_editors(handler->config))) {
-      set_bit_in_bitmap(pid, handler->editor_pid_bitmap, error_code);
+      set_bit_in_bitmap(pid, handler->editor_pid_bitmap, trace);
     } else {
       unset_bit_in_bitmap(pid, handler->editor_pid_bitmap);
     }
@@ -93,41 +95,39 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
 }
 
 void handle_close_write(pid_t pid, int fd, struct handler *handler,
-                        bool *is_config_changed, int *error_code,
-                        char **error_message) {
-  char *file_path = deref_fd(
-      fd, get_configured_path_length_guess(handler->config), error_code);
-  if (*error_code) {
+                        struct trace *trace) {
+  char *file_path =
+      deref_fd(fd, get_configured_path_length_guess(handler->config), trace);
+  if (!ok(trace)) {
     return;
   }
   if (get_bit_in_bitmap(pid, handler->editor_pid_bitmap) &&
       /*FIXME*/ strstr(file_path, "/.") == NULL) {
-    push_to_linq(file_path, handler->linq, error_code);
-    if (*error_code) {
+    push_to_linq(file_path, handler->linq, trace);
+    if (!ok(trace)) {
       goto path_cleanup;
     }
   }
 
   if (!strcmp(file_path, handler->config_path)) {
-    *is_config_changed = true;
-
-    struct config *new_config =
-        load_config(handler->config_path, error_code, error_message);
-    if (*error_message || *error_code) {
+    struct config *new_config = load_config(handler->config_path, trace);
+    if (!ok(trace)) {
+      trace_static(messages.handler.config.cannot_reload, trace);
       goto path_cleanup;
     }
 
     struct linq *new_linq =
         load_linq(get_configured_queue_path(new_config),
-                  get_configured_debounce_seconds(new_config), error_code);
-    if (*error_code) {
+                  get_configured_debounce_seconds(new_config), trace);
+    if (!ok(trace)) {
+      trace_static(messages.handler.linq.cannot_reload, trace);
       free_config(new_config);
       goto path_cleanup;
     }
 
     struct store *new_store =
-        create_store(get_configured_store_root(new_config), error_code);
-    if (*error_code) {
+        create_store(get_configured_store_root(new_config), trace);
+    if (!ok(trace)) {
       free_linq(new_linq);
       free_config(new_config);
       goto path_cleanup;
@@ -146,35 +146,39 @@ path_cleanup:
 }
 
 void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
-                    bool *is_version_invalid, int *error_code,
-                    int *cleanup_error_code) {
+                    struct trace *trace) {
   *retry_after_seconds = 0;
   for (;;) {
     char *path = pop_from_linq(
         handler->linq, get_configured_path_length_guess(handler->config),
-        retry_after_seconds, error_code);
-    if (*error_code || *retry_after_seconds) {
+        retry_after_seconds, trace);
+    if (!ok(trace)) {
+      trace_static(messages.handler.linq.cannot_pop, trace);
+      return;
+    }
+    if (*retry_after_seconds) {
       return;
     }
 
-    char *version =
-        get_timestamp(get_configured_version_pattern(handler->config),
-                      get_configured_version_max_length(handler->config),
-                      error_code, is_version_invalid);
-    if (*error_code || *is_version_invalid) {
+    char *version = get_timestamp(
+        get_configured_version_pattern(handler->config),
+        get_configured_version_max_length(handler->config), trace);
+    if (!ok(trace)) {
       free(path);
       return;
     }
     if (strchr(version, '/')) {
-      *is_version_invalid = true;
+      trace_static(messages.handler.version.has_slashes, trace);
       free(path);
       return;
     }
 
-    bool is_not_found = false;
-    copy_to_store(path, version, handler->store, error_code, cleanup_error_code,
-                  &is_not_found);
-    if (*error_code || *cleanup_error_code) {
+    copy_to_store(path, version, handler->store, trace);
+    if (get_trace_message(trace) == messages.store.copy.file_does_not_exist) {
+      clear(trace);
+    }
+    if (!ok(trace)) {
+      trace_static(messages.handler.store.cannot_copy, trace);
       free(path);
       free(version);
       return;
