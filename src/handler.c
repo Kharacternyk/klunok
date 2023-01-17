@@ -187,3 +187,14 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     free(version);
   }
 }
+
+void free_handler(struct handler *handler) {
+  if (handler) {
+    free(handler->config_path);
+    free_config(handler->config);
+    free_linq(handler->linq);
+    free_store(handler->store);
+    free_bitmap(handler->editor_pid_bitmap);
+    free(handler);
+  }
+}
