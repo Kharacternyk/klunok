@@ -174,7 +174,8 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     }
 
     copy_to_store(path, version, handler->store, trace);
-    if (get_trace_message(trace) == messages.store.copy.file_does_not_exist) {
+    if (get_trace_message(trace) == messages.store.copy.file_does_not_exist ||
+        get_trace_message(trace) == messages.store.copy.permission_denied) {
       clear(trace);
     }
     if (!ok(trace)) {

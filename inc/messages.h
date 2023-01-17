@@ -5,6 +5,7 @@ struct translation {
   struct {
     struct {
       const char *file_does_not_exist;
+      const char *permission_denied;
     } copy;
   } store;
   struct {

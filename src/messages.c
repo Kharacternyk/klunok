@@ -8,6 +8,7 @@ const struct translation messages = {
   .store = {
     .copy = {
       .file_does_not_exist = "File does not exist",
+      .permission_denied = "Permission denied",
     },
   },
   .handler = {

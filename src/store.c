@@ -66,6 +66,8 @@ void copy_to_store(const char *filesystem_path, const char *version,
   if (in_fd < 0) {
     if (errno == ENOENT) {
       trace_static(messages.store.copy.file_does_not_exist, trace);
+    } else if (errno == EACCES) {
+      trace_static(messages.store.copy.permission_denied, trace);
     } else {
       trace_errno(trace);
     }
