@@ -101,6 +101,8 @@ static struct linq *load_or_create_linq(const char *path,
     return NULL;
   }
 
+  free_entries(entries, entry_count);
+
   return linq;
 }
 
