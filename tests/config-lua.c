@@ -19,7 +19,7 @@ int main() {
   assert(!is_in_set("vi", editors));
   assert(is_in_set("vim", editors));
   assert(is_in_set("nvim", editors));
-  assert(is_in_set("rstudio", editors));
+  assert(is_in_set("rsession", editors));
   assert(is_in_set("cat", editors));
 
   const char *version_pattern = get_configured_version_pattern(config);

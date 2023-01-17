@@ -7,7 +7,7 @@ void check_default_config(struct config *config) {
   assert(is_in_set("vi", editors));
   assert(is_in_set("vim", editors));
   assert(is_in_set("nvim", editors));
-  assert(is_in_set("rstudio", editors));
+  assert(is_in_set("rsession", editors));
   assert(!is_in_set("cat", editors));
 
   assert(!strcmp(get_configured_store_root(config), "./klunok/store"));

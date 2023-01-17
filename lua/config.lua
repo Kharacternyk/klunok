@@ -9,5 +9,5 @@ editors = {
   vi = true,
   vim = true,
   nvim = true,
-  rstudio = true,
+  rsession = true,
 }

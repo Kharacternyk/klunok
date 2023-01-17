@@ -13,7 +13,7 @@ static const char *const editors[] = {
     "vi",
     "vim",
     "nvim",
-    "rstudio",
+    "rsession",
 };
 
 struct config {
