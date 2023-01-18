@@ -18,8 +18,13 @@ static int unwind(struct trace *trace) {
     ++depth;
   }
   if (get_dropped_trace_message_count(trace)) {
-    fprintf(stderr, "%*s╰─┤%zd messages dropped│\n", (depth - 1) * 2, "",
-            get_dropped_trace_message_count(trace));
+    if (depth > 0) {
+      fprintf(stderr, "%*s╰─┤%zd messages dropped│\n", (depth - 1) * 2, "",
+              get_dropped_trace_message_count(trace));
+    } else {
+      fprintf(stderr, "│%zd messages dropped│\n",
+              get_dropped_trace_message_count(trace));
+    }
   }
   clear(trace);
   return EXIT_FAILURE;
