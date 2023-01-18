@@ -6,6 +6,7 @@ struct translation {
     struct {
       const char *file_does_not_exist;
       const char *permission_denied;
+      const char *version_already_exists;
     } copy;
   } store;
   struct {
@@ -20,6 +21,7 @@ struct translation {
       const char *cannot_load;
       const char *cannot_reload;
       const char *cannot_pop;
+      const char *cannot_push;
     } linq;
     struct {
       const char *cannot_copy;

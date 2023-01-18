@@ -74,10 +74,14 @@ void copy_to_store(const char *filesystem_path, const char *version,
     return free(store_path);
   }
 
-  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_TRUNC,
+  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_EXCL,
                     S_IRUSR | S_IRGRP | S_IROTH);
   if (out_fd < 0) {
-    trace_errno(trace);
+    if (errno == EEXIST) {
+      trace_static(messages.store.copy.version_already_exists, trace);
+    } else {
+      trace_errno(trace);
+    }
     remove_empty_parents(store_path, trace);
     close(in_fd);
     return free(store_path);

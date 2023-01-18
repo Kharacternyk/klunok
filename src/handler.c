@@ -122,6 +122,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
       /*FIXME*/ strstr(file_path, "/.") == NULL) {
     push_to_linq(file_path, handler->linq, trace);
     if (!ok(trace)) {
+      trace_static(messages.handler.linq.cannot_push, trace);
       return free(file_path);
     }
   }
@@ -157,6 +158,8 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
     free_linq(handler->linq);
     handler->linq = new_linq;
   }
+
+  free(file_path);
 }
 
 void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
@@ -189,8 +192,10 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
     copy_to_store(path, version, handler->store, trace);
     if (get_trace_message(trace) == messages.store.copy.file_does_not_exist ||
-        get_trace_message(trace) == messages.store.copy.permission_denied) {
-      clear(trace);
+        get_trace_message(trace) == messages.store.copy.permission_denied ||
+        get_trace_message(trace) ==
+            messages.store.copy.version_already_exists) {
+      pop_trace_message(trace);
     }
     if (!ok(trace)) {
       trace_static(messages.handler.store.cannot_copy, trace);
