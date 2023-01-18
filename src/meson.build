@@ -9,6 +9,7 @@ components = [
   'handler',
   'trace',
   'messages',
+  'elfinterp',
   'config-lua',
   'config-static',
 ]

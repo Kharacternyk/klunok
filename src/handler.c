@@ -1,6 +1,7 @@
 #include "handler.h"
 #include "bitmap.h"
 #include "deref.h"
+#include "elfinterp.h"
 #include "linq.h"
 #include "messages.h"
 #include "store.h"
@@ -17,6 +18,8 @@ struct handler {
   struct linq *linq;
   struct store *store;
   struct bitmap *editor_pid_bitmap;
+  struct set *elf_interpeters;
+  struct set *handled_executables;
 };
 
 struct handler *load_handler(const char *config_path, struct trace *trace) {
@@ -26,10 +29,21 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
     return NULL;
   }
 
+  /*FIXME size guesses*/
+  handler->elf_interpeters = create_set(1, trace);
+  if (!ok(trace)) {
+    goto handler_cleanup;
+  }
+
+  handler->handled_executables = create_set(1000, trace);
+  if (!ok(trace)) {
+    goto elf_cleanup;
+  }
+
   handler->config_path = strdup(config_path);
   if (!handler->config_path) {
     trace_errno(trace);
-    goto handler_cleanup;
+    goto exe_cleanup;
   }
 
   handler->config = load_config(config_path, trace);
@@ -68,6 +82,10 @@ config_cleanup:
   free_config(handler->config);
 path_cleanup:
   free(handler->config_path);
+exe_cleanup:
+  free_set(handler->handled_executables);
+elf_cleanup:
+  free_set(handler->elf_interpeters);
 handler_cleanup:
   free(handler);
   return NULL;
@@ -83,12 +101,20 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   char *exe_filename = strrchr(file_path, '/');
   assert(exe_filename);
   ++exe_filename;
-  /*FIXME*/
-  if (fnmatch("ld-linux*.so*", exe_filename, 0)) {
+
+  if (!is_in_set(file_path, handler->elf_interpeters)) {
     if (is_in_set(exe_filename, get_configured_editors(handler->config))) {
       set_bit_in_bitmap(pid, handler->editor_pid_bitmap, trace);
     } else {
       unset_bit_in_bitmap(pid, handler->editor_pid_bitmap);
+    }
+
+    if (!is_in_set(file_path, handler->handled_executables)) {
+      char *interpreter = get_elf_interpreter(fd, trace);
+      if (ok(trace) && interpreter) {
+        add_to_set(interpreter, handler->elf_interpeters, trace);
+        free(interpreter);
+      }
     }
   }
   free(file_path);
@@ -196,6 +222,8 @@ void free_handler(struct handler *handler) {
     free_linq(handler->linq);
     free_store(handler->store);
     free_bitmap(handler->editor_pid_bitmap);
+    free_set(handler->elf_interpeters);
+    free_set(handler->handled_executables);
     free(handler);
   }
 }

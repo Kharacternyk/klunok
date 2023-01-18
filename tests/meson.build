@@ -21,7 +21,7 @@ foreach component: components
   if component == 'config-lua' and not lua.found()
     continue
   endif
-  if component in ['config-lua', 'store', 'parents', 'linq', 'handler']
+  if component in ['config-lua', 'store', 'parents', 'linq', 'handler', 'elfinterp']
     c_args += '-DTEST_ROOT="' + meson.current_source_dir() + '"'
   endif
   if component.startswith('config-') or component in ['store', 'linq']
