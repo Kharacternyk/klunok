@@ -6,25 +6,29 @@
 
 char *deref_fd(int fd, size_t length_guess, struct trace *trace) {
   size_t max_size = length_guess + 1;
-  char *link = NULL;
-  char *target = NULL;
 
   for (;;) {
     char *link = malloc(max_size);
     if (!link) {
-      goto fail;
+      trace_errno(trace);
+      return NULL;
     }
 
     char *target = malloc(max_size);
     if (!target) {
-      goto fail;
+      trace_errno(trace);
+      free(link);
+      return NULL;
     }
 
     if (snprintf(link, max_size, "/proc/self/fd/%d", fd) <= max_size) {
       int length = readlink(link, target, max_size);
 
       if (length < 0) {
-        goto fail;
+        trace_errno(trace);
+        free(link);
+        free(target);
+        return NULL;
       }
       if (length < max_size) {
         free(link);
@@ -37,10 +41,4 @@ char *deref_fd(int fd, size_t length_guess, struct trace *trace) {
     free(target);
     max_size *= 2;
   }
-
-fail:
-  trace_errno(trace);
-  free(link);
-  free(target);
-  return NULL;
 }

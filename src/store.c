@@ -51,15 +51,14 @@ void copy_to_store(const char *filesystem_path, const char *version,
                    const struct store *store, struct trace *trace) {
   char *store_path = get_store_path(filesystem_path, version, store);
   if (!store_path) {
-    trace_errno(trace);
-    return;
+    return trace_errno(trace);
   }
 
   create_parents(store_path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH,
                  trace);
   if (!ok(trace)) {
     remove_empty_parents(store_path, trace);
-    goto path_cleanup;
+    return free(store_path);
   }
 
   int in_fd = open(filesystem_path, O_RDONLY);
@@ -72,7 +71,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
       trace_errno(trace);
     }
     remove_empty_parents(store_path, trace);
-    goto path_cleanup;
+    return free(store_path);
   }
 
   int out_fd = open(store_path, O_CREAT | O_WRONLY | O_TRUNC,
@@ -80,14 +79,17 @@ void copy_to_store(const char *filesystem_path, const char *version,
   if (out_fd < 0) {
     trace_errno(trace);
     remove_empty_parents(store_path, trace);
-    goto in_fd_cleanup;
+    close(in_fd);
+    return free(store_path);
   }
 
   struct stat in_fd_stat;
   if (fstat(in_fd, &in_fd_stat) < 0) {
     trace_errno(trace);
     remove_empty_parents(store_path, trace);
-    goto out_fd_cleanup;
+    close(out_fd);
+    close(in_fd);
+    return free(store_path);
   }
 
   while (in_fd_stat.st_size) {
@@ -97,15 +99,20 @@ void copy_to_store(const char *filesystem_path, const char *version,
     } else {
       trace_errno(trace);
       remove_empty_parents(store_path, trace);
-      goto out_fd_cleanup;
+      close(out_fd);
+      close(in_fd);
+      return free(store_path);
     }
   }
 
-out_fd_cleanup:
-  close(out_fd);
-in_fd_cleanup:
+  if (close(out_fd) < 0) {
+    trace_errno(trace);
+    remove_empty_parents(store_path, trace);
+    close(in_fd);
+    return free(store_path);
+  }
+
   close(in_fd);
-path_cleanup:
   free(store_path);
 }
 

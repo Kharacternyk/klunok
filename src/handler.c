@@ -23,7 +23,7 @@ struct handler {
 };
 
 struct handler *load_handler(const char *config_path, struct trace *trace) {
-  struct handler *handler = malloc(sizeof(struct handler));
+  struct handler *handler = calloc(1, sizeof(struct handler));
   if (!handler) {
     trace_errno(trace);
     return NULL;
@@ -32,30 +32,35 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
   /*FIXME size guesses*/
   handler->elf_interpeters = create_set(1, trace);
   if (!ok(trace)) {
-    goto handler_cleanup;
+    free(handler);
+    return NULL;
   }
 
   handler->handled_executables = create_set(1000, trace);
   if (!ok(trace)) {
-    goto elf_cleanup;
+    free(handler);
+    return NULL;
   }
 
   handler->config_path = strdup(config_path);
   if (!handler->config_path) {
     trace_errno(trace);
-    goto exe_cleanup;
+    free(handler);
+    return NULL;
   }
 
   handler->config = load_config(config_path, trace);
   if (!ok(trace)) {
     trace_static(messages.handler.config.cannot_load, trace);
-    goto path_cleanup;
+    free(handler);
+    return NULL;
   }
 
   handler->store =
       create_store(get_configured_store_root(handler->config), trace);
   if (!ok(trace)) {
-    goto config_cleanup;
+    free(handler);
+    return NULL;
   }
 
   handler->linq =
@@ -63,32 +68,18 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
                 get_configured_debounce_seconds(handler->config), trace);
   if (!ok(trace)) {
     trace_static(messages.handler.linq.cannot_load, trace);
-    goto store_cleanup;
+    free(handler);
+    return NULL;
   }
 
   handler->editor_pid_bitmap =
       create_bitmap(get_configured_max_pid_guess(handler->config), trace);
   if (!ok(trace)) {
-    goto linq_cleanup;
+    free(handler);
+    return NULL;
   }
 
   return handler;
-
-linq_cleanup:
-  free_linq(handler->linq);
-store_cleanup:
-  free_store(handler->store);
-config_cleanup:
-  free_config(handler->config);
-path_cleanup:
-  free(handler->config_path);
-exe_cleanup:
-  free_set(handler->handled_executables);
-elf_cleanup:
-  free_set(handler->elf_interpeters);
-handler_cleanup:
-  free(handler);
-  return NULL;
 }
 
 void handle_open_exec(pid_t pid, int fd, struct handler *handler,
@@ -131,7 +122,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
       /*FIXME*/ strstr(file_path, "/.") == NULL) {
     push_to_linq(file_path, handler->linq, trace);
     if (!ok(trace)) {
-      goto path_cleanup;
+      return free(file_path);
     }
   }
 
@@ -139,7 +130,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
     struct config *new_config = load_config(handler->config_path, trace);
     if (!ok(trace)) {
       trace_static(messages.handler.config.cannot_reload, trace);
-      goto path_cleanup;
+      return free(file_path);
     }
 
     struct linq *new_linq =
@@ -148,7 +139,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
     if (!ok(trace)) {
       trace_static(messages.handler.linq.cannot_reload, trace);
       free_config(new_config);
-      goto path_cleanup;
+      return free(file_path);
     }
 
     struct store *new_store =
@@ -156,7 +147,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
     if (!ok(trace)) {
       free_linq(new_linq);
       free_config(new_config);
-      goto path_cleanup;
+      return free(file_path);
     }
 
     free_config(handler->config);
@@ -166,9 +157,6 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
     free_linq(handler->linq);
     handler->linq = new_linq;
   }
-
-path_cleanup:
-  free(file_path);
 }
 
 void handle_timeout(struct handler *handler, time_t *retry_after_seconds,

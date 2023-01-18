@@ -21,7 +21,7 @@ struct config {
 };
 
 struct config *load_config(const char *path, struct trace *trace) {
-  struct config *config = malloc(sizeof(struct config));
+  struct config *config = calloc(1, sizeof(struct config));
   if (!config) {
     trace_errno(trace);
     return NULL;
@@ -30,23 +30,19 @@ struct config *load_config(const char *path, struct trace *trace) {
   size_t editors_length = sizeof editors / sizeof editors[0];
   config->editors = create_set(editors_length, trace);
   if (!ok(trace)) {
-    goto config_cleanup;
+    free_config(config);
+    return NULL;
   }
 
   for (size_t i = 0; i < editors_length; ++i) {
     add_to_set(editors[i], config->editors, trace);
     if (!ok(trace)) {
-      goto editors_cleanup;
+      free_config(config);
+      return NULL;
     }
   }
 
   return config;
-
-editors_cleanup:
-  free_set(config->editors);
-config_cleanup:
-  free(config);
-  return NULL;
 }
 
 const struct set *get_configured_editors(const struct config *config) {

@@ -60,7 +60,7 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 }
 
 struct config *load_config(const char *path, struct trace *trace) {
-  struct config *config = malloc(sizeof(struct config));
+  struct config *config = calloc(1, sizeof(struct config));
   if (!config) {
     trace_errno(trace);
     return NULL;
@@ -80,27 +80,37 @@ struct config *load_config(const char *path, struct trace *trace) {
                       "validation") ||
       lua_pcall(lua, 0, 0, 0)) {
     trace_dynamic(lua_tostring(lua, -1), trace);
-    goto config_cleanup;
+    lua_close(lua);
+    free_config(config);
+    return NULL;
   }
 
   config->editors = read_lua_set(lua, "editors", trace);
   if (!ok(trace)) {
-    goto config_cleanup;
+    lua_close(lua);
+    free_config(config);
+    return NULL;
   }
 
   config->store_root = read_lua_string(lua, "store_root", trace);
   if (!ok(trace)) {
-    goto editors_cleanup;
+    lua_close(lua);
+    free_config(config);
+    return NULL;
   }
 
   config->queue_path = read_lua_string(lua, "queue_path", trace);
   if (!ok(trace)) {
-    goto store_cleanup;
+    lua_close(lua);
+    free_config(config);
+    return NULL;
   }
 
   config->version_pattern = read_lua_string(lua, "version_pattern", trace);
   if (!ok(trace)) {
-    goto queue_cleanup;
+    lua_close(lua);
+    free_config(config);
+    return NULL;
   }
 
   config->debounce_seconds = read_lua_size(lua, "debounce_seconds");
@@ -110,17 +120,6 @@ struct config *load_config(const char *path, struct trace *trace) {
 
   lua_close(lua);
   return config;
-
-queue_cleanup:
-  free(config->queue_path);
-store_cleanup:
-  free(config->store_root);
-editors_cleanup:
-  free_set(config->editors);
-config_cleanup:
-  free(config);
-  lua_close(lua);
-  return NULL;
 }
 
 const struct set *get_configured_editors(const struct config *config) {
