@@ -29,19 +29,6 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
     return NULL;
   }
 
-  /*FIXME size guesses*/
-  handler->elf_interpreters = create_set(1, trace);
-  if (!ok(trace)) {
-    free(handler);
-    return NULL;
-  }
-
-  handler->handled_executables = create_set(1000, trace);
-  if (!ok(trace)) {
-    free(handler);
-    return NULL;
-  }
-
   handler->config_path = strdup(config_path);
   if (!handler->config_path) {
     trace_errno(trace);
@@ -52,6 +39,20 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
   handler->config = load_config(config_path, trace);
   if (!ok(trace)) {
     trace_static(messages.handler.config.cannot_load, trace);
+    free(handler);
+    return NULL;
+  }
+
+  handler->elf_interpreters = create_set(
+      get_configured_elf_interpreter_count_guess(handler->config), trace);
+  if (!ok(trace)) {
+    free(handler);
+    return NULL;
+  }
+
+  handler->handled_executables =
+      create_set(get_configured_executable_count_guess(handler->config), trace);
+  if (!ok(trace)) {
     free(handler);
     return NULL;
   }

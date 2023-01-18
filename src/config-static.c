@@ -9,6 +9,8 @@ static const size_t debounce_seconds = 60;
 static const size_t version_max_length = 80;
 static const size_t path_length_guess = 1024;
 static const pid_t max_pid_guess = 1 << 16;
+static const size_t elf_interpreter_count_guess = 1;
+static const size_t executable_count_guess = 128;
 static const char *const editors[] = {
     "vi",
     "vim",
@@ -75,6 +77,14 @@ size_t get_configured_path_length_guess(const struct config *config) {
 
 pid_t get_configured_max_pid_guess(const struct config *config) {
   return max_pid_guess;
+}
+
+size_t get_configured_elf_interpreter_count_guess(const struct config *config) {
+  return elf_interpreter_count_guess;
+}
+
+size_t get_configured_executable_count_guess(const struct config *config) {
+  return executable_count_guess;
 }
 
 void free_config(struct config *config) {
