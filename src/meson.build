@@ -10,6 +10,7 @@ components = [
   'trace',
   'messages',
   'elfinterp',
+  'builder',
   'config-lua',
   'config-static',
 ]
