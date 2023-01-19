@@ -70,12 +70,10 @@ int main(int argc, const char **argv) {
     return unwind(trace);
   }
   if (config_stat.st_uid == 0) {
-    trace_errno(trace);
     trace_static("Configuration file must not be owned by root", trace);
     return unwind(trace);
   }
   if (config_stat.st_gid == 0) {
-    trace_errno(trace);
     trace_static("Configuration file must not be owned by the root group",
                  trace);
     return unwind(trace);
