@@ -9,7 +9,7 @@ void create_parents(const char *original_path, mode_t mode,
                     struct trace *trace) {
   char *path = strdup(original_path);
   if (!path) {
-    trace_errno(trace);
+    throw_errno(trace);
     return;
   }
 
@@ -22,7 +22,7 @@ void create_parents(const char *original_path, mode_t mode,
   while (slash) {
     *slash = 0;
     if (mkdir(path, mode) < 0 && errno != EEXIST) {
-      trace_errno(trace);
+      throw_errno(trace);
       free(path);
       return;
     }
@@ -37,7 +37,7 @@ void create_parents(const char *original_path, mode_t mode,
 void remove_empty_parents(const char *original_path, struct trace *trace) {
   char *path = strdup(original_path);
   if (!path) {
-    trace_errno(trace);
+    throw_errno(trace);
     return;
   }
 
@@ -47,7 +47,7 @@ void remove_empty_parents(const char *original_path, struct trace *trace) {
     *slash = 0;
     if (rmdir(path) < 0) {
       if (errno != ENOTEMPTY) {
-        trace_errno(trace);
+        throw_errno(trace);
       }
       free(path);
       return;

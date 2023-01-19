@@ -25,7 +25,7 @@ struct config {
 struct config *load_config(const char *path, struct trace *trace) {
   struct config *config = calloc(1, sizeof(struct config));
   if (!config) {
-    trace_errno(trace);
+    throw_errno(trace);
     return NULL;
   }
 

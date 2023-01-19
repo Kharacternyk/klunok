@@ -29,11 +29,11 @@ int main() {
 
   load_config(TEST_ROOT "/configs/broken-semantics.lua", trace);
   assert(!ok(trace));
-  clear(trace);
+  catch_all(trace);
 
   load_config(TEST_ROOT "/configs/broken-syntax.lua", trace);
   assert(!ok(trace));
-  clear(trace);
+  catch_all(trace);
 
   free(trace);
 }

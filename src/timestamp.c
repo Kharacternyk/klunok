@@ -8,7 +8,7 @@ char *get_timestamp(const char *format, size_t max_length,
   time_t t = time(NULL);
   struct tm *tm = localtime(&t);
   if (!tm) {
-    trace_errno(trace);
+    throw_errno(trace);
     return NULL;
   }
 
@@ -18,7 +18,7 @@ char *get_timestamp(const char *format, size_t max_length,
 
   if (actual_length <= 0) {
     if (actual_length == 0) {
-      trace_static(messages.timestamp.overflow, trace);
+      throw_static(messages.timestamp.overflow, trace);
     }
     free(timestamp);
     return NULL;

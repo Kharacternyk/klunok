@@ -16,13 +16,13 @@ struct set *create_set(size_t size_guess, struct trace *trace) {
   size_t size = size_guess * 2 + 2;
   struct entry **entries = calloc(size, sizeof(struct entry *));
   if (!entries) {
-    trace_errno(trace);
+    throw_errno(trace);
     return NULL;
   }
 
   struct set *set = malloc(sizeof(struct set));
   if (!set) {
-    trace_errno(trace);
+    throw_errno(trace);
     free(entries);
     return NULL;
   }
@@ -70,13 +70,13 @@ void add_to_set(const char *value, struct set *set, struct trace *trace) {
 
   char *value_copy = strdup(value);
   if (!value_copy) {
-    trace_errno(trace);
+    throw_errno(trace);
     return;
   }
 
   struct entry *new_entry = malloc(sizeof(struct entry));
   if (!new_entry) {
-    trace_errno(trace);
+    throw_errno(trace);
     free(value_copy);
     return;
   }

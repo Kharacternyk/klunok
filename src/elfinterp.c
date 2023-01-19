@@ -17,7 +17,7 @@ char *get_elf_interpreter(int exe_fd, struct trace *trace) {
   while (total_read < sizeof elf_header) {
     ssize_t iter_read = read(exe_fd, &elf_header, sizeof elf_header);
     if (iter_read < 0) {
-      trace_errno(trace);
+      throw_errno(trace);
       return NULL;
     }
     if (iter_read == 0) {
@@ -40,7 +40,7 @@ char *get_elf_interpreter(int exe_fd, struct trace *trace) {
     while (total_read < sizeof program_header) {
       ssize_t iter_read = read(exe_fd, &program_header, sizeof program_header);
       if (iter_read < 0) {
-        trace_errno(trace);
+        throw_errno(trace);
         return NULL;
       }
       if (iter_read == 0) {
@@ -62,7 +62,7 @@ char *get_elf_interpreter(int exe_fd, struct trace *trace) {
       while (total_read < program_header.p_filesz) {
         ssize_t iter_read = read(exe_fd, result, program_header.p_filesz);
         if (iter_read < 0) {
-          trace_errno(trace);
+          throw_errno(trace);
           return NULL;
         }
         if (iter_read == 0) {

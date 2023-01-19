@@ -25,20 +25,20 @@ struct handler {
 struct handler *load_handler(const char *config_path, struct trace *trace) {
   struct handler *handler = calloc(1, sizeof(struct handler));
   if (!handler) {
-    trace_errno(trace);
+    throw_errno(trace);
     return NULL;
   }
 
   handler->config_path = strdup(config_path);
   if (!handler->config_path) {
-    trace_errno(trace);
+    throw_errno(trace);
     free(handler);
     return NULL;
   }
 
   handler->config = load_config(config_path, trace);
   if (!ok(trace)) {
-    trace_static(messages.handler.config.cannot_load, trace);
+    throw_static(messages.handler.config.cannot_load, trace);
     free(handler);
     return NULL;
   }
@@ -68,7 +68,7 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
       load_linq(get_configured_queue_path(handler->config),
                 get_configured_debounce_seconds(handler->config), trace);
   if (!ok(trace)) {
-    trace_static(messages.handler.linq.cannot_load, trace);
+    throw_static(messages.handler.linq.cannot_load, trace);
     free(handler);
     return NULL;
   }
@@ -123,7 +123,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
       /*FIXME*/ strstr(file_path, "/.") == NULL) {
     push_to_linq(file_path, handler->linq, trace);
     if (!ok(trace)) {
-      trace_static(messages.handler.linq.cannot_push, trace);
+      throw_static(messages.handler.linq.cannot_push, trace);
       return free(file_path);
     }
   }
@@ -131,7 +131,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   if (!strcmp(file_path, handler->config_path)) {
     struct config *new_config = load_config(handler->config_path, trace);
     if (!ok(trace)) {
-      trace_static(messages.handler.config.cannot_reload, trace);
+      throw_static(messages.handler.config.cannot_reload, trace);
       return free(file_path);
     }
 
@@ -139,7 +139,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
         load_linq(get_configured_queue_path(new_config),
                   get_configured_debounce_seconds(new_config), trace);
     if (!ok(trace)) {
-      trace_static(messages.handler.linq.cannot_reload, trace);
+      throw_static(messages.handler.linq.cannot_reload, trace);
       free_config(new_config);
       return free(file_path);
     }
@@ -171,7 +171,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
         handler->linq, get_configured_path_length_guess(handler->config),
         retry_after_seconds, trace);
     if (!ok(trace)) {
-      trace_static(messages.handler.linq.cannot_pop, trace);
+      throw_static(messages.handler.linq.cannot_pop, trace);
       return;
     }
     if (*retry_after_seconds) {
@@ -186,20 +186,18 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       return;
     }
     if (strchr(version, '/')) {
-      trace_static(messages.handler.version.has_slashes, trace);
+      throw_static(messages.handler.version.has_slashes, trace);
       free(path);
       return;
     }
 
     copy_to_store(path, version, handler->store, trace);
-    if (get_trace_message(trace) == messages.store.copy.file_does_not_exist ||
-        get_trace_message(trace) == messages.store.copy.permission_denied ||
-        get_trace_message(trace) ==
-            messages.store.copy.version_already_exists) {
-      pop_trace_message(trace);
-    }
+    catch_static(messages.store.copy.file_does_not_exist, trace);
+    catch_static(messages.store.copy.permission_denied, trace);
+    catch_static(messages.store.copy.version_already_exists, trace);
+
     if (!ok(trace)) {
-      trace_static(messages.handler.store.cannot_copy, trace);
+      throw_static(messages.handler.store.cannot_copy, trace);
       free(path);
       free(version);
       return;

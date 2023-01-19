@@ -26,9 +26,7 @@ int main() {
   unlink(FILE_COPY);
 
   copy_to_store(MISSING_FILE, FILE_VERSION, store, trace);
-  assert(!ok(trace));
-  assert(get_trace_message(trace) == messages.store.copy.file_does_not_exist);
-  clear(trace);
+  assert(catch_static(messages.store.copy.file_does_not_exist, trace));
 
   free(trace);
   free_store(store);

@@ -34,7 +34,7 @@ static char *stringify(size_t value, struct trace *trace) {
   size_t size = length + 1;
   char *result = malloc(size);
   if (!result) {
-    trace_errno(trace);
+    throw_errno(trace);
     return NULL;
   }
   snprintf(result, size, "%zd", value);
@@ -48,7 +48,7 @@ static void create_linq_path(const char *path, struct trace *trace) {
     return;
   }
   if (mkdir(path, mode) < 0) {
-    trace_errno(trace);
+    throw_errno(trace);
   }
 }
 
@@ -73,13 +73,13 @@ static struct linq *load_or_create_linq(const char *path,
       }
       return load_or_create_linq(path, debounce_seconds, false, trace);
     }
-    trace_errno(trace);
+    throw_errno(trace);
     return NULL;
   }
 
   struct linq *linq = malloc(sizeof(struct linq));
   if (!linq) {
-    trace_errno(trace);
+    throw_errno(trace);
     free_entries(entries, entry_count);
     return NULL;
   }
@@ -95,7 +95,7 @@ static struct linq *load_or_create_linq(const char *path,
 
   linq->dirfd = open(path, O_DIRECTORY);
   if (linq->dirfd < 0) {
-    trace_errno(trace);
+    throw_errno(trace);
     free(linq);
     free_entries(entries, entry_count);
     return NULL;
@@ -118,7 +118,7 @@ void push_to_linq(const char *path, struct linq *linq, struct trace *trace) {
   }
 
   if (symlinkat(path, linq->dirfd, link_name) < 0) {
-    trace_errno(trace);
+    throw_errno(trace);
   } else {
     ++linq->size;
   }
@@ -140,7 +140,7 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
 
   struct stat link_stat;
   if (fstatat(linq->dirfd, link_name, &link_stat, AT_SYMLINK_NOFOLLOW) < 0) {
-    trace_errno(trace);
+    throw_errno(trace);
     free(link_name);
     return NULL;
   }
@@ -155,7 +155,7 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
   if (fstatat(linq->dirfd, link_name, &target_stat, 0) < 0 ||
       target_stat.st_mtime > link_stat.st_mtime) {
     if (unlinkat(linq->dirfd, link_name, 0) < 0) {
-      trace_errno(trace);
+      throw_errno(trace);
       free(link_name);
       return NULL;
     }
@@ -169,7 +169,7 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
   for (;;) {
     char *target = malloc(max_size);
     if (!target) {
-      trace_errno(trace);
+      throw_errno(trace);
       free(link_name);
       return NULL;
     }
@@ -177,14 +177,14 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
     int length = readlinkat(linq->dirfd, link_name, target, max_size);
 
     if (length < 0) {
-      trace_errno(trace);
+      throw_errno(trace);
       free(link_name);
       free(target);
       return NULL;
     }
     if (length < max_size) {
       if (unlinkat(linq->dirfd, link_name, 0) < 0) {
-        trace_errno(trace);
+        throw_errno(trace);
         free(link_name);
         free(target);
         return NULL;

@@ -33,7 +33,7 @@ static char *read_lua_string(lua_State *lua, const char *name,
   lua_getglobal(lua, name);
   char *string = strdup(lua_tostring(lua, -1));
   if (!string) {
-    trace_errno(trace);
+    throw_errno(trace);
   }
   return string;
 }
@@ -64,7 +64,7 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 struct config *load_config(const char *path, struct trace *trace) {
   struct config *config = calloc(1, sizeof(struct config));
   if (!config) {
-    trace_errno(trace);
+    throw_errno(trace);
     return NULL;
   }
 
@@ -81,7 +81,7 @@ struct config *load_config(const char *path, struct trace *trace) {
                           &_binary_lua_validation_lua_start,
                       "validation") ||
       lua_pcall(lua, 0, 0, 0)) {
-    trace_dynamic(lua_tostring(lua, -1), trace);
+    throw_dynamic(lua_tostring(lua, -1), trace);
     lua_close(lua);
     free_config(config);
     return NULL;

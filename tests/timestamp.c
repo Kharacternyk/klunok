@@ -27,9 +27,7 @@ int main() {
   free(timestamp);
 
   timestamp = get_timestamp("%Y", 3, trace);
-  assert(!ok(trace));
-  assert(get_trace_message(trace) == messages.timestamp.overflow);
-  clear(trace);
+  assert(catch_static(messages.timestamp.overflow, trace));
   free(trace);
   free(timestamp);
 }

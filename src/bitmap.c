@@ -11,13 +11,13 @@ struct bitmap {
 struct bitmap *create_bitmap(size_t size_guess, struct trace *trace) {
   struct bitmap *bitmap = malloc(sizeof(struct bitmap));
   if (!bitmap) {
-    trace_errno(trace);
+    throw_errno(trace);
     return NULL;
   }
 
   bool *array = calloc(size_guess, sizeof(bool));
   if (!array) {
-    trace_errno(trace);
+    throw_errno(trace);
     free(bitmap);
     return NULL;
   }
@@ -33,7 +33,7 @@ void set_bit_in_bitmap(size_t bit, struct bitmap *bitmap, struct trace *trace) {
     size_t new_size = bit * 2;
     bool *new_array = calloc(new_size, sizeof(bool));
     if (!new_array) {
-      trace_errno(trace);
+      throw_errno(trace);
       return;
     }
     memcpy(new_array, bitmap->array, bitmap->size);

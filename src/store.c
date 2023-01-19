@@ -19,13 +19,13 @@ struct store {
 struct store *create_store(const char *root, struct trace *trace) {
   struct store *store = malloc(sizeof(struct store));
   if (!store) {
-    trace_errno(trace);
+    throw_errno(trace);
     return NULL;
   }
 
   store->root = strdup(root);
   if (!store->root) {
-    trace_errno(trace);
+    throw_errno(trace);
     free(store);
     return NULL;
   }
@@ -51,7 +51,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
                    const struct store *store, struct trace *trace) {
   char *store_path = get_store_path(filesystem_path, version, store);
   if (!store_path) {
-    return trace_errno(trace);
+    return throw_errno(trace);
   }
 
   create_parents(store_path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH,
@@ -64,11 +64,11 @@ void copy_to_store(const char *filesystem_path, const char *version,
   int in_fd = open(filesystem_path, O_RDONLY);
   if (in_fd < 0) {
     if (errno == ENOENT) {
-      trace_static(messages.store.copy.file_does_not_exist, trace);
+      throw_static(messages.store.copy.file_does_not_exist, trace);
     } else if (errno == EACCES) {
-      trace_static(messages.store.copy.permission_denied, trace);
+      throw_static(messages.store.copy.permission_denied, trace);
     } else {
-      trace_errno(trace);
+      throw_errno(trace);
     }
     remove_empty_parents(store_path, trace);
     return free(store_path);
@@ -78,9 +78,9 @@ void copy_to_store(const char *filesystem_path, const char *version,
                     S_IRUSR | S_IRGRP | S_IROTH);
   if (out_fd < 0) {
     if (errno == EEXIST) {
-      trace_static(messages.store.copy.version_already_exists, trace);
+      throw_static(messages.store.copy.version_already_exists, trace);
     } else {
-      trace_errno(trace);
+      throw_errno(trace);
     }
     remove_empty_parents(store_path, trace);
     close(in_fd);
@@ -89,7 +89,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
 
   struct stat in_fd_stat;
   if (fstat(in_fd, &in_fd_stat) < 0) {
-    trace_errno(trace);
+    throw_errno(trace);
     remove_empty_parents(store_path, trace);
     close(out_fd);
     close(in_fd);
@@ -101,7 +101,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
     if (written_size > 0) {
       in_fd_stat.st_size -= written_size;
     } else {
-      trace_errno(trace);
+      throw_errno(trace);
       remove_empty_parents(store_path, trace);
       close(out_fd);
       close(in_fd);
@@ -110,7 +110,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
   }
 
   if (close(out_fd) < 0) {
-    trace_errno(trace);
+    throw_errno(trace);
     remove_empty_parents(store_path, trace);
     close(in_fd);
     return free(store_path);

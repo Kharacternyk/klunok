@@ -41,7 +41,7 @@ void pop_trace_message(struct trace *trace) {
   trace->head = new_head;
 }
 
-void trace_static(const char *message, struct trace *trace) {
+void throw_static(const char *message, struct trace *trace) {
   assert(message);
   assert(trace);
   struct frame *frame = malloc(sizeof(struct frame));
@@ -55,7 +55,7 @@ void trace_static(const char *message, struct trace *trace) {
   trace->head = frame;
 }
 
-void trace_dynamic(const char *message, struct trace *trace) {
+void throw_dynamic(const char *message, struct trace *trace) {
   assert(message);
   assert(trace);
   struct frame *frame = malloc(sizeof(struct frame));
@@ -74,7 +74,7 @@ void trace_dynamic(const char *message, struct trace *trace) {
   trace->head = frame;
 }
 
-void trace_errno(struct trace *trace) { trace_dynamic(strerror(errno), trace); }
+void throw_errno(struct trace *trace) { throw_dynamic(strerror(errno), trace); }
 
 size_t get_dropped_trace_message_count(const struct trace *trace) {
   assert(trace);
@@ -86,7 +86,22 @@ bool ok(const struct trace *trace) {
   return !trace->head && !trace->dropped_frame_count;
 }
 
-void clear(struct trace *trace) {
+bool catch_static(const char *message, struct trace *trace) {
+  assert(message);
+  assert(trace);
+  if (trace->dropped_frame_count) {
+    return false;
+  }
+  if (trace->head && !trace->head->is_dynamic) {
+    while (trace->head) {
+      pop_trace_message(trace);
+    }
+    return true;
+  }
+  return false;
+}
+
+void catch_all(struct trace *trace) {
   assert(trace);
   trace->dropped_frame_count = 0;
   while (trace->head) {

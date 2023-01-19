@@ -10,13 +10,13 @@ char *deref_fd(int fd, size_t length_guess, struct trace *trace) {
   for (;;) {
     char *link = malloc(max_size);
     if (!link) {
-      trace_errno(trace);
+      throw_errno(trace);
       return NULL;
     }
 
     char *target = malloc(max_size);
     if (!target) {
-      trace_errno(trace);
+      throw_errno(trace);
       free(link);
       return NULL;
     }
@@ -25,7 +25,7 @@ char *deref_fd(int fd, size_t length_guess, struct trace *trace) {
       int length = readlink(link, target, max_size);
 
       if (length < 0) {
-        trace_errno(trace);
+        throw_errno(trace);
         free(link);
         free(target);
         return NULL;

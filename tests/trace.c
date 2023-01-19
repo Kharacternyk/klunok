@@ -13,10 +13,10 @@ int main() {
   const char *a = "abc";
   const char *b = "XYZ";
 
-  trace_static(a, trace);
-  trace_dynamic(b, trace);
+  throw_static(a, trace);
+  throw_dynamic(b, trace);
   errno = ENOMEM;
-  trace_errno(trace);
+  throw_errno(trace);
 
   assert(!ok(trace));
 
@@ -31,11 +31,18 @@ int main() {
   pop_trace_message(trace);
   assert(!get_trace_message(trace));
 
-  trace_static(a, trace);
-  trace_static(a, trace);
-  trace_static(a, trace);
+  throw_static(a, trace);
+  throw_static(b, trace);
+  throw_static(a, trace);
   assert(!ok(trace));
-  clear(trace);
+  catch_all(trace);
+  assert(ok(trace));
+
+  throw_static(a, trace);
+  throw_static(b, trace);
+  throw_static(a, trace);
+  assert(!ok(trace));
+  assert(catch_static(a, trace));
   assert(ok(trace));
 
   free(trace);
