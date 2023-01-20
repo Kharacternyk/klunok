@@ -9,20 +9,12 @@ struct bitmap {
 };
 
 struct bitmap *create_bitmap(size_t size_guess, struct trace *trace) {
+  struct bitmap *bitmap = TNULL(malloc(sizeof(struct bitmap)), trace);
+  bool *array = TNULL(calloc(size_guess, sizeof(bool)), trace);
+
   if (!ok(trace)) {
-    return NULL;
-  }
-
-  struct bitmap *bitmap = malloc(sizeof(struct bitmap));
-  if (!bitmap) {
-    throw_errno(trace);
-    return NULL;
-  }
-
-  bool *array = calloc(size_guess, sizeof(bool));
-  if (!array) {
-    throw_errno(trace);
     free(bitmap);
+    free(array);
     return NULL;
   }
 
@@ -33,15 +25,10 @@ struct bitmap *create_bitmap(size_t size_guess, struct trace *trace) {
 }
 
 void set_bit_in_bitmap(size_t bit, struct bitmap *bitmap, struct trace *trace) {
-  if (!ok(trace)) {
-    return;
-  }
-
   if (bit >= bitmap->size) {
     size_t new_size = bit * 2;
-    bool *new_array = calloc(new_size, sizeof(bool));
-    if (!new_array) {
-      throw_errno(trace);
+    bool *new_array = TNULL(calloc(new_size, sizeof(bool)), trace);
+    if (!ok(trace)) {
       return;
     }
     memcpy(new_array, bitmap->array, bitmap->size);

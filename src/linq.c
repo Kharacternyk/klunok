@@ -30,17 +30,9 @@ static int compare(const struct dirent **first, const struct dirent **second) {
 }
 
 static void create_linq_path(const char *path, struct trace *trace) {
-  if (!ok(trace)) {
-    return;
-  }
   mode_t mode = S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH;
   create_parents(path, mode, trace);
-  if (!ok(trace)) {
-    return;
-  }
-  if (mkdir(path, mode) < 0) {
-    throw_errno(trace);
-  }
+  TNEG(mkdir(path, mode), trace);
 }
 
 static void free_entries(struct dirent **entries, size_t entry_count) {
@@ -68,9 +60,10 @@ static struct linq *load_or_create_linq(const char *path,
     return NULL;
   }
 
-  struct linq *linq = malloc(sizeof(struct linq));
-  if (!linq) {
-    throw_errno(trace);
+  struct linq *linq = TNULL(malloc(sizeof(struct linq)), trace);
+  int dirfd = TNEG(open(path, O_DIRECTORY), trace);
+  if (!ok(trace)) {
+    free(linq);
     free_entries(entries, entry_count);
     return NULL;
   }
@@ -81,16 +74,9 @@ static struct linq *load_or_create_linq(const char *path,
     linq->head_index = 0;
   }
 
+  linq->dirfd = dirfd;
   linq->size = entry_count;
   linq->debounce_seconds = debounce_seconds;
-
-  linq->dirfd = open(path, O_DIRECTORY);
-  if (linq->dirfd < 0) {
-    throw_errno(trace);
-    free(linq);
-    free_entries(entries, entry_count);
-    return NULL;
-  }
 
   free_entries(entries, entry_count);
 
@@ -105,16 +91,12 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
 void push_to_linq(const char *path, struct linq *linq, struct trace *trace) {
   struct builder *link_builder = create_builder(trace);
   concat_size(linq->head_index + linq->size, link_builder, trace);
+  TNEG(symlinkat(path, linq->dirfd, build_string(link_builder)), trace);
   if (!ok(trace)) {
     return free_builder(link_builder);
   }
 
-  if (symlinkat(path, linq->dirfd, build_string(link_builder)) < 0) {
-    throw_errno(trace);
-  } else {
-    ++linq->size;
-  }
-
+  ++linq->size;
   free_builder(link_builder);
 }
 
@@ -130,18 +112,15 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
 
   struct builder *link_builder = create_builder(trace);
   concat_size(linq->head_index, link_builder, trace);
+  struct stat link_stat;
+  TNEG(fstatat(linq->dirfd, build_string(link_builder), &link_stat,
+               AT_SYMLINK_NOFOLLOW),
+       trace);
   if (!ok(trace)) {
     free_builder(link_builder);
     return NULL;
   }
 
-  struct stat link_stat;
-  if (fstatat(linq->dirfd, build_string(link_builder), &link_stat,
-              AT_SYMLINK_NOFOLLOW) < 0) {
-    throw_errno(trace);
-    free_builder(link_builder);
-    return NULL;
-  }
   time_t link_age = time(NULL) - link_stat.st_mtime;
   if (link_age < linq->debounce_seconds) {
     *retry_after_seconds = linq->debounce_seconds - link_age;
@@ -152,8 +131,8 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
   struct stat target_stat;
   if (fstatat(linq->dirfd, build_string(link_builder), &target_stat, 0) < 0 ||
       target_stat.st_mtime > link_stat.st_mtime) {
-    if (unlinkat(linq->dirfd, build_string(link_builder), 0) < 0) {
-      throw_errno(trace);
+    TNEG(unlinkat(linq->dirfd, build_string(link_builder), 0), trace);
+    if (!ok(trace)) {
       free_builder(link_builder);
       return NULL;
     }
@@ -165,25 +144,19 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
 
   size_t max_size = length_guess + 1;
   for (;;) {
-    char *target = malloc(max_size);
-    if (!target) {
-      throw_errno(trace);
-      free_builder(link_builder);
-      return NULL;
-    }
+    char *target = TNULL(malloc(max_size), trace);
+    int length = TNEG(
+        readlinkat(linq->dirfd, build_string(link_builder), target, max_size),
+        trace);
 
-    int length =
-        readlinkat(linq->dirfd, build_string(link_builder), target, max_size);
-
-    if (length < 0) {
-      throw_errno(trace);
+    if (!ok(trace)) {
       free_builder(link_builder);
       free(target);
       return NULL;
     }
     if (length < max_size) {
-      if (unlinkat(linq->dirfd, build_string(link_builder), 0) < 0) {
-        throw_errno(trace);
+      TNEG(unlinkat(linq->dirfd, build_string(link_builder), 0), trace);
+      if (!ok(trace)) {
         free_builder(link_builder);
         free(target);
         return NULL;

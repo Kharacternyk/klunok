@@ -17,24 +17,15 @@ struct store {
 };
 
 struct store *create_store(const char *root, struct trace *trace) {
+  struct store *store = TNULL(malloc(sizeof(struct store)), trace);
+  char *root_copy = TNULL(strdup(root), trace);
   if (!ok(trace)) {
-    return NULL;
-  }
-
-  struct store *store = malloc(sizeof(struct store));
-  if (!store) {
-    throw_errno(trace);
-    return NULL;
-  }
-
-  store->root = strdup(root);
-  if (!store->root) {
-    throw_errno(trace);
     free(store);
     return NULL;
   }
 
   store->root_length = strlen(root);
+  store->root = root_copy;
   return store;
 }
 

@@ -5,24 +5,15 @@
 
 char *get_timestamp(const char *format, size_t max_length,
                     struct trace *trace) {
-  if (!ok(trace)) {
-    return NULL;
-  }
   time_t t = time(NULL);
-  struct tm *tm = localtime(&t);
-  if (!tm) {
-    throw_errno(trace);
-    return NULL;
-  }
-
+  struct tm *tm = TNULL(localtime(&t), trace);
   size_t max_size = max_length + 1;
-  char *timestamp = malloc(max_size);
-  size_t actual_length = strftime(timestamp, max_size, format, tm);
+  char *timestamp = TNULL(malloc(max_size), trace);
 
-  if (actual_length <= 0) {
-    if (actual_length == 0) {
-      throw_static(messages.timestamp.overflow, trace);
-    }
+  if (!TNEG(strftime(timestamp, max_size, format, tm), trace)) {
+    throw_static(messages.timestamp.overflow, trace);
+  }
+  if (!ok(trace)) {
     free(timestamp);
     return NULL;
   }

@@ -9,21 +9,15 @@ struct builder {
 };
 
 struct builder *create_builder(struct trace *trace) {
+  struct builder *builder = TNULL(malloc(sizeof(struct builder)), trace);
+  char *buffer = TNULL(calloc(1, sizeof(char)), trace);
   if (!ok(trace)) {
-    return NULL;
-  }
-  struct builder *builder = malloc(sizeof(struct builder));
-  if (!builder) {
-    throw_errno(trace);
+    free(builder);
+    free(buffer);
     return NULL;
   }
   builder->size = 1;
-  builder->buffer = calloc(1, sizeof(char));
-  if (!builder->buffer) {
-    throw_errno(trace);
-    free(builder);
-    return NULL;
-  }
+  builder->buffer = buffer;
   return builder;
 }
 
@@ -34,9 +28,10 @@ void concat_string(const char *string, struct builder *builder,
   }
   size_t string_length = strlen(string);
   if (string_length > 0) {
-    char *new_buffer = realloc(builder->buffer, builder->size + string_length);
-    if (!new_buffer) {
-      return throw_errno(trace);
+    char *new_buffer =
+        TNULL(realloc(builder->buffer, builder->size + string_length), trace);
+    if (!ok(trace)) {
+      return;
     }
     strcat(new_buffer, string);
     builder->buffer = new_buffer;
@@ -45,12 +40,13 @@ void concat_string(const char *string, struct builder *builder,
 }
 
 void concat_size(size_t size, struct builder *builder, struct trace *trace) {
-  if (!ok(trace)) {
-    return;
-  }
   if (!size) {
     return concat_string("0", builder, trace);
   }
+  if (!ok(trace)) {
+    return;
+  }
+  size_t saved_length = get_builder_length(builder);
 
   size_t power_of_ten = 1;
   while (power_of_ten <= size / 10) {
@@ -61,6 +57,10 @@ void concat_size(size_t size, struct builder *builder, struct trace *trace) {
   while (size) {
     digit[0] = '0' + size / power_of_ten;
     concat_string(digit, builder, trace);
+    if (!ok(trace)) {
+      truncate_builder(saved_length, builder);
+      return;
+    }
     size %= power_of_ten;
     power_of_ten /= 10;
   }

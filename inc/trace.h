@@ -1,6 +1,30 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define TNEG(call, trace)                                                      \
+  ({                                                                           \
+    typeof(call) _tneg_result = -1;                                            \
+    if (ok(trace)) {                                                           \
+      _tneg_result = call;                                                     \
+      if (_tneg_result < 0) {                                                  \
+        throw_errno(trace);                                                    \
+      }                                                                        \
+    }                                                                          \
+    _tneg_result;                                                              \
+  })
+
+#define TNULL(call, trace)                                                     \
+  ({                                                                           \
+    typeof(call) _tnull_result = NULL;                                         \
+    if (ok(trace)) {                                                           \
+      _tnull_result = call;                                                    \
+      if (!_tnull_result) {                                                    \
+        throw_errno(trace);                                                    \
+      }                                                                        \
+    }                                                                          \
+    _tnull_result;                                                             \
+  })
+
 struct trace;
 
 struct trace *create_trace();

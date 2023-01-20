@@ -13,20 +13,10 @@ struct set {
 };
 
 struct set *create_set(size_t size_guess, struct trace *trace) {
-  if (!ok(trace)) {
-    return NULL;
-  }
-
   size_t size = size_guess * 2 + 2;
-  struct entry **entries = calloc(size, sizeof(struct entry *));
-  if (!entries) {
-    throw_errno(trace);
-    return NULL;
-  }
-
-  struct set *set = malloc(sizeof(struct set));
-  if (!set) {
-    throw_errno(trace);
+  struct entry **entries = TNULL(calloc(size, sizeof(struct entry *)), trace);
+  struct set *set = TNULL(malloc(sizeof(struct set)), trace);
+  if (!ok(trace)) {
     free(entries);
     return NULL;
   }
@@ -69,37 +59,24 @@ bool is_in_set(const char *value, const struct set *set) {
 }
 
 void add_to_set(const char *value, struct set *set, struct trace *trace) {
+  char *value_copy = TNULL(strdup(value), trace);
+  struct entry *new_entry = TNULL(malloc(sizeof(struct entry)), trace);
   if (!ok(trace)) {
-    return;
+    return free(value_copy);
   }
 
-  size_t hashed_value = hash(value);
-  struct entry **entry = &(set->entries[hashed_value % set->size]);
-
-  char *value_copy = strdup(value);
-  if (!value_copy) {
-    throw_errno(trace);
-    return;
-  }
-
-  struct entry *new_entry = malloc(sizeof(struct entry));
-  if (!new_entry) {
-    throw_errno(trace);
-    free(value_copy);
-    return;
-  }
   new_entry->next = NULL;
   new_entry->value = value_copy;
 
+  size_t hashed_value = hash(value);
+  struct entry **entry = &(set->entries[hashed_value % set->size]);
   if (!*entry) {
     *entry = new_entry;
     return;
   }
-
   while ((*entry)->next) {
     entry = &((*entry)->next);
   }
-
   (*entry)->next = new_entry;
 }
 

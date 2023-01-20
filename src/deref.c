@@ -16,17 +16,11 @@ char *deref_fd(int fd, size_t length_guess, struct trace *trace) {
   size_t max_size = length_guess + 1;
 
   for (;;) {
-    char *target = malloc(max_size);
-    if (!target) {
-      throw_errno(trace);
-      free_builder(link_builder);
-      return NULL;
-    }
+    char *target = TNULL(malloc(max_size), trace);
+    int length =
+        TNEG(readlink(build_string(link_builder), target, max_size), trace);
 
-    int length = readlink(build_string(link_builder), target, max_size);
-
-    if (length < 0) {
-      throw_errno(trace);
+    if (!ok(trace)) {
       free_builder(link_builder);
       free(target);
       return NULL;

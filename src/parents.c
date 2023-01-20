@@ -7,12 +7,8 @@
 
 void create_parents(const char *original_path, mode_t mode,
                     struct trace *trace) {
+  char *path = TNULL(strdup(original_path), trace);
   if (!ok(trace)) {
-    return;
-  }
-  char *path = strdup(original_path);
-  if (!path) {
-    throw_errno(trace);
     return;
   }
 
@@ -38,12 +34,8 @@ void create_parents(const char *original_path, mode_t mode,
 }
 
 void remove_empty_parents(const char *original_path, struct trace *trace) {
+  char *path = TNULL(strdup(original_path), trace);
   if (!ok(trace)) {
-    return;
-  }
-  char *path = strdup(original_path);
-  if (!path) {
-    throw_errno(trace);
     return;
   }
 

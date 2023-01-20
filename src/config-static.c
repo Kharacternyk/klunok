@@ -24,13 +24,8 @@ struct config {
 };
 
 struct config *load_config(const char *path, struct trace *trace) {
+  struct config *config = TNULL(calloc(1, sizeof(struct config)), trace);
   if (!ok(trace)) {
-    return NULL;
-  }
-
-  struct config *config = calloc(1, sizeof(struct config));
-  if (!config) {
-    throw_errno(trace);
     return NULL;
   }
 

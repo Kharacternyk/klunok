@@ -33,13 +33,8 @@ static char *read_lua_string(lua_State *lua, const char *name,
   if (!ok(trace)) {
     return NULL;
   }
-
   lua_getglobal(lua, name);
-  char *string = strdup(lua_tostring(lua, -1));
-  if (!string) {
-    throw_errno(trace);
-  }
-  return string;
+  return TNULL(strdup(lua_tostring(lua, -1)), trace);
 }
 
 static struct set *read_lua_set(lua_State *lua, const char *name,
@@ -69,17 +64,12 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 }
 
 struct config *load_config(const char *path, struct trace *trace) {
+  struct config *config = TNULL(calloc(1, sizeof(struct config)), trace);
+  lua_State *lua = TNULL(luaL_newstate(), trace);
   if (!ok(trace)) {
     return NULL;
   }
 
-  struct config *config = calloc(1, sizeof(struct config));
-  if (!config) {
-    throw_errno(trace);
-    return NULL;
-  }
-
-  lua_State *lua = luaL_newstate();
   luaL_openlibs(lua);
   if (luaL_loadbuffer(lua, &_binary_lua_config_lua_start,
                       &_binary_lua_config_lua_end -

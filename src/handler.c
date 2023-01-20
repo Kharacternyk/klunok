@@ -23,19 +23,9 @@ struct handler {
 };
 
 struct handler *load_handler(const char *config_path, struct trace *trace) {
+  struct handler *handler = TNULL(calloc(1, sizeof(struct handler)), trace);
+  handler->config_path = TNULL(strdup(config_path), trace);
   if (!ok(trace)) {
-    return NULL;
-  }
-
-  struct handler *handler = calloc(1, sizeof(struct handler));
-  if (!handler) {
-    throw_errno(trace);
-    return NULL;
-  }
-
-  handler->config_path = strdup(config_path);
-  if (!handler->config_path) {
-    throw_errno(trace);
     free(handler);
     return NULL;
   }
