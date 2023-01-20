@@ -1,11 +1,11 @@
 #include "linq.h"
+#include "builder.h"
 #include "messages.h"
 #include "parents.h"
 #include <dirent.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -27,18 +27,6 @@ static int dot_filter(const struct dirent *dirent) {
 static int compare(const struct dirent **first, const struct dirent **second) {
   return strtol((*first)->d_name, NULL, 10) -
          strtol((*second)->d_name, NULL, 10);
-}
-
-static char *stringify(size_t value, struct trace *trace) {
-  size_t length = snprintf(NULL, 0, "%zd", value);
-  size_t size = length + 1;
-  char *result = malloc(size);
-  if (!result) {
-    throw_errno(trace);
-    return NULL;
-  }
-  snprintf(result, size, "%zd", value);
-  return result;
 }
 
 static void create_linq_path(const char *path, struct trace *trace) {
@@ -112,56 +100,63 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
 }
 
 void push_to_linq(const char *path, struct linq *linq, struct trace *trace) {
-  char *link_name = stringify(linq->head_index + linq->size, trace);
+  struct builder *link_builder = create_builder(trace);
+  concat_size(linq->head_index + linq->size, link_builder, trace);
   if (!ok(trace)) {
-    return;
+    return free_builder(link_builder);
   }
 
-  if (symlinkat(path, linq->dirfd, link_name) < 0) {
+  if (symlinkat(path, linq->dirfd, build_string(link_builder)) < 0) {
     throw_errno(trace);
   } else {
     ++linq->size;
   }
 
-  free(link_name);
+  free_builder(link_builder);
 }
 
 char *pop_from_linq(struct linq *linq, size_t length_guess,
                     time_t *retry_after_seconds, struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
   if (!linq->size) {
     *retry_after_seconds = -1;
     return NULL;
   }
 
-  char *link_name = stringify(linq->head_index, trace);
+  struct builder *link_builder = create_builder(trace);
+  concat_size(linq->head_index, link_builder, trace);
   if (!ok(trace)) {
+    free_builder(link_builder);
     return NULL;
   }
 
   struct stat link_stat;
-  if (fstatat(linq->dirfd, link_name, &link_stat, AT_SYMLINK_NOFOLLOW) < 0) {
+  if (fstatat(linq->dirfd, build_string(link_builder), &link_stat,
+              AT_SYMLINK_NOFOLLOW) < 0) {
     throw_errno(trace);
-    free(link_name);
+    free_builder(link_builder);
     return NULL;
   }
   time_t link_age = time(NULL) - link_stat.st_mtime;
   if (link_age < linq->debounce_seconds) {
     *retry_after_seconds = linq->debounce_seconds - link_age;
-    free(link_name);
+    free_builder(link_builder);
     return NULL;
   }
 
   struct stat target_stat;
-  if (fstatat(linq->dirfd, link_name, &target_stat, 0) < 0 ||
+  if (fstatat(linq->dirfd, build_string(link_builder), &target_stat, 0) < 0 ||
       target_stat.st_mtime > link_stat.st_mtime) {
-    if (unlinkat(linq->dirfd, link_name, 0) < 0) {
+    if (unlinkat(linq->dirfd, build_string(link_builder), 0) < 0) {
       throw_errno(trace);
-      free(link_name);
+      free_builder(link_builder);
       return NULL;
     }
     ++linq->head_index;
     --linq->size;
-    free(link_name);
+    free_builder(link_builder);
     return pop_from_linq(linq, length_guess, retry_after_seconds, trace);
   }
 
@@ -170,28 +165,29 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
     char *target = malloc(max_size);
     if (!target) {
       throw_errno(trace);
-      free(link_name);
+      free_builder(link_builder);
       return NULL;
     }
 
-    int length = readlinkat(linq->dirfd, link_name, target, max_size);
+    int length =
+        readlinkat(linq->dirfd, build_string(link_builder), target, max_size);
 
     if (length < 0) {
       throw_errno(trace);
-      free(link_name);
+      free_builder(link_builder);
       free(target);
       return NULL;
     }
     if (length < max_size) {
-      if (unlinkat(linq->dirfd, link_name, 0) < 0) {
+      if (unlinkat(linq->dirfd, build_string(link_builder), 0) < 0) {
         throw_errno(trace);
-        free(link_name);
+        free_builder(link_builder);
         free(target);
         return NULL;
       }
       ++linq->head_index;
       --linq->size;
-      free(link_name);
+      free_builder(link_builder);
       target[length] = 0;
       return target;
     }

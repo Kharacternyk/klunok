@@ -1,10 +1,10 @@
 #include "store.h"
+#include "builder.h"
 #include "messages.h"
 #include "parents.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/sendfile.h>
@@ -17,6 +17,10 @@ struct store {
 };
 
 struct store *create_store(const char *root, struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
+
   struct store *store = malloc(sizeof(struct store));
   if (!store) {
     throw_errno(trace);
@@ -34,31 +38,32 @@ struct store *create_store(const char *root, struct trace *trace) {
   return store;
 }
 
-static char *get_store_path(const char *filesystem_path, const char *version,
-                            const struct store *store) {
+static struct builder *get_store_path_builder(const char *filesystem_path,
+                                              const char *version,
+                                              const struct store *store,
+                                              struct trace *trace) {
   assert(*filesystem_path == '/');
-  size_t length = store->root_length + strlen(filesystem_path) +
-                  (/*a slash*/ 1) + strlen(version);
-  char *store_path = malloc(length + (/*0 at the end*/ 1));
-  if (!store_path) {
-    return NULL;
-  }
-  sprintf(store_path, "%s%s/%s", store->root, filesystem_path, version);
-  return store_path;
+  struct builder *builder = create_builder(trace);
+  concat_string(store->root, builder, trace);
+  concat_string(filesystem_path, builder, trace);
+  concat_string("/", builder, trace);
+  concat_string(version, builder, trace);
+  return builder;
 }
 
 void copy_to_store(const char *filesystem_path, const char *version,
                    const struct store *store, struct trace *trace) {
-  char *store_path = get_store_path(filesystem_path, version, store);
-  if (!store_path) {
-    return throw_errno(trace);
+  struct builder *path_builder =
+      get_store_path_builder(filesystem_path, version, store, trace);
+  if (!ok(trace)) {
+    return free_builder(path_builder);
   }
 
-  create_parents(store_path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH,
-                 trace);
+  create_parents(build_string(path_builder),
+                 S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, trace);
   if (!ok(trace)) {
-    remove_empty_parents(store_path, trace);
-    return free(store_path);
+    remove_empty_parents(build_string(path_builder), trace);
+    return free_builder(path_builder);
   }
 
   int in_fd = open(filesystem_path, O_RDONLY);
@@ -70,11 +75,11 @@ void copy_to_store(const char *filesystem_path, const char *version,
     } else {
       throw_errno(trace);
     }
-    remove_empty_parents(store_path, trace);
-    return free(store_path);
+    remove_empty_parents(build_string(path_builder), trace);
+    return free_builder(path_builder);
   }
 
-  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_EXCL,
+  int out_fd = open(build_string(path_builder), O_CREAT | O_WRONLY | O_EXCL,
                     S_IRUSR | S_IRGRP | S_IROTH);
   if (out_fd < 0) {
     if (errno == EEXIST) {
@@ -82,18 +87,18 @@ void copy_to_store(const char *filesystem_path, const char *version,
     } else {
       throw_errno(trace);
     }
-    remove_empty_parents(store_path, trace);
+    remove_empty_parents(build_string(path_builder), trace);
     close(in_fd);
-    return free(store_path);
+    return free_builder(path_builder);
   }
 
   struct stat in_fd_stat;
   if (fstat(in_fd, &in_fd_stat) < 0) {
     throw_errno(trace);
-    remove_empty_parents(store_path, trace);
+    remove_empty_parents(build_string(path_builder), trace);
     close(out_fd);
     close(in_fd);
-    return free(store_path);
+    return free_builder(path_builder);
   }
 
   while (in_fd_stat.st_size) {
@@ -102,22 +107,22 @@ void copy_to_store(const char *filesystem_path, const char *version,
       in_fd_stat.st_size -= written_size;
     } else {
       throw_errno(trace);
-      remove_empty_parents(store_path, trace);
+      remove_empty_parents(build_string(path_builder), trace);
       close(out_fd);
       close(in_fd);
-      return free(store_path);
+      return free_builder(path_builder);
     }
   }
 
   if (close(out_fd) < 0) {
     throw_errno(trace);
-    remove_empty_parents(store_path, trace);
+    remove_empty_parents(build_string(path_builder), trace);
     close(in_fd);
-    return free(store_path);
+    return free_builder(path_builder);
   }
 
   close(in_fd);
-  free(store_path);
+  free_builder(path_builder);
 }
 
 void free_store(struct store *store) {

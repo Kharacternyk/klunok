@@ -24,6 +24,9 @@ foreach component: components
   if component in ['config-lua', 'store', 'parents', 'linq', 'handler', 'elfinterp']
     c_args += '-DTEST_ROOT="' + meson.current_source_dir() + '"'
   endif
+  if component in ['deref', 'linq', 'store']
+    test_sources += sources['builder']
+  endif
   if component.startswith('config-') or component in ['store', 'linq']
     test_sources += sources['parents']
   endif

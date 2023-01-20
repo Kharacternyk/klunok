@@ -5,6 +5,7 @@
 static const char *const store_root = "./klunok/store";
 static const char *const queue_path = "./klunok/queue";
 static const char *const version_pattern = "v%Y-%m-%d-%H-%M";
+static const char *const ld_linux_glob = "ld-linux*.so*";
 static const size_t debounce_seconds = 60;
 static const size_t version_max_length = 80;
 static const size_t path_length_guess = 1024;
@@ -61,6 +62,10 @@ const char *get_configured_queue_path(const struct config *config) {
 
 const char *get_configured_version_pattern(const struct config *config) {
   return version_pattern;
+}
+
+const char *get_configured_ld_linux_glob(const struct config *config) {
+  return ld_linux_glob;
 }
 
 size_t get_configured_debounce_seconds(const struct config *config) {

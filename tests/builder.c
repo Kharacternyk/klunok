@@ -5,6 +5,8 @@
 
 #define S1 "abc"
 #define S2 " 1 2 3"
+#define N 123
+#define SN "123"
 
 int main() {
   struct trace *trace = create_trace();
@@ -12,13 +14,26 @@ int main() {
   assert(ok(trace));
   assert(*build_string(builder) == 0);
 
-  append_to_builder(S1, builder, trace);
+  concat_string(S1, builder, trace);
   assert(ok(trace));
   assert(!strcmp(S1, build_string(builder)));
 
-  append_to_builder(S2, builder, trace);
+  concat_string(S2, builder, trace);
   assert(ok(trace));
   assert(!strcmp(S1 S2, build_string(builder)));
+
+  size_t saved_length = get_builder_length(builder);
+
+  concat_size(N, builder, trace);
+  assert(ok(trace));
+  assert(!strcmp(S1 S2 SN, build_string(builder)));
+
+  truncate_builder(saved_length, builder);
+  assert(!strcmp(S1 S2, build_string(builder)));
+
+  concat_size(0, builder, trace);
+  assert(ok(trace));
+  assert(!strcmp(S1 S2 "0", build_string(builder)));
 
   free_builder(builder);
   free(trace);
