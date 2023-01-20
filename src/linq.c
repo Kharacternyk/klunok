@@ -100,7 +100,7 @@ void push_to_linq(const char *path, struct linq *linq, struct trace *trace) {
   free_builder(link_builder);
 }
 
-char *pop_from_linq(struct linq *linq, size_t length_guess,
+char *get_linq_head(struct linq *linq, size_t length_guess,
                     time_t *retry_after_seconds, struct trace *trace) {
   if (!ok(trace)) {
     return NULL;
@@ -131,15 +131,9 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
   struct stat target_stat;
   if (fstatat(linq->dirfd, build_string(link_builder), &target_stat, 0) < 0 ||
       target_stat.st_mtime > link_stat.st_mtime) {
-    TNEG(unlinkat(linq->dirfd, build_string(link_builder), 0), trace);
-    if (!ok(trace)) {
-      free_builder(link_builder);
-      return NULL;
-    }
-    ++linq->head_index;
-    --linq->size;
     free_builder(link_builder);
-    return pop_from_linq(linq, length_guess, retry_after_seconds, trace);
+    pop_from_linq(linq, trace);
+    return get_linq_head(linq, length_guess, retry_after_seconds, trace);
   }
 
   size_t max_size = length_guess + 1;
@@ -155,14 +149,6 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
       return NULL;
     }
     if (length < max_size) {
-      TNEG(unlinkat(linq->dirfd, build_string(link_builder), 0), trace);
-      if (!ok(trace)) {
-        free_builder(link_builder);
-        free(target);
-        return NULL;
-      }
-      ++linq->head_index;
-      --linq->size;
       free_builder(link_builder);
       target[length] = 0;
       return target;
@@ -171,6 +157,20 @@ char *pop_from_linq(struct linq *linq, size_t length_guess,
     free(target);
     max_size *= 2;
   }
+}
+
+void pop_from_linq(struct linq *linq, struct trace *trace) {
+  if (!linq->size) {
+    return;
+  }
+  struct builder *link_builder = create_builder(trace);
+  concat_size(linq->head_index, link_builder, trace);
+  TNEG(unlinkat(linq->dirfd, build_string(link_builder), 0), trace);
+  if (ok(trace)) {
+    ++linq->head_index;
+    --linq->size;
+  }
+  free_builder(link_builder);
 }
 
 void free_linq(struct linq *linq) {

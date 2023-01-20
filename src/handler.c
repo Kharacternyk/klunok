@@ -146,11 +146,11 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
                     struct trace *trace) {
   *retry_after_seconds = 0;
   for (;;) {
-    char *path = pop_from_linq(
+    char *path = get_linq_head(
         handler->linq, get_configured_path_length_guess(handler->config),
         retry_after_seconds, trace);
     if (!ok(trace)) {
-      throw_static(messages.handler.linq.cannot_pop, trace);
+      throw_static(messages.handler.linq.cannot_get_head, trace);
       return;
     }
     if (*retry_after_seconds) {
@@ -175,11 +175,10 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     catch_static(messages.store.copy.permission_denied, trace);
     catch_static(messages.store.copy.version_already_exists, trace);
 
-    if (!ok(trace)) {
+    if (ok(trace)) {
+      pop_from_linq(handler->linq, trace);
+    } else {
       throw_static(messages.handler.store.cannot_copy, trace);
-      free(path);
-      free(version);
-      return;
     }
     free(path);
     free(version);

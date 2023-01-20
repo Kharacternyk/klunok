@@ -20,7 +20,7 @@ struct translation {
     struct {
       const char *cannot_load;
       const char *cannot_reload;
-      const char *cannot_pop;
+      const char *cannot_get_head;
       const char *cannot_push;
     } linq;
     struct {

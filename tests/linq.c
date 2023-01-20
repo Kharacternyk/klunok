@@ -15,36 +15,44 @@ int main() {
   assert(ok(trace));
 
   time_t retry_after_seconds = 0;
-  char *path = pop_from_linq(linq, 0, &retry_after_seconds, trace);
+  char *path = get_linq_head(linq, 0, &retry_after_seconds, trace);
   assert(ok(trace));
   assert(retry_after_seconds < 0);
   retry_after_seconds = 0;
 
   push_to_linq(F1, linq, trace);
   assert(ok(trace));
-  path = pop_from_linq(linq, 0, &retry_after_seconds, trace);
+  path = get_linq_head(linq, 0, &retry_after_seconds, trace);
   assert(!retry_after_seconds);
   assert(ok(trace));
   assert(!strcmp(path, F1));
-
   free(path);
+
+  pop_from_linq(linq, trace);
+  assert(ok(trace));
 
   push_to_linq(F1, linq, trace);
   assert(ok(trace));
   push_to_linq(F2, linq, trace);
   assert(ok(trace));
 
-  path = pop_from_linq(linq, 0, &retry_after_seconds, trace);
+  path = get_linq_head(linq, 0, &retry_after_seconds, trace);
   assert(!retry_after_seconds);
   assert(ok(trace));
   assert(!strcmp(path, F1));
   free(path);
 
-  path = pop_from_linq(linq, 0, &retry_after_seconds, trace);
+  pop_from_linq(linq, trace);
+  assert(ok(trace));
+
+  path = get_linq_head(linq, 0, &retry_after_seconds, trace);
   assert(!retry_after_seconds);
   assert(ok(trace));
   assert(!strcmp(path, F2));
   free(path);
+
+  pop_from_linq(linq, trace);
+  assert(ok(trace));
 
   free_linq(linq);
 
@@ -52,10 +60,11 @@ int main() {
   linq = load_linq(LAGGED_LINQ_PATH, 3600, trace);
   push_to_linq(F1, linq, trace);
   assert(ok(trace));
-  path = pop_from_linq(linq, 0, &retry_after_seconds, trace);
+  path = get_linq_head(linq, 0, &retry_after_seconds, trace);
   assert(ok(trace));
   assert(retry_after_seconds > 0);
-  unlink(LAGGED_LINQ_PATH "/0");
+  pop_from_linq(linq, trace);
+  assert(ok(trace));
 
   free_linq(linq);
   free(trace);

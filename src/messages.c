@@ -23,7 +23,7 @@ const struct translation messages = {
     .linq = {
       .cannot_load = "Cannot load debouncing link queue",
       .cannot_reload = "Cannot reload debouncing link queue",
-      .cannot_pop = "Cannot get head of debouncing link queue",
+      .cannot_get_head = "Cannot get head of debouncing link queue",
       .cannot_push = "Cannot push file to debouncing link queue",
     },
     .store = {
