@@ -5,8 +5,8 @@
 
 #define S1 "abc"
 #define S2 " 1 2 3"
-#define N 123
-#define SN "123"
+#define N 1230
+#define SN "1230"
 
 int main() {
   struct trace *trace = create_trace();

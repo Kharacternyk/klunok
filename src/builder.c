@@ -54,7 +54,7 @@ void concat_size(size_t size, struct builder *builder, struct trace *trace) {
   }
 
   char digit[] = {0, 0};
-  while (size) {
+  while (power_of_ten) {
     digit[0] = '0' + size / power_of_ten;
     concat_string(digit, builder, trace);
     if (!ok(trace)) {
