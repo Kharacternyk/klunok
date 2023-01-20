@@ -55,10 +55,6 @@ void copy_to_store(const char *filesystem_path, const char *version,
                    const struct store *store, struct trace *trace) {
   struct builder *path_builder =
       get_store_path_builder(filesystem_path, version, store, trace);
-  if (!ok(trace)) {
-    return free_builder(path_builder);
-  }
-
   create_parents(build_string(path_builder),
                  S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, trace);
   if (!ok(trace)) {

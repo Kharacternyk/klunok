@@ -13,6 +13,10 @@ struct set {
 };
 
 struct set *create_set(size_t size_guess, struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
+
   size_t size = size_guess * 2 + 2;
   struct entry **entries = calloc(size, sizeof(struct entry *));
   if (!entries) {
@@ -65,6 +69,10 @@ bool is_in_set(const char *value, const struct set *set) {
 }
 
 void add_to_set(const char *value, struct set *set, struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
+
   size_t hashed_value = hash(value);
   struct entry **entry = &(set->entries[hashed_value % set->size]);
 

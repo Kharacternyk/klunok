@@ -5,6 +5,9 @@
 
 char *get_timestamp(const char *format, size_t max_length,
                     struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
   time_t t = time(NULL);
   struct tm *tm = localtime(&t);
   if (!tm) {

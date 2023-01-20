@@ -30,6 +30,10 @@ static size_t read_lua_size(lua_State *lua, const char *name) {
 
 static char *read_lua_string(lua_State *lua, const char *name,
                              struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
+
   lua_getglobal(lua, name);
   char *string = strdup(lua_tostring(lua, -1));
   if (!string) {
@@ -40,6 +44,9 @@ static char *read_lua_string(lua_State *lua, const char *name,
 
 static struct set *read_lua_set(lua_State *lua, const char *name,
                                 struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
   lua_getglobal(lua, name);
 
   struct set *set = create_set(lua_rawlen(lua, -1), trace);
@@ -62,6 +69,10 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 }
 
 struct config *load_config(const char *path, struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
+
   struct config *config = calloc(1, sizeof(struct config));
   if (!config) {
     throw_errno(trace);
@@ -88,26 +99,8 @@ struct config *load_config(const char *path, struct trace *trace) {
   }
 
   config->editors = read_lua_set(lua, "editors", trace);
-  if (!ok(trace)) {
-    lua_close(lua);
-    free_config(config);
-    return NULL;
-  }
-
   config->store_root = read_lua_string(lua, "store_root", trace);
-  if (!ok(trace)) {
-    lua_close(lua);
-    free_config(config);
-    return NULL;
-  }
-
   config->queue_path = read_lua_string(lua, "queue_path", trace);
-  if (!ok(trace)) {
-    lua_close(lua);
-    free_config(config);
-    return NULL;
-  }
-
   config->version_pattern = read_lua_string(lua, "version_pattern", trace);
   if (!ok(trace)) {
     lua_close(lua);

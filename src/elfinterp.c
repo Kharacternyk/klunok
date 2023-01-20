@@ -11,6 +11,10 @@
 #endif
 
 char *get_elf_interpreter(int exe_fd, struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
+
   ElfW(Ehdr) elf_header;
   size_t total_read = 0;
 

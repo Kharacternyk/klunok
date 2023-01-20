@@ -30,6 +30,9 @@ static int compare(const struct dirent **first, const struct dirent **second) {
 }
 
 static void create_linq_path(const char *path, struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
   mode_t mode = S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH;
   create_parents(path, mode, trace);
   if (!ok(trace)) {
@@ -51,14 +54,14 @@ static struct linq *load_or_create_linq(const char *path,
                                         time_t debounce_seconds,
                                         bool try_to_create,
                                         struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
   struct dirent **entries;
   int entry_count = scandir(path, &entries, dot_filter, compare);
   if (entry_count < 0) {
     if (errno == ENOENT && try_to_create) {
       create_linq_path(path, trace);
-      if (!ok(trace)) {
-        return NULL;
-      }
       return load_or_create_linq(path, debounce_seconds, false, trace);
     }
     throw_errno(trace);

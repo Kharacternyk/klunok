@@ -9,6 +9,10 @@ struct bitmap {
 };
 
 struct bitmap *create_bitmap(size_t size_guess, struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
+
   struct bitmap *bitmap = malloc(sizeof(struct bitmap));
   if (!bitmap) {
     throw_errno(trace);
@@ -29,6 +33,10 @@ struct bitmap *create_bitmap(size_t size_guess, struct trace *trace) {
 }
 
 void set_bit_in_bitmap(size_t bit, struct bitmap *bitmap, struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
+
   if (bit >= bitmap->size) {
     size_t new_size = bit * 2;
     bool *new_array = calloc(new_size, sizeof(bool));
