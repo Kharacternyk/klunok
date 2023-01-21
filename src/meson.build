@@ -11,6 +11,7 @@ components = [
   'messages',
   'elfinterp',
   'builder',
+  'extension',
   'config-lua',
   'config-static',
 ]

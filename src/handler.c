@@ -3,6 +3,7 @@
 #include "builder.h"
 #include "deref.h"
 #include "elfinterp.h"
+#include "extension.h"
 #include "linq.h"
 #include "messages.h"
 #include "store.h"
@@ -158,13 +159,6 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       return;
     }
 
-    char *last_slash = strrchr(path, '/');
-    assert(last_slash);
-    char *extension = strchr(last_slash, '.');
-    if (!extension || extension - last_slash == 1) {
-      extension = "";
-    }
-
     char *base_version = get_timestamp(
         get_configured_version_pattern(handler->config),
         get_configured_version_max_length(handler->config), trace);
@@ -183,6 +177,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       return;
     }
 
+    const char *extension = get_file_extension(path);
     size_t version_base_length = get_builder_length(version_builder);
     size_t duplicate_count = 0;
 
