@@ -96,7 +96,7 @@ int main(int argc, const char **argv) {
   }
 
   pid_t self = getpid();
-  time_t wake_after_seconds = -1;
+  time_t wake_after_seconds = 0;
   struct pollfd pollfd = {
       .fd = fanotify_fd,
       .events = POLLIN,
