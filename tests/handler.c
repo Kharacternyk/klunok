@@ -30,12 +30,21 @@ int main() {
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
 
+  handle_close_write(getpid(), fd, handler, trace);
+  assert(ok(trace));
+
   handle_timeout(handler, &retry_after_seconds, trace);
   assert(ok(trace));
   assert(retry_after_seconds < 0);
 
   assert(access(IN_STORE(CONFIG), F_OK) == 0);
   assert(unlink(IN_STORE(CONFIG)) >= 0);
+
+  assert(access(IN_STORE(CONFIG) "-1", F_OK) == 0);
+  assert(unlink(IN_STORE(CONFIG) "-1") >= 0);
+
+  assert(access(IN_STORE(CONFIG) "-2", F_OK) == 0);
+  assert(unlink(IN_STORE(CONFIG) "-2") >= 0);
 
   close(fd);
   fd = open(EMPTY, O_CREAT, S_IRWXU);

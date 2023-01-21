@@ -1,5 +1,6 @@
 #include "handler.h"
 #include "bitmap.h"
+#include "builder.h"
 #include "deref.h"
 #include "elfinterp.h"
 #include "linq.h"
@@ -157,31 +158,51 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       return;
     }
 
-    char *version = get_timestamp(
+    char *base_version = get_timestamp(
         get_configured_version_pattern(handler->config),
         get_configured_version_max_length(handler->config), trace);
+    struct builder *version_builder = create_builder(trace);
+    concat_string(base_version, version_builder, trace);
+    free(base_version);
     if (!ok(trace)) {
       free(path);
+      free_builder(version_builder);
       return;
     }
-    if (strchr(version, '/')) {
+    if (strchr(build_string(version_builder), '/')) {
       throw_static(messages.handler.version.has_slashes, trace);
       free(path);
+      free_builder(version_builder);
       return;
     }
 
-    copy_to_store(path, version, handler->store, trace);
-    catch_static(messages.store.copy.file_does_not_exist, trace);
-    catch_static(messages.store.copy.permission_denied, trace);
-    catch_static(messages.store.copy.version_already_exists, trace);
+    size_t version_base_length = get_builder_length(version_builder);
+    size_t duplicate_count = 0;
 
-    if (ok(trace)) {
-      pop_from_linq(handler->linq, trace);
-    } else {
-      throw_static(messages.handler.store.cannot_copy, trace);
+    for (;;) {
+      copy_to_store(path, build_string(version_builder), handler->store, trace);
+      catch_static(messages.store.copy.file_does_not_exist, trace);
+      catch_static(messages.store.copy.permission_denied, trace);
+      if (ok(trace)) {
+        pop_from_linq(handler->linq, trace);
+        break;
+      } else if (catch_static(messages.store.copy.version_already_exists,
+                              trace)) {
+        ++duplicate_count;
+        truncate_builder(version_base_length, version_builder);
+        /*FIXME configure me*/
+        concat_string("-", version_builder, trace);
+        concat_size(duplicate_count, version_builder, trace);
+      } else {
+        throw_static(messages.handler.store.cannot_copy, trace);
+        free(path);
+        free_builder(version_builder);
+        return;
+      }
     }
+
     free(path);
-    free(version);
+    free_builder(version_builder);
   }
 }
 
