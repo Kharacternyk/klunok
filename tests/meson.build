@@ -1,4 +1,5 @@
 add_test_setup('fast')
+add_test_setup('gdb', gdb: true)
 add_test_setup(
   'valgrind',
   exe_wrapper: ['valgrind', '--error-exitcode=1', '--leak-check=full'],
