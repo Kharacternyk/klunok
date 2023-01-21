@@ -42,6 +42,17 @@ static struct builder *get_store_path_builder(const char *filesystem_path,
   return builder;
 }
 
+static void cleanup(struct builder *path_builder) {
+  /*FIXME cleanup error reporting*/
+  struct trace *cleanup_trace = create_trace();
+  if (cleanup_trace) {
+    remove_empty_parents(build_string(path_builder), cleanup_trace);
+  }
+  catch_all(cleanup_trace);
+  free(cleanup_trace);
+  free_builder(path_builder);
+}
+
 void copy_to_store(const char *filesystem_path, const char *version,
                    const struct store *store, struct trace *trace) {
   struct builder *path_builder =
@@ -49,8 +60,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
   create_parents(build_string(path_builder),
                  S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, trace);
   if (!ok(trace)) {
-    remove_empty_parents(build_string(path_builder), trace);
-    return free_builder(path_builder);
+    return cleanup(path_builder);
   }
 
   int in_fd = open(filesystem_path, O_RDONLY);
@@ -62,8 +72,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
     } else {
       throw_errno(trace);
     }
-    remove_empty_parents(build_string(path_builder), trace);
-    return free_builder(path_builder);
+    return cleanup(path_builder);
   }
 
   int out_fd = open(build_string(path_builder), O_CREAT | O_WRONLY | O_EXCL,
@@ -74,18 +83,16 @@ void copy_to_store(const char *filesystem_path, const char *version,
     } else {
       throw_errno(trace);
     }
-    remove_empty_parents(build_string(path_builder), trace);
     close(in_fd);
-    return free_builder(path_builder);
+    return cleanup(path_builder);
   }
 
   struct stat in_fd_stat;
   if (fstat(in_fd, &in_fd_stat) < 0) {
     throw_errno(trace);
-    remove_empty_parents(build_string(path_builder), trace);
     close(out_fd);
     close(in_fd);
-    return free_builder(path_builder);
+    return cleanup(path_builder);
   }
 
   while (in_fd_stat.st_size) {
@@ -94,18 +101,16 @@ void copy_to_store(const char *filesystem_path, const char *version,
       in_fd_stat.st_size -= written_size;
     } else {
       throw_errno(trace);
-      remove_empty_parents(build_string(path_builder), trace);
       close(out_fd);
       close(in_fd);
-      return free_builder(path_builder);
+      return cleanup(path_builder);
     }
   }
 
   if (close(out_fd) < 0) {
     throw_errno(trace);
-    remove_empty_parents(build_string(path_builder), trace);
     close(in_fd);
-    return free_builder(path_builder);
+    return cleanup(path_builder);
   }
 
   close(in_fd);
