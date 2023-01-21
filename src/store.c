@@ -47,9 +47,9 @@ static void cleanup(struct builder *path_builder) {
   struct trace *cleanup_trace = create_trace();
   if (cleanup_trace) {
     remove_empty_parents(build_string(path_builder), cleanup_trace);
+    catch_all(cleanup_trace);
+    free(cleanup_trace);
   }
-  catch_all(cleanup_trace);
-  free(cleanup_trace);
   free_builder(path_builder);
 }
 
