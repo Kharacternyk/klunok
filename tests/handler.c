@@ -37,14 +37,14 @@ int main() {
   assert(ok(trace));
   assert(retry_after_seconds < 0);
 
-  assert(access(IN_STORE(CONFIG), F_OK) == 0);
-  assert(unlink(IN_STORE(CONFIG)) >= 0);
+  assert(access(IN_STORE(CONFIG) ".lua", F_OK) == 0);
+  assert(unlink(IN_STORE(CONFIG) ".lua") >= 0);
 
-  assert(access(IN_STORE(CONFIG) "-1", F_OK) == 0);
-  assert(unlink(IN_STORE(CONFIG) "-1") >= 0);
+  assert(access(IN_STORE(CONFIG) "-1.lua", F_OK) == 0);
+  assert(unlink(IN_STORE(CONFIG) "-1.lua") >= 0);
 
-  assert(access(IN_STORE(CONFIG) "-2", F_OK) == 0);
-  assert(unlink(IN_STORE(CONFIG) "-2") >= 0);
+  assert(access(IN_STORE(CONFIG) "-2.lua", F_OK) == 0);
+  assert(unlink(IN_STORE(CONFIG) "-2.lua") >= 0);
 
   close(fd);
   fd = open(EMPTY, O_CREAT, S_IRWXU);

@@ -158,6 +158,13 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       return;
     }
 
+    char *last_slash = strrchr(path, '/');
+    assert(last_slash);
+    char *extension = strchr(last_slash, '.');
+    if (!extension || extension - last_slash == 1) {
+      extension = "";
+    }
+
     char *base_version = get_timestamp(
         get_configured_version_pattern(handler->config),
         get_configured_version_max_length(handler->config), trace);
@@ -180,6 +187,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     size_t duplicate_count = 0;
 
     for (;;) {
+      concat_string(extension, version_builder, trace);
       copy_to_store(path, build_string(version_builder), handler->store, trace);
       catch_static(messages.store.copy.file_does_not_exist, trace);
       catch_static(messages.store.copy.permission_denied, trace);
