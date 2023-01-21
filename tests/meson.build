@@ -36,11 +36,11 @@ foreach component: components
     test_sources += sources['parents']
   endif
   if component.startswith('config-')
-    test_sources += sources['circbreak']
     test_sources += sources['set']
     test_sources += 'config.c'
   endif
   if component == 'config-lua'
+    test_sources += sources['circbreak']
     dependencies += lua
     test_sources += lua_sources
   endif
