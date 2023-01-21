@@ -6,7 +6,7 @@ void check_default_config(struct config *config);
 
 int main() {
   struct trace *trace = create_trace();
-  struct config *config = load_config("", trace);
+  struct config *config = load_config("", NULL, trace);
   assert(ok(trace));
   free(trace);
   check_default_config(config);

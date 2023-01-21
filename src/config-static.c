@@ -23,7 +23,9 @@ struct config {
   struct set *editors;
 };
 
-struct config *load_config(const char *path, struct trace *trace) {
+struct config *load_config(const char *path,
+                           const struct circuit_breaker *circuit_breaker,
+                           struct trace *trace) {
   struct config *config = TNULL(calloc(1, sizeof(struct config)), trace);
   if (!ok(trace)) {
     return NULL;

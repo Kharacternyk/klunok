@@ -12,6 +12,7 @@ components = [
   'elfinterp',
   'builder',
   'extension',
+  'circbreak',
   'config-lua',
   'config-static',
 ]

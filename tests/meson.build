@@ -15,12 +15,16 @@ foreach component: components
   ]
   c_args = []
   dependencies = []
+  should_fail = false
 
   if component == 'messages'
     continue
   endif
   if component == 'config-lua' and not lua.found()
     continue
+  endif
+  if component == 'circbreak'
+    should_fail = true
   endif
   if component in ['config-lua', 'store', 'parents', 'linq', 'handler', 'elfinterp']
     c_args += '-DTEST_ROOT="' + meson.current_source_dir() + '"'
@@ -32,6 +36,7 @@ foreach component: components
     test_sources += sources['parents']
   endif
   if component.startswith('config-')
+    test_sources += sources['circbreak']
     test_sources += sources['set']
     test_sources += 'config.c'
   endif
@@ -57,11 +62,15 @@ foreach component: components
     endforeach
   endif
 
-  test(component, executable(
+  test(
     component,
-    test_sources,
-    dependencies: dependencies,
-    c_args: c_args,
-    include_directories: inc
-  ))
+    executable(
+      component,
+      test_sources,
+      dependencies: dependencies,
+      c_args: c_args,
+      include_directories: inc,
+    ),
+    should_fail: should_fail,
+  )
 endforeach

@@ -63,7 +63,9 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
   return set;
 }
 
-struct config *load_config(const char *path, struct trace *trace) {
+struct config *load_config(const char *path,
+                           const struct circuit_breaker *circuit_breaker,
+                           struct trace *trace) {
   struct config *config = TNULL(calloc(1, sizeof(struct config)), trace);
   lua_State *lua = TNULL(luaL_newstate(), trace);
   if (!ok(trace)) {
@@ -71,6 +73,7 @@ struct config *load_config(const char *path, struct trace *trace) {
   }
 
   luaL_openlibs(lua);
+  arm(circuit_breaker);
   if (luaL_loadbuffer(lua, &_binary_lua_config_lua_start,
                       &_binary_lua_config_lua_end -
                           &_binary_lua_config_lua_start,
@@ -82,6 +85,7 @@ struct config *load_config(const char *path, struct trace *trace) {
                           &_binary_lua_validation_lua_start,
                       "validation") ||
       lua_pcall(lua, 0, 0, 0)) {
+    disarm(circuit_breaker);
     throw_dynamic(lua_tostring(lua, -1), trace);
     lua_close(lua);
     free_config(config);
@@ -89,6 +93,8 @@ struct config *load_config(const char *path, struct trace *trace) {
   }
 
   config->editors = read_lua_set(lua, "editors", trace);
+  disarm(circuit_breaker);
+
   config->store_root = read_lua_string(lua, "store_root", trace);
   config->queue_path = read_lua_string(lua, "queue_path", trace);
   config->version_pattern = read_lua_string(lua, "version_pattern", trace);
