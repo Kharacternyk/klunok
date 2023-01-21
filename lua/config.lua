@@ -13,3 +13,5 @@ editors = {
   nvim = true,
   rsession = true,
 }
+
+circuit_breaker_seconds = 5

@@ -7,13 +7,12 @@ void check_default_config(struct config *config);
 
 int main() {
   struct trace *trace = create_trace();
-  struct config *config =
-      load_config(TEST_ROOT "/configs/empty.lua", NULL, trace);
+  struct config *config = load_config(TEST_ROOT "/configs/empty.lua", trace);
   assert(ok(trace));
 
   check_default_config(config);
 
-  config = load_config(TEST_ROOT "/configs/override.lua", NULL, trace);
+  config = load_config(TEST_ROOT "/configs/override.lua", trace);
   assert(ok(trace));
 
   const struct set *editors = get_configured_editors(config);
@@ -28,11 +27,11 @@ int main() {
 
   free_config(config);
 
-  load_config(TEST_ROOT "/configs/broken-semantics.lua", NULL, trace);
+  load_config(TEST_ROOT "/configs/broken-semantics.lua", trace);
   assert(!ok(trace));
   catch_all(trace);
 
-  load_config(TEST_ROOT "/configs/broken-syntax.lua", NULL, trace);
+  load_config(TEST_ROOT "/configs/broken-syntax.lua", trace);
   assert(!ok(trace));
   catch_all(trace);
 

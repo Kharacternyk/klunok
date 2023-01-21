@@ -1,13 +1,10 @@
-#include "circbreak.h"
 #include "set.h"
 #include "trace.h"
 #include <fcntl.h>
 
 struct config;
 
-struct config *load_config(const char *path,
-                           const struct circuit_breaker *circuit_breaker,
-                           struct trace *trace);
+struct config *load_config(const char *path, struct trace *trace);
 
 const struct set *get_configured_editors(const struct config *config);
 const char *get_configured_store_root(const struct config *config);

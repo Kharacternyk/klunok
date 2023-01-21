@@ -22,19 +22,17 @@ struct handler {
   struct bitmap *editor_pid_bitmap;
   struct set *elf_interpreters;
   struct set *handled_executables;
-  struct circuit_breaker *config_breaker;
 };
 
 struct handler *load_handler(const char *config_path, struct trace *trace) {
   struct handler *handler = TNULL(calloc(1, sizeof(struct handler)), trace);
   handler->config_path = TNULL(strdup(config_path), trace);
-  handler->config_breaker = create_circuit_breaker(5, trace);
   if (!ok(trace)) {
     free(handler);
     return NULL;
   }
 
-  handler->config = load_config(config_path, handler->config_breaker, trace);
+  handler->config = load_config(config_path, trace);
   if (!ok(trace)) {
     throw_static(messages.handler.config.cannot_load, trace);
     free(handler);
@@ -112,8 +110,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   }
 
   if (!strcmp(file_path, handler->config_path)) {
-    struct config *new_config =
-        load_config(handler->config_path, handler->config_breaker, trace);
+    struct config *new_config = load_config(handler->config_path, trace);
     if (!ok(trace)) {
       throw_static(messages.handler.config.cannot_reload, trace);
       return free(file_path);
@@ -221,7 +218,6 @@ void free_handler(struct handler *handler) {
     free_bitmap(handler->editor_pid_bitmap);
     free_set(handler->elf_interpreters);
     free_set(handler->handled_executables);
-    free_circuit_breaker(handler->config_breaker);
     free(handler);
   }
 }
