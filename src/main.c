@@ -8,23 +8,23 @@
 #include <unistd.h>
 
 static int unwind(struct trace *trace) {
-  int depth = 0;
+  int depth = -1;
   while (get_trace_message(trace)) {
-    if (depth > 0) {
-      fprintf(stderr, "%*s╰─┤because of│ ", (depth - 1) * 2, "");
+    if (depth >= 0) {
+      fprintf(stderr, "%*s╰─┤because of│ ", depth * 2, "");
     }
     fprintf(stderr, "%s\n", get_trace_message(trace));
     pop_trace_message(trace);
     ++depth;
   }
   if (get_dropped_trace_message_count(trace)) {
-    if (depth > 0) {
-      fprintf(stderr, "%*s╰─┤%zd messages dropped│\n", (depth - 1) * 2, "",
-              get_dropped_trace_message_count(trace));
+    if (depth >= 0) {
+      fprintf(stderr, "%*s╰─┤", depth * 2, "");
     } else {
-      fprintf(stderr, "│%zd messages dropped│\n",
-              get_dropped_trace_message_count(trace));
+      fprintf(stderr, "│");
     }
+    fprintf(stderr, "%zd messages dropped│\n",
+            get_dropped_trace_message_count(trace));
   }
   catch_all(trace);
   return EXIT_FAILURE;
