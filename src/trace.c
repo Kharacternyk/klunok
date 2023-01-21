@@ -92,7 +92,8 @@ bool catch_static(const char *message, struct trace *trace) {
   if (trace->dropped_frame_count) {
     return false;
   }
-  if (trace->head && !trace->head->is_dynamic) {
+  if (trace->head && !trace->head->is_dynamic &&
+      trace->head->static_message == message) {
     while (trace->head) {
       pop_trace_message(trace);
     }

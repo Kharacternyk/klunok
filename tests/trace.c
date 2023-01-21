@@ -42,6 +42,7 @@ int main() {
   throw_static(b, trace);
   throw_static(a, trace);
   assert(!ok(trace));
+  assert(!catch_static(b, trace));
   assert(catch_static(a, trace));
   assert(ok(trace));
 
