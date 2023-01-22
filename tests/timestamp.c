@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+void test_timestamp() {
   struct trace *trace = create_trace();
   char *timestamp = get_timestamp("abc", 7, trace);
   assert(ok(trace));

@@ -1,38 +1,24 @@
 components = [
-  'set',
   'bitmap',
+  'builder',
+  'circbreak',
   'deref',
+  'elfinterp',
+  'extension',
+  'handler',
+  'linq',
+  'messages',
+  'parents',
+  'set',
   'store',
   'timestamp',
-  'parents',
-  'linq',
-  'handler',
   'trace',
-  'messages',
-  'elfinterp',
-  'builder',
-  'extension',
-  'circbreak',
-  'config-lua',
-  'config-static',
-]
+] + ('config-' + (lua.found() ? 'lua' : 'static'))
 
-sources = {}
-main_sources = ['main.c']
-
+sources = lua.found() ? lua_sources : []
 foreach component: components
-  file = files(component + '.c')
-  sources += {component: file}
-  if not component.startswith('config-')
-    main_sources += file
-  endif
+  sources += files(component + '.c')
 endforeach
-
-if lua.found()
-  main_sources += lua_sources
-  main_sources += sources['config-lua']
-else
-  main_sources += sources['config-static']
-endif
+main_sources = sources + 'main.c'
 
 executable('klunok', main_sources, dependencies: lua, include_directories: inc, install: true)

@@ -1,6 +1,6 @@
 project('klunok', 'c')
 
-lua = dependency('lua', required: false)
+lua = dependency(get_option('lua'), required: false)
 
 subdir('lua')
 subdir('inc')

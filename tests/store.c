@@ -11,7 +11,7 @@
 #define FILE_VERSION "v123"
 #define FILE_COPY STORE_ROOT COPYIED_FILE "/" FILE_VERSION
 
-int main() {
+void test_store() {
   struct trace *trace = create_trace();
   struct store *store = create_store(STORE_ROOT, trace);
   assert(ok(trace));

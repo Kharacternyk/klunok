@@ -5,7 +5,7 @@
 
 void check_default_config(struct config *config);
 
-int main() {
+void test_config_lua() {
   struct trace *trace = create_trace();
   struct config *config = load_config(TEST_ROOT "/configs/empty.lua", trace);
   assert(ok(trace));

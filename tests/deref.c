@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+void test_deref() {
   struct trace *trace = create_trace();
   const char *path = "/dev/null";
   int fd = open(path, O_RDONLY);

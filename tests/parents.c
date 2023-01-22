@@ -5,7 +5,7 @@
 
 #define DIRECTORY TEST_ROOT "/parents/abc/defgh/123"
 
-int main() {
+void test_parents() {
   struct trace *trace = create_trace();
 
   rmdir(DIRECTORY);

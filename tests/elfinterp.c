@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-int main() {
+void test_elfinterp() {
   int fd = open(TEST_ROOT "/meson.build", O_RDONLY);
   assert(fd >= 0);
 

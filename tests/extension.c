@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <string.h>
 
-int main() {
+void test_extension() {
   assert(!strcmp(get_file_extension("/abc/def/archive.tar.gz"), ".tar.gz"));
   assert(!strcmp(get_file_extension("/abc/def/archive"), ""));
   assert(!strcmp(get_file_extension("/abc/def/.archive.tar.gz"), ".tar.gz"));

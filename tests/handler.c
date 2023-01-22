@@ -7,7 +7,7 @@
 #define EMPTY TEST_ROOT "/klunok/empty"
 #define IN_STORE(PATH) TEST_ROOT "/klunok/store/" PATH "/version"
 
-int main() {
+void test_handler() {
   assert(chdir(TEST_ROOT) >= 0);
 
   struct trace *trace = create_trace();

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+void test_trace() {
   struct trace *trace = create_trace();
   assert(trace);
   assert(!get_trace_message(trace));

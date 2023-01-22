@@ -8,7 +8,7 @@
 #define N 1230
 #define SN "1230"
 
-int main() {
+void test_builder() {
   struct trace *trace = create_trace();
   struct builder *builder = create_builder(trace);
   assert(ok(trace));

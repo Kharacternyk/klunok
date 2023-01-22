@@ -4,7 +4,7 @@
 
 void check_default_config(struct config *config);
 
-int main() {
+void test_config_static() {
   struct trace *trace = create_trace();
   struct config *config = load_config("", trace);
   assert(ok(trace));

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+void test_set() {
   struct trace *trace = create_trace();
   struct set *set = create_set(0, trace);
   assert(ok(trace));

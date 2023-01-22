@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-int main() {
+void test_bitmap() {
   struct trace *trace = create_trace();
   struct bitmap *bitmap = create_bitmap(0, trace);
 
