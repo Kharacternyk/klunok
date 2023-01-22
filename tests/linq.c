@@ -4,8 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#define INSTANT_LINQ_PATH TEST_ROOT "/linq/instant"
-#define LAGGED_LINQ_PATH TEST_ROOT "/linq/lagged"
+#define INSTANT_LINQ_PATH "./linq/instant"
+#define LAGGED_LINQ_PATH "./linq/lagged"
 #define F1 TEST_ROOT "/meson.build"
 #define F2 TEST_ROOT "/linq.c"
 
@@ -56,7 +56,6 @@ void test_linq() {
 
   free_linq(linq);
 
-  unlink(LAGGED_LINQ_PATH "/0");
   linq = load_linq(LAGGED_LINQ_PATH, 3600, trace);
   push_to_linq(F1, linq, trace);
   assert(ok(trace));

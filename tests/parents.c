@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define DIRECTORY TEST_ROOT "/parents/abc/defgh/123"
+#define DIRECTORY "parents/abc/defgh/123"
 
 void test_parents() {
   struct trace *trace = create_trace();

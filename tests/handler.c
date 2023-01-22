@@ -3,13 +3,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define CONFIG TEST_ROOT "/configs/handler.lua"
-#define EMPTY TEST_ROOT "/klunok/empty"
-#define IN_STORE(PATH) TEST_ROOT "/klunok/store/" PATH "/version"
+#define CONFIG TEST_ROOT "/lua/handler.lua"
+#define EMPTY "empty"
+#define IN_STORE(PATH) "./klunok/store/" PATH "/version"
 
 void test_handler() {
-  assert(chdir(TEST_ROOT) >= 0);
-
   struct trace *trace = create_trace();
   struct handler *handler = load_handler(CONFIG, trace);
   assert(ok(trace));
@@ -38,13 +36,8 @@ void test_handler() {
   assert(retry_after_seconds < 0);
 
   assert(access(IN_STORE(CONFIG) ".lua", F_OK) == 0);
-  assert(unlink(IN_STORE(CONFIG) ".lua") >= 0);
-
   assert(access(IN_STORE(CONFIG) "-1.lua", F_OK) == 0);
-  assert(unlink(IN_STORE(CONFIG) "-1.lua") >= 0);
-
   assert(access(IN_STORE(CONFIG) "-2.lua", F_OK) == 0);
-  assert(unlink(IN_STORE(CONFIG) "-2.lua") >= 0);
 
   close(fd);
   fd = open(EMPTY, O_CREAT, S_IRWXU);
@@ -69,8 +62,6 @@ void test_handler() {
   assert(ok(trace));
   assert(retry_after_seconds < 0);
   assert(access(IN_STORE(EMPTY), F_OK) != 0);
-
-  assert(unlink(EMPTY) >= 0);
 
   close(fd);
   free_handler(handler);

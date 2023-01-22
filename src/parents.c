@@ -54,4 +54,6 @@ void remove_empty_parents(const char *original_path, struct trace *trace) {
     slash = strrchr(path, '/');
     *old_slash = '/';
   }
+
+  free(path);
 }
