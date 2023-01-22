@@ -13,10 +13,7 @@ static const pid_t max_pid_guess = 1 << 16;
 static const size_t elf_interpreter_count_guess = 1;
 static const size_t executable_count_guess = 128;
 static const char *const editors[] = {
-    "vi",
-    "vim",
-    "nvim",
-    "rsession",
+    "vi", "vim", "nvim", "rsession", "soffice.bin",
 };
 
 struct config {

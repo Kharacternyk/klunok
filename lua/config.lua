@@ -12,6 +12,7 @@ editors = {
   vim = true,
   nvim = true,
   rsession = true,
+  ["soffice.bin"] = true,
 }
 
 circuit_breaker_seconds = 5
