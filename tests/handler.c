@@ -4,6 +4,8 @@
 #include <unistd.h>
 
 #define CONFIG TEST_ROOT "/lua/handler.lua"
+#define F1 CONFIG
+#define F2 TEST_ROOT "/lua/empty.lua"
 #define EMPTY "empty"
 #define IN_STORE(PATH) "./klunok/store/" PATH "/version"
 
@@ -25,8 +27,18 @@ void test_handler() {
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
 
+  close(fd);
+  fd = open(F2, O_RDONLY);
+  assert(fd >= 0);
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
+
+  handle_timeout(handler, &retry_after_seconds, trace);
+  assert(ok(trace));
+  assert(retry_after_seconds < 0);
+
+  assert(access(IN_STORE(F1) ".lua", F_OK) == 0);
+  assert(access(IN_STORE(F2) ".lua", F_OK) == 0);
 
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
@@ -35,9 +47,7 @@ void test_handler() {
   assert(ok(trace));
   assert(retry_after_seconds < 0);
 
-  assert(access(IN_STORE(CONFIG) ".lua", F_OK) == 0);
-  assert(access(IN_STORE(CONFIG) "-1.lua", F_OK) == 0);
-  assert(access(IN_STORE(CONFIG) "-2.lua", F_OK) == 0);
+  assert(access(IN_STORE(F2) "-1.lua", F_OK) == 0);
 
   close(fd);
   fd = open(EMPTY, O_CREAT, S_IRWXU);

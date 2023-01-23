@@ -51,7 +51,8 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
 
   handler->linq =
       load_linq(get_configured_queue_path(handler->config),
-                get_configured_debounce_seconds(handler->config), trace);
+                get_configured_debounce_seconds(handler->config),
+                get_configured_path_length_guess(handler->config), trace);
   if (!ok(trace)) {
     throw_static(messages.handler.linq.cannot_load, trace);
     free(handler);
@@ -117,7 +118,8 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
                get_configured_queue_path(new_config))) {
       struct linq *new_linq =
           load_linq(get_configured_queue_path(new_config),
-                    get_configured_debounce_seconds(new_config), trace);
+                    get_configured_debounce_seconds(new_config),
+                    get_configured_path_length_guess(new_config), trace);
       if (!ok(trace)) {
         throw_static(messages.handler.linq.cannot_reload, trace);
         free_config(new_config);
@@ -138,9 +140,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
                     struct trace *trace) {
   *retry_after_seconds = 0;
   for (;;) {
-    char *path = get_linq_head(
-        handler->linq, get_configured_path_length_guess(handler->config),
-        retry_after_seconds, trace);
+    char *path = get_linq_head(handler->linq, retry_after_seconds, trace);
     if (!ok(trace)) {
       throw_static(messages.handler.linq.cannot_get_head, trace);
       return;
