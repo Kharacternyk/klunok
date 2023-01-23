@@ -18,7 +18,6 @@ struct handler {
   char *config_path;
   struct config *config;
   struct linq *linq;
-  struct store *store;
   struct bitmap *editor_pid_bitmap;
   struct set *elf_interpreters;
   struct set *handled_executables;
@@ -43,8 +42,6 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
       get_configured_elf_interpreter_count_guess(handler->config), trace);
   handler->handled_executables =
       create_set(get_configured_executable_count_guess(handler->config), trace);
-  handler->store =
-      create_store(get_configured_store_root(handler->config), trace);
   handler->editor_pid_bitmap =
       create_bitmap(get_configured_max_pid_guess(handler->config), trace);
   if (!ok(trace)) {
@@ -116,29 +113,22 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
       return free(file_path);
     }
 
-    struct linq *new_linq =
-        load_linq(get_configured_queue_path(new_config),
-                  get_configured_debounce_seconds(new_config), trace);
-    if (!ok(trace)) {
-      throw_static(messages.handler.linq.cannot_reload, trace);
-      free_config(new_config);
-      return free(file_path);
-    }
-
-    struct store *new_store =
-        create_store(get_configured_store_root(new_config), trace);
-    if (!ok(trace)) {
-      free_linq(new_linq);
-      free_config(new_config);
-      return free(file_path);
+    if (strcmp(get_configured_queue_path(handler->config),
+               get_configured_queue_path(new_config))) {
+      struct linq *new_linq =
+          load_linq(get_configured_queue_path(new_config),
+                    get_configured_debounce_seconds(new_config), trace);
+      if (!ok(trace)) {
+        throw_static(messages.handler.linq.cannot_reload, trace);
+        free_config(new_config);
+        return free(file_path);
+      }
+      free_linq(handler->linq);
+      handler->linq = new_linq;
     }
 
     free_config(handler->config);
     handler->config = new_config;
-    free_store(handler->store);
-    handler->store = new_store;
-    free_linq(handler->linq);
-    handler->linq = new_linq;
   }
 
   free(file_path);
@@ -183,7 +173,8 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
     for (;;) {
       concat_string(extension, version_builder, trace);
-      copy_to_store(path, build_string(version_builder), handler->store, trace);
+      copy_to_store(path, build_string(version_builder),
+                    get_configured_store_root(handler->config), trace);
       catch_static(messages.store.copy.file_does_not_exist, trace);
       catch_static(messages.store.copy.permission_denied, trace);
       if (ok(trace)) {
@@ -214,7 +205,6 @@ void free_handler(struct handler *handler) {
     free(handler->config_path);
     free_config(handler->config);
     free_linq(handler->linq);
-    free_store(handler->store);
     free_bitmap(handler->editor_pid_bitmap);
     free_set(handler->elf_interpreters);
     free_set(handler->handled_executables);

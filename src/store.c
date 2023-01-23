@@ -11,31 +11,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-struct store {
-  char *root;
-  size_t root_length;
-};
-
-struct store *create_store(const char *root, struct trace *trace) {
-  struct store *store = TNULL(malloc(sizeof(struct store)), trace);
-  char *root_copy = TNULL(strdup(root), trace);
-  if (!ok(trace)) {
-    free(store);
-    return NULL;
-  }
-
-  store->root_length = strlen(root);
-  store->root = root_copy;
-  return store;
-}
-
 static struct builder *get_store_path_builder(const char *filesystem_path,
                                               const char *version,
-                                              const struct store *store,
+                                              const char *store_root,
                                               struct trace *trace) {
   assert(*filesystem_path == '/');
   struct builder *builder = create_builder(trace);
-  concat_string(store->root, builder, trace);
+  concat_string(store_root, builder, trace);
   concat_string(filesystem_path, builder, trace);
   concat_string("/", builder, trace);
   concat_string(version, builder, trace);
@@ -54,9 +36,9 @@ static void cleanup(struct builder *path_builder) {
 }
 
 void copy_to_store(const char *filesystem_path, const char *version,
-                   const struct store *store, struct trace *trace) {
+                   const char *store_root, struct trace *trace) {
   struct builder *path_builder =
-      get_store_path_builder(filesystem_path, version, store, trace);
+      get_store_path_builder(filesystem_path, version, store_root, trace);
   create_parents(build_string(path_builder),
                  S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, trace);
   if (!ok(trace)) {
@@ -115,11 +97,4 @@ void copy_to_store(const char *filesystem_path, const char *version,
 
   close(in_fd);
   free_builder(path_builder);
-}
-
-void free_store(struct store *store) {
-  if (store) {
-    free(store->root);
-    free(store);
-  }
 }

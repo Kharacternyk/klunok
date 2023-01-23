@@ -13,19 +13,16 @@
 
 void test_store() {
   struct trace *trace = create_trace();
-  struct store *store = create_store(STORE_ROOT, trace);
-  assert(ok(trace));
 
-  assert(access(FILE_COPY, F_OK));
+  assert(access(FILE_COPY, F_OK) != 0);
 
-  copy_to_store(COPYIED_FILE, FILE_VERSION, store, trace);
+  copy_to_store(COPYIED_FILE, FILE_VERSION, STORE_ROOT, trace);
   assert(ok(trace));
 
   assert(!access(FILE_COPY, F_OK));
 
-  copy_to_store(MISSING_FILE, FILE_VERSION, store, trace);
+  copy_to_store(MISSING_FILE, FILE_VERSION, STORE_ROOT, trace);
   assert(catch_static(messages.store.copy.file_does_not_exist, trace));
 
   free(trace);
-  free_store(store);
 }
