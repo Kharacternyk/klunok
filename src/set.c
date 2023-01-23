@@ -1,4 +1,5 @@
 #include "set.h"
+#include "messages.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -44,9 +45,13 @@ static size_t hash(const char *value) {
   return result;
 }
 
-bool is_in_set(const char *value, const struct set *set) {
+static struct entry **get_head(const char *value, const struct set *set) {
   size_t hashed_value = hash(value);
-  struct entry *entry = set->entries[hashed_value % set->size];
+  return &(set->entries[hashed_value % set->size]);
+}
+
+bool is_in_set(const char *value, const struct set *set) {
+  struct entry *entry = *get_head(value, set);
 
   while (entry) {
     if (strcmp(value, entry->value) == 0) {
@@ -65,19 +70,31 @@ void add_to_set(const char *value, struct set *set, struct trace *trace) {
     return free(value_copy);
   }
 
-  new_entry->next = NULL;
+  struct entry **head = get_head(value, set);
+
+  new_entry->next = *head;
   new_entry->value = value_copy;
 
-  size_t hashed_value = hash(value);
-  struct entry **entry = &(set->entries[hashed_value % set->size]);
-  if (!*entry) {
-    *entry = new_entry;
+  *head = new_entry;
+}
+
+void remove_from_set(const char *value, struct set *set, struct trace *trace) {
+  if (!ok(trace)) {
     return;
   }
-  while ((*entry)->next) {
+
+  struct entry **entry = get_head(value, set);
+  while (*entry && strcmp((*entry)->value, value)) {
     entry = &((*entry)->next);
   }
-  (*entry)->next = new_entry;
+  if (!*entry) {
+    return throw_static(messages.set.not_in_set, trace);
+  }
+
+  struct entry *new_next = (*entry)->next;
+  free((*entry)->value);
+  free(*entry);
+  *entry = new_next;
 }
 
 void free_set(struct set *set) {
