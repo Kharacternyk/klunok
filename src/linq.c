@@ -89,6 +89,18 @@ static struct linq *load_or_create_linq(const char *path,
   struct linq *linq = TNULL(malloc(sizeof(struct linq)), trace);
   int dirfd = TNEG(open(path, O_DIRECTORY), trace);
   struct set *set = create_set(/*FIXME*/ entry_count, trace);
+  if (ok(trace)) {
+    linq->dirfd = dirfd;
+    linq->size = entry_count;
+    linq->debounce_seconds = debounce_seconds;
+    linq->length_guess = entry_length_guess;
+    linq->set = set;
+    if (entry_count > 0) {
+      linq->head_index = strtol(entries[0]->d_name, NULL, 10);
+    } else {
+      linq->head_index = 0;
+    }
+  }
   for (size_t i = 0; i < entry_count && ok(trace); ++i) {
     char *entry_target = read_entry(entries[i]->d_name, linq, trace);
     add_to_set(entry_target, set, trace);
@@ -100,18 +112,6 @@ static struct linq *load_or_create_linq(const char *path,
     free_set(set);
     return NULL;
   }
-
-  if (entry_count > 0) {
-    linq->head_index = strtol(entries[0]->d_name, NULL, 10);
-  } else {
-    linq->head_index = 0;
-  }
-
-  linq->dirfd = dirfd;
-  linq->size = entry_count;
-  linq->debounce_seconds = debounce_seconds;
-  linq->length_guess = entry_length_guess;
-  linq->set = set;
 
   free_entries(entries, entry_count);
 
