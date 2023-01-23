@@ -64,6 +64,20 @@ void test_set() {
   assert(is_in_set(s2, set));
   assert(!is_in_set(s1, set));
 
+  assert(is_unique_within_set(s4, set));
+  add_to_set(s4, set, trace);
+  assert(ok(trace));
+  assert(!is_unique_within_set(s4, set));
+  assert(is_in_set(s4, set));
+
+  remove_from_set(s4, set, trace);
+  assert(ok(trace));
+  assert(is_in_set(s4, set));
+
+  remove_from_set(s4, set, trace);
+  assert(ok(trace));
+  assert(!is_in_set(s4, set));
+
   free_set(set);
   free(trace);
 }

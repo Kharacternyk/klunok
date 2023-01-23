@@ -63,6 +63,23 @@ bool is_in_set(const char *value, const struct set *set) {
   return false;
 }
 
+bool is_unique_within_set(const char *value, const struct set *set) {
+  size_t count = 0;
+  struct entry *entry = *get_head(value, set);
+
+  while (entry) {
+    if (strcmp(value, entry->value) == 0) {
+      ++count;
+      if (count == 2) {
+        return false;
+      }
+    }
+    entry = entry->next;
+  }
+
+  return true;
+}
+
 void add_to_set(const char *value, struct set *set, struct trace *trace) {
   char *value_copy = TNULL(strdup(value), trace);
   struct entry *new_entry = TNULL(malloc(sizeof(struct entry)), trace);
