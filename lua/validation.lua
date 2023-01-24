@@ -22,6 +22,12 @@ assert_is_positive('max_pid_guess')
 assert_is_positive('elf_interpreter_count_guess')
 assert_is_positive('executable_count_guess')
 
+if queue_size_guess == nil then
+  queue_size_guess = debounce_seconds * 2
+else
+  assert_is_positive('queue_size_guess')
+end
+
 assert(type(editors) == 'table', 'editors must be a table')
 for editor, _ in pairs(editors) do
   assert(type(editor) == 'string', 'editors must contain only string keys')

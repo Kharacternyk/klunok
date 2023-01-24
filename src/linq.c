@@ -66,11 +66,10 @@ static char *read_entry(const char *entry, const struct linq *linq,
   }
 }
 
-static struct linq *load_or_create_linq(const char *path,
-                                        time_t debounce_seconds,
-                                        size_t entry_length_guess,
-                                        bool try_to_create,
-                                        struct trace *trace) {
+static struct linq *
+load_or_create_linq(const char *path, time_t debounce_seconds,
+                    size_t entry_count_guess, size_t entry_length_guess,
+                    bool try_to_create, struct trace *trace) {
   if (!ok(trace)) {
     return NULL;
   }
@@ -79,16 +78,19 @@ static struct linq *load_or_create_linq(const char *path,
   if (entry_count < 0) {
     if (errno == ENOENT && try_to_create) {
       create_linq_path(path, trace);
-      return load_or_create_linq(path, debounce_seconds, entry_length_guess,
-                                 false, trace);
+      return load_or_create_linq(path, debounce_seconds, entry_count_guess,
+                                 entry_length_guess, false, trace);
     }
     throw_errno(trace);
     return NULL;
   }
 
+  size_t set_size =
+      entry_count_guess > entry_count ? entry_count_guess : entry_count;
+
   struct linq *linq = TNULL(malloc(sizeof(struct linq)), trace);
   int dirfd = TNEG(open(path, O_DIRECTORY), trace);
-  struct set *set = create_set(/*FIXME*/ entry_count, trace);
+  struct set *set = create_set(set_size, trace);
   if (ok(trace)) {
     linq->dirfd = dirfd;
     linq->size = entry_count;
@@ -119,9 +121,10 @@ static struct linq *load_or_create_linq(const char *path,
 }
 
 struct linq *load_linq(const char *path, time_t debounce_seconds,
-                       size_t entry_length_guess, struct trace *trace) {
-  return load_or_create_linq(path, debounce_seconds, entry_length_guess, true,
-                             trace);
+                       size_t entry_count_guess, size_t entry_length_guess,
+                       struct trace *trace) {
+  return load_or_create_linq(path, debounce_seconds, entry_count_guess,
+                             entry_length_guess, true, trace);
 }
 
 void push_to_linq(const char *path, struct linq *linq, struct trace *trace) {

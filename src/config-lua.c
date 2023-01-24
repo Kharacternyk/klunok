@@ -21,6 +21,7 @@ struct config {
   size_t path_length_guess;
   size_t elf_interpreter_count_guess;
   size_t executable_count_guess;
+  size_t queue_size_guess;
   pid_t max_pid_guess;
 };
 
@@ -126,6 +127,7 @@ struct config *load_config(const char *path, struct trace *trace) {
   config->elf_interpreter_count_guess =
       read_lua_size(lua, "elf_interpreter_count_guess");
   config->executable_count_guess = read_lua_size(lua, "executable_count_guess");
+  config->queue_size_guess = read_lua_size(lua, "queue_size_guess");
 
   lua_close(lua);
   return config;
@@ -169,6 +171,10 @@ size_t get_configured_elf_interpreter_count_guess(const struct config *config) {
 
 size_t get_configured_executable_count_guess(const struct config *config) {
   return config->executable_count_guess;
+}
+
+size_t get_configured_queue_size_guess(const struct config *config) {
+  return config->queue_size_guess;
 }
 
 void free_config(struct config *config) {

@@ -12,6 +12,7 @@ static const size_t path_length_guess = 1024;
 static const pid_t max_pid_guess = 1 << 16;
 static const size_t elf_interpreter_count_guess = 1;
 static const size_t executable_count_guess = 128;
+static const size_t queue_size_guess = 2 * debounce_seconds;
 static const char *const editors[] = {
     "vi", "vim", "nvim", "rsession", "soffice.bin",
 };
@@ -86,6 +87,10 @@ size_t get_configured_elf_interpreter_count_guess(const struct config *config) {
 
 size_t get_configured_executable_count_guess(const struct config *config) {
   return executable_count_guess;
+}
+
+size_t get_configured_queue_size_guess(const struct config *config) {
+  return queue_size_guess;
 }
 
 void free_config(struct config *config) {

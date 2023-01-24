@@ -20,6 +20,8 @@ void check_default_config(struct config *config) {
   assert(get_configured_max_pid_guess(config) == 1 << 16);
   assert(get_configured_elf_interpreter_count_guess(config) == 1);
   assert(get_configured_executable_count_guess(config) == 128);
+  assert(get_configured_queue_size_guess(config) ==
+         get_configured_debounce_seconds(config) * 2);
 
   free_config(config);
 }

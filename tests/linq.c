@@ -11,7 +11,7 @@
 
 void test_linq() {
   struct trace *trace = create_trace();
-  struct linq *linq = load_linq(INSTANT_LINQ_PATH, 0, 0, trace);
+  struct linq *linq = load_linq(INSTANT_LINQ_PATH, 0, 0, 0, trace);
   assert(ok(trace));
 
   time_t retry_after_seconds = 0;
@@ -56,7 +56,7 @@ void test_linq() {
 
   free_linq(linq);
 
-  linq = load_linq(LAGGED_LINQ_PATH, 3600, 0, trace);
+  linq = load_linq(LAGGED_LINQ_PATH, 3600, 0, 0, trace);
   push_to_linq(F1, linq, trace);
   assert(ok(trace));
   path = get_linq_head(linq, &retry_after_seconds, trace);
