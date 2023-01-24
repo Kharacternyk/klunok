@@ -19,6 +19,8 @@ assert_is_positive('debounce_seconds')
 assert_is_positive('version_max_length')
 assert_is_positive('path_length_guess')
 assert_is_positive('max_pid_guess')
+assert_is_positive('elf_interpreter_count_guess')
+assert_is_positive('executable_count_guess')
 
 assert(type(editors) == 'table', 'editors must be a table')
 for editor, _ in pairs(editors) do
