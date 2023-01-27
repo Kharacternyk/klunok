@@ -39,9 +39,20 @@ void concat_string(const char *string, struct builder *builder,
   }
 }
 
+void concat_char(char c, struct builder *builder, struct trace *trace) {
+  char *new_buffer = TNULL(realloc(builder->buffer, builder->size + 1), trace);
+  if (!ok(trace)) {
+    return;
+  }
+  builder->buffer = new_buffer;
+  builder->buffer[builder->size] = '\0';
+  builder->buffer[builder->size - 1] = c;
+  ++builder->size;
+}
+
 void concat_size(size_t size, struct builder *builder, struct trace *trace) {
   if (!size) {
-    return concat_string("0", builder, trace);
+    return concat_char('0', builder, trace);
   }
   if (!ok(trace)) {
     return;
@@ -53,10 +64,10 @@ void concat_size(size_t size, struct builder *builder, struct trace *trace) {
     power_of_ten *= 10;
   }
 
-  char digit[] = {0, 0};
+  char digit;
   while (power_of_ten) {
-    digit[0] = '0' + size / power_of_ten;
-    concat_string(digit, builder, trace);
+    digit = '0' + size / power_of_ten;
+    concat_char(digit, builder, trace);
     if (!ok(trace)) {
       truncate_builder(saved_length, builder);
       return;
