@@ -16,7 +16,6 @@ assert_is_string('queue_path')
 assert_is_string('version_pattern')
 
 assert_is_positive('debounce_seconds')
-assert_is_positive('version_max_length')
 assert_is_positive('path_length_guess')
 assert_is_positive('max_pid_guess')
 assert_is_positive('elf_interpreter_count_guess')

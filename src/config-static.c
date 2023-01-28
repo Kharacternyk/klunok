@@ -7,7 +7,6 @@ static const char *const queue_path = "./klunok/queue";
 static const char *const version_pattern = "v%Y-%m-%d-%H-%M";
 static const char *const ld_linux_glob = "ld-linux*.so*";
 static const size_t debounce_seconds = 60;
-static const size_t version_max_length = 80;
 static const size_t path_length_guess = 1024;
 static const pid_t max_pid_guess = 1 << 16;
 static const size_t elf_interpreter_count_guess = 1;
@@ -67,10 +66,6 @@ const char *get_configured_ld_linux_glob(const struct config *config) {
 
 size_t get_configured_debounce_seconds(const struct config *config) {
   return debounce_seconds;
-}
-
-size_t get_configured_version_max_length(const struct config *config) {
-  return version_max_length;
 }
 
 size_t get_configured_path_length_guess(const struct config *config) {

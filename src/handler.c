@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fnmatch.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -152,8 +153,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     }
 
     char *base_version = get_timestamp(
-        get_configured_version_pattern(handler->config),
-        get_configured_version_max_length(handler->config), trace);
+        get_configured_version_pattern(handler->config), NAME_MAX, trace);
     struct builder *version_builder = create_builder(trace);
     concat_string(base_version, version_builder, trace);
     free(base_version);

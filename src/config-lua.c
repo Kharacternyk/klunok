@@ -17,7 +17,6 @@ struct config {
   char *queue_path;
   char *version_pattern;
   size_t debounce_seconds;
-  size_t version_max_length;
   size_t path_length_guess;
   size_t elf_interpreter_count_guess;
   size_t executable_count_guess;
@@ -121,7 +120,6 @@ struct config *load_config(const char *path, struct trace *trace) {
   }
 
   config->debounce_seconds = read_lua_size(lua, "debounce_seconds");
-  config->version_max_length = read_lua_size(lua, "version_max_length");
   config->path_length_guess = read_lua_size(lua, "path_length_guess");
   config->max_pid_guess = read_lua_size(lua, "max_pid_guess");
   config->elf_interpreter_count_guess =
@@ -151,10 +149,6 @@ const char *get_configured_version_pattern(const struct config *config) {
 
 size_t get_configured_debounce_seconds(const struct config *config) {
   return config->debounce_seconds;
-}
-
-size_t get_configured_version_max_length(const struct config *config) {
-  return config->version_max_length;
 }
 
 size_t get_configured_path_length_guess(const struct config *config) {
