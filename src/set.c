@@ -21,10 +21,8 @@ struct set *create_set(size_t size_guess, struct trace *trace) {
     free(entries);
     return NULL;
   }
-
   set->size = size;
   set->entries = entries;
-
   return set;
 }
 

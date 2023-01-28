@@ -4,23 +4,20 @@
 #include <string.h>
 
 struct bitmap {
-  size_t size;
   bool *array;
+  size_t size;
 };
 
 struct bitmap *create_bitmap(size_t size_guess, struct trace *trace) {
   struct bitmap *bitmap = TNULL(malloc(sizeof(struct bitmap)), trace);
   bool *array = TNULL(calloc(size_guess, sizeof(bool)), trace);
-
   if (!ok(trace)) {
     free(bitmap);
     free(array);
     return NULL;
   }
-
   bitmap->array = array;
   bitmap->size = size_guess;
-
   return bitmap;
 }
 
