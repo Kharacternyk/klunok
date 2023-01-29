@@ -92,6 +92,9 @@ void truncate_builder(size_t length, struct builder *builder) {
 }
 
 char *free_outer_builder(struct builder *builder) {
+  if (!builder) {
+    return NULL;
+  }
   char *result = builder->buffer;
   free(builder);
   return result;

@@ -21,11 +21,7 @@ char *get_store_path(const char *filesystem_path, const char *version,
   concat_string(filesystem_path, builder, trace);
   concat_string("/", builder, trace);
   concat_string(version, builder, trace);
-  if (ok(trace)) {
-    return free_outer_builder(builder);
-  }
-  free_builder(builder);
-  return NULL;
+  return free_outer_builder(builder);
 }
 
 static void cleanup(char *store_path) {
