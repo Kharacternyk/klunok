@@ -40,3 +40,6 @@ void throw_errno(struct trace *trace);
 bool ok(const struct trace *trace);
 bool catch_static(const char *message, struct trace *trace);
 void catch_all(struct trace *trace);
+
+void rethrow_check(struct trace *trace);
+void rethrow_static(const char *message, struct trace *trace);

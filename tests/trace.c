@@ -46,5 +46,43 @@ void test_trace() {
   assert(catch_static(a, trace));
   assert(ok(trace));
 
+  rethrow_check(trace);
+  rethrow_check(trace);
+  rethrow_static(a, trace);
+  rethrow_static(b, trace);
+  assert(ok(trace));
+
+  const char *c = "\\m/";
+
+  rethrow_check(trace);
+  rethrow_check(trace);
+  throw_static(a, trace);
+  assert(get_trace_message(trace) == a);
+  rethrow_static(b, trace);
+  assert(get_trace_message(trace) == b);
+  rethrow_static(c, trace);
+  assert(get_trace_message(trace) == c);
+  assert(catch_static(c, trace));
+
+  rethrow_check(trace);
+  throw_static(a, trace);
+  assert(get_trace_message(trace) == a);
+  rethrow_check(trace);
+  rethrow_static(b, trace);
+  assert(get_trace_message(trace) == a);
+  rethrow_static(c, trace);
+  assert(get_trace_message(trace) == c);
+  assert(catch_static(c, trace));
+
+  throw_static(a, trace);
+  assert(get_trace_message(trace) == a);
+  rethrow_check(trace);
+  rethrow_check(trace);
+  rethrow_static(b, trace);
+  assert(get_trace_message(trace) == a);
+  rethrow_static(c, trace);
+  assert(get_trace_message(trace) == a);
+  assert(catch_static(a, trace));
+
   free(trace);
 }

@@ -16,6 +16,8 @@ struct frame {
 struct trace {
   size_t dropped_frame_count;
   struct frame *head;
+  size_t pre_throw_depth;
+  size_t post_throw_depth;
 };
 
 struct trace *create_trace() {
@@ -107,5 +109,25 @@ void catch_all(struct trace *trace) {
   trace->dropped_frame_count = 0;
   while (trace->head) {
     pop_trace_message(trace);
+  }
+}
+
+void rethrow_check(struct trace *trace) {
+  if (ok(trace)) {
+    ++trace->pre_throw_depth;
+  } else {
+    ++trace->post_throw_depth;
+  }
+}
+
+void rethrow_static(const char *message, struct trace *trace) {
+  if (trace->post_throw_depth) {
+    --trace->post_throw_depth;
+  } else {
+    assert(trace->pre_throw_depth);
+    --trace->pre_throw_depth;
+    if (!ok(trace)) {
+      throw_static(message, trace);
+    }
   }
 }

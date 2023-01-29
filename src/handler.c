@@ -27,17 +27,10 @@ struct handler {
 struct handler *load_handler(const char *config_path, struct trace *trace) {
   struct handler *handler = TNULL(calloc(1, sizeof(struct handler)), trace);
   handler->config_path = TNULL(strdup(config_path), trace);
-  if (!ok(trace)) {
-    free(handler);
-    return NULL;
-  }
 
+  rethrow_check(trace);
   handler->config = load_config(config_path, trace);
-  if (!ok(trace)) {
-    throw_static(messages.handler.config.cannot_load, trace);
-    free(handler);
-    return NULL;
-  }
+  rethrow_static(messages.handler.config.cannot_load, trace);
 
   handler->elf_interpreters = create_set(
       get_configured_elf_interpreter_count_guess(handler->config), trace);
@@ -45,19 +38,17 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
       create_set(get_configured_executable_count_guess(handler->config), trace);
   handler->editor_pid_bitmap =
       create_bitmap(get_configured_max_pid_guess(handler->config), trace);
-  if (!ok(trace)) {
-    free(handler);
-    return NULL;
-  }
 
+  rethrow_check(trace);
   handler->linq =
       load_linq(get_configured_queue_path(handler->config),
                 get_configured_debounce_seconds(handler->config),
                 get_configured_queue_size_guess(handler->config),
                 get_configured_path_length_guess(handler->config), trace);
+  rethrow_static(messages.handler.linq.cannot_load, trace);
+
   if (!ok(trace)) {
-    throw_static(messages.handler.linq.cannot_load, trace);
-    free(handler);
+    free_handler(handler);
     return NULL;
   }
 
