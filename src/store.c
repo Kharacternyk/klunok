@@ -11,38 +11,42 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static struct builder *get_store_path_builder(const char *filesystem_path,
-                                              const char *version,
-                                              const char *store_root,
-                                              struct trace *trace) {
-  assert(*filesystem_path == '/');
+char *get_store_path(const char *filesystem_path, const char *version,
+                     const char *store_root, struct trace *trace) {
+  if (ok(trace)) {
+    assert(*filesystem_path == '/');
+  }
   struct builder *builder = create_builder(trace);
   concat_string(store_root, builder, trace);
   concat_string(filesystem_path, builder, trace);
   concat_string("/", builder, trace);
   concat_string(version, builder, trace);
-  return builder;
+  if (ok(trace)) {
+    return free_outer_builder(builder);
+  }
+  free_builder(builder);
+  return NULL;
 }
 
-static void cleanup(struct builder *path_builder) {
+static void cleanup(char *store_path) {
   /*FIXME cleanup error reporting*/
   struct trace *cleanup_trace = create_trace();
   if (cleanup_trace) {
-    remove_empty_parents(build_string(path_builder), cleanup_trace);
+    remove_empty_parents(store_path, cleanup_trace);
     catch_all(cleanup_trace);
     free(cleanup_trace);
   }
-  free_builder(path_builder);
+  free(store_path);
 }
 
 void copy_to_store(const char *filesystem_path, const char *version,
                    const char *store_root, struct trace *trace) {
-  struct builder *path_builder =
-      get_store_path_builder(filesystem_path, version, store_root, trace);
-  create_parents(build_string(path_builder),
-                 S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, trace);
+  char *store_path =
+      get_store_path(filesystem_path, version, store_root, trace);
+  create_parents(store_path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH,
+                 trace);
   if (!ok(trace)) {
-    return cleanup(path_builder);
+    return cleanup(store_path);
   }
 
   int in_fd = open(filesystem_path, O_RDONLY);
@@ -54,10 +58,10 @@ void copy_to_store(const char *filesystem_path, const char *version,
     } else {
       throw_errno(trace);
     }
-    return cleanup(path_builder);
+    return cleanup(store_path);
   }
 
-  int out_fd = open(build_string(path_builder), O_CREAT | O_WRONLY | O_EXCL,
+  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_EXCL,
                     S_IRUSR | S_IRGRP | S_IROTH);
   if (out_fd < 0) {
     if (errno == EEXIST) {
@@ -66,7 +70,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
       throw_errno(trace);
     }
     close(in_fd);
-    return cleanup(path_builder);
+    return cleanup(store_path);
   }
 
   struct stat in_fd_stat;
@@ -74,7 +78,7 @@ void copy_to_store(const char *filesystem_path, const char *version,
     throw_errno(trace);
     close(out_fd);
     close(in_fd);
-    return cleanup(path_builder);
+    return cleanup(store_path);
   }
 
   while (in_fd_stat.st_size) {
@@ -85,16 +89,16 @@ void copy_to_store(const char *filesystem_path, const char *version,
       throw_errno(trace);
       close(out_fd);
       close(in_fd);
-      return cleanup(path_builder);
+      return cleanup(store_path);
     }
   }
 
   if (close(out_fd) < 0) {
     throw_errno(trace);
     close(in_fd);
-    return cleanup(path_builder);
+    return cleanup(store_path);
   }
 
   close(in_fd);
-  free_builder(path_builder);
+  free(store_path);
 }
