@@ -1,4 +1,5 @@
 #include "handler.h"
+#include "mountinfo.h"
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,11 +57,20 @@ int main(int argc, const char **argv) {
     return unwind(trace);
   }
 
-  if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
-                    FAN_OPEN_EXEC | FAN_CLOSE_WRITE, 0, config_path) < 0) {
-    throw_errno(trace);
-    throw_static("Cannot watch mount point of configuration file", trace);
+  struct mountinfo *mountinfo = create_mountinfo(trace);
+  if (!ok(trace)) {
+    throw_static("Cannot list mount points of the system", trace);
     return unwind(trace);
+  }
+
+  for (const char *mount = get_next_block_mount(mountinfo); mount;
+       mount = get_next_block_mount(mountinfo)) {
+    if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
+                      FAN_OPEN_EXEC | FAN_CLOSE_WRITE, 0, mount) < 0) {
+      throw_errno(trace);
+      throw_static("Cannot watch a mount point", trace);
+      return unwind(trace);
+    }
   }
 
   struct stat config_stat;
