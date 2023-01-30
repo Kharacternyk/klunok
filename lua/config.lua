@@ -11,6 +11,8 @@ editors = {
   nvim = true,
   rsession = true,
   ["soffice.bin"] = true,
+  inkscape = true,
+  [".inkscape-wrapped"] = true,
 }
 
 -- Not reloadable settings
