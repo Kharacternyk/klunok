@@ -13,7 +13,13 @@ static const size_t elf_interpreter_count_guess = 1;
 static const size_t executable_count_guess = 128;
 static const size_t queue_size_guess = 2 * debounce_seconds;
 static const char *const editors[] = {
-    "vi", "vim", "nvim", "rsession", "soffice.bin",
+    "vi",          "vim",
+    "nvim",        "code",
+    "kak",         "hx",
+    ".hx-wrapped", "micro",
+    "nano",        "atom",
+    "rsession",    "soffice.bin",
+    "inkscape",    ".inkscape-wrapped",
 };
 
 struct config {
