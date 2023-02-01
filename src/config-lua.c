@@ -67,54 +67,53 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 struct config *load_config(const char *path, struct trace *trace) {
   struct config *config = TNULL(calloc(1, sizeof(struct config)), trace);
   lua_State *lua = TNULL(luaL_newstate(), trace);
-  if (!ok(trace)) {
-    return NULL;
-  }
 
-  luaL_openlibs(lua);
-  if (luaL_loadbuffer(lua, &_binary_lua_config_lua_start,
-                      &_binary_lua_config_lua_end -
-                          &_binary_lua_config_lua_start,
-                      "default") ||
-      lua_pcall(lua, 0, 0, 0)) {
-    throw_dynamic(lua_tostring(lua, -1), trace);
-    lua_close(lua);
-    free_config(config);
-    return NULL;
+  if (ok(trace)) {
+    luaL_openlibs(lua);
+    if (luaL_loadbuffer(lua, &_binary_lua_config_lua_start,
+                        &_binary_lua_config_lua_end -
+                            &_binary_lua_config_lua_start,
+                        "default") ||
+        lua_pcall(lua, 0, 0, 0)) {
+      throw_dynamic(lua_tostring(lua, -1), trace);
+    }
   }
 
   struct circuit_breaker *circuit_breaker = create_circuit_breaker(
       read_lua_size(lua, "circuit_breaker_seconds"), trace);
-  if (!ok(trace)) {
-    lua_close(lua);
-    free_config(config);
-    return NULL;
+
+  if (ok(trace)) {
+    if (path) {
+      arm(circuit_breaker);
+      if (luaL_loadfile(lua, path) || lua_pcall(lua, 0, 0, 0) ||
+          luaL_loadbuffer(lua, &_binary_lua_validation_lua_start,
+                          &_binary_lua_validation_lua_end -
+                              &_binary_lua_validation_lua_start,
+                          "validation") ||
+          lua_pcall(lua, 0, 0, 0)) {
+        throw_dynamic(lua_tostring(lua, -1), trace);
+      }
+      disarm(circuit_breaker);
+    } else if (luaL_loadbuffer(lua, &_binary_lua_validation_lua_start,
+                               &_binary_lua_validation_lua_end -
+                                   &_binary_lua_validation_lua_start,
+                               "validation") ||
+               lua_pcall(lua, 0, 0, 0)) {
+      throw_dynamic(lua_tostring(lua, -1), trace);
+    }
   }
 
-  arm(circuit_breaker);
-  if (luaL_loadfile(lua, path) || lua_pcall(lua, 0, 0, 0) ||
-      luaL_loadbuffer(lua, &_binary_lua_validation_lua_start,
-                      &_binary_lua_validation_lua_end -
-                          &_binary_lua_validation_lua_start,
-                      "validation") ||
-      lua_pcall(lua, 0, 0, 0)) {
-    disarm(circuit_breaker);
-    free_circuit_breaker(circuit_breaker);
-    throw_dynamic(lua_tostring(lua, -1), trace);
-    lua_close(lua);
-    free_config(config);
-    return NULL;
-  }
-
-  config->editors = read_lua_set(lua, "editors", trace);
-  disarm(circuit_breaker);
   free_circuit_breaker(circuit_breaker);
 
+  config->editors = read_lua_set(lua, "editors", trace);
   config->store_root = read_lua_string(lua, "store_root", trace);
   config->queue_path = read_lua_string(lua, "queue_path", trace);
   config->version_pattern = read_lua_string(lua, "version_pattern", trace);
+
   if (!ok(trace)) {
-    lua_close(lua);
+    if (lua) {
+      lua_close(lua);
+    }
     free_config(config);
     return NULL;
   }

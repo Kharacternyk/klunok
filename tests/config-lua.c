@@ -7,9 +7,12 @@ void check_default_config(struct config *config);
 
 void test_config_lua() {
   struct trace *trace = create_trace();
-  struct config *config = load_config(TEST_ROOT "/lua/empty.lua", trace);
+  struct config *config = load_config(NULL, trace);
   assert(ok(trace));
+  check_default_config(config);
 
+  config = load_config(TEST_ROOT "/lua/empty.lua", trace);
+  assert(ok(trace));
   check_default_config(config);
 
   config = load_config(TEST_ROOT "/lua/override.lua", trace);

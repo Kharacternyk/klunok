@@ -46,18 +46,6 @@ int main(int argc, const char **argv) {
     return unwind(trace);
   }
 
-  if (argc < 2) {
-    throw_static("No configuration file provided", trace);
-    return unwind(trace);
-  }
-
-  char *config_path = realpath(argv[1], NULL);
-  if (!config_path) {
-    throw_errno(trace);
-    throw_static("Cannot canonicalize path of configuration file", trace);
-    return unwind(trace);
-  }
-
   struct mountinfo *mountinfo = create_mountinfo(trace);
   if (!ok(trace)) {
     throw_static("Cannot list mount points of the system", trace);
@@ -74,34 +62,34 @@ int main(int argc, const char **argv) {
     }
   }
 
-  struct stat config_stat;
-  if (stat(config_path, &config_stat) < 0) {
-    throw_errno(trace);
-    throw_static("Cannot stat configuration file", trace);
-    return unwind(trace);
+  char *config_path = NULL;
+
+  if (argc > 1) {
+    config_path = realpath(argv[1], NULL);
+    if (!config_path) {
+      throw_errno(trace);
+      throw_static("Cannot canonicalize path of configuration file", trace);
+      return unwind(trace);
+    }
   }
-  if (config_stat.st_uid == 0) {
-    throw_static("Configuration file must not be owned by root", trace);
-    return unwind(trace);
+
+  const char *unprivileged_paths[] = {
+      config_path,
+      ".",
+      "klunok",
+  };
+  for (size_t i = 0; i < sizeof unprivileged_paths / sizeof(char *); ++i) {
+    struct stat drop_stat;
+    if (unprivileged_paths[i] && stat(unprivileged_paths[i], &drop_stat) >= 0 &&
+        drop_stat.st_gid && drop_stat.st_uid) {
+      TNEG(setgroups(0, NULL), trace);
+      TNEG(setgid(drop_stat.st_gid), trace);
+      TNEG(setuid(drop_stat.st_uid), trace);
+      break;
+    }
   }
-  if (config_stat.st_gid == 0) {
-    throw_static("Configuration file must not be owned by the root group",
-                 trace);
-    return unwind(trace);
-  }
-  if (setgroups(0, NULL) < 0) {
-    throw_errno(trace);
-    throw_static("Cannot drop supplementary groups", trace);
-    return unwind(trace);
-  }
-  if (setgid(config_stat.st_gid) < 0) {
-    throw_errno(trace);
-    throw_static("Cannot drop privileged group ID", trace);
-    return unwind(trace);
-  }
-  if (setuid(config_stat.st_uid) < 0) {
-    throw_errno(trace);
-    throw_static("Cannot drop privileged user ID", trace);
+  if (!ok(trace) || !getuid() || !getgid()) {
+    throw_static("Cannot drop privileges", trace);
     return unwind(trace);
   }
 

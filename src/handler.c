@@ -26,7 +26,11 @@ struct handler {
 
 struct handler *load_handler(const char *config_path, struct trace *trace) {
   struct handler *handler = TNULL(calloc(1, sizeof(struct handler)), trace);
-  handler->config_path = TNULL(strdup(config_path), trace);
+  if (!ok(trace)) {
+    return NULL;
+  }
+
+  handler->config_path = config_path ? TNULL(strdup(config_path), trace) : NULL;
 
   rethrow_check(trace);
   handler->config = load_config(config_path, trace);
@@ -100,7 +104,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
     }
   }
 
-  if (!strcmp(file_path, handler->config_path)) {
+  if (handler->config_path && !strcmp(file_path, handler->config_path)) {
     struct config *new_config = load_config(handler->config_path, trace);
     if (!ok(trace)) {
       throw_static(messages.handler.config.cannot_reload, trace);

@@ -15,6 +15,9 @@ const struct translation messages = {
       .version_already_exists = "Version already exists",
     },
   },
+  .config = {
+    .is_static = "Configuration files are not supported",
+  },
   .handler = {
     .version = {
       .has_slashes = "Version string contains slash characters",

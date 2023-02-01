@@ -1,5 +1,6 @@
 #include "config.h"
 #include <errno.h>
+#include <messages.h>
 #include <stdlib.h>
 
 static const char *const store_root = "./klunok/store";
@@ -51,26 +52,20 @@ struct config {
 };
 
 struct config *load_config(const char *path, struct trace *trace) {
-  struct config *config = TNULL(calloc(1, sizeof(struct config)), trace);
-  if (!ok(trace)) {
+  if (ok(trace) && path) {
+    throw_static(messages.config.is_static, trace);
     return NULL;
   }
-
+  struct config *config = TNULL(calloc(1, sizeof(struct config)), trace);
   size_t editors_length = sizeof editors / sizeof editors[0];
   config->editors = create_set(editors_length, trace);
+  for (size_t i = 0; ok(trace) && i < editors_length; ++i) {
+    add_to_set(editors[i], config->editors, trace);
+  }
   if (!ok(trace)) {
     free_config(config);
     return NULL;
   }
-
-  for (size_t i = 0; i < editors_length; ++i) {
-    add_to_set(editors[i], config->editors, trace);
-    if (!ok(trace)) {
-      free_config(config);
-      return NULL;
-    }
-  }
-
   return config;
 }
 

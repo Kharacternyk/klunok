@@ -13,6 +13,9 @@ struct translation {
     } copy;
   } store;
   struct {
+    const char *is_static;
+  } config;
+  struct {
     struct {
       const char *has_slashes;
     } version;
