@@ -1,5 +1,6 @@
 #include "handler.h"
 #include "mountinfo.h"
+#include <grp.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,6 +87,11 @@ int main(int argc, const char **argv) {
   if (config_stat.st_gid == 0) {
     throw_static("Configuration file must not be owned by the root group",
                  trace);
+    return unwind(trace);
+  }
+  if (setgroups(0, NULL) < 0) {
+    throw_errno(trace);
+    throw_static("Cannot drop supplementary groups", trace);
     return unwind(trace);
   }
   if (setgid(config_stat.st_gid) < 0) {
