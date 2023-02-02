@@ -3,6 +3,7 @@
 #include "messages.h"
 #include "parents.h"
 #include "set.h"
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -176,9 +177,7 @@ char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
 }
 
 void pop_from_linq(struct linq *linq, struct trace *trace) {
-  if (!linq->size) {
-    return;
-  }
+  assert(linq->size);
   struct builder *link_builder = create_builder(trace);
   concat_size(linq->head_index, link_builder, trace);
   char *target = read_entry(build_string(link_builder), linq, trace);
@@ -186,8 +185,12 @@ void pop_from_linq(struct linq *linq, struct trace *trace) {
   remove_from_set(target, linq->set, trace);
   free(target);
   if (ok(trace)) {
-    ++linq->head_index;
     --linq->size;
+    if (linq->size) {
+      ++linq->head_index;
+    } else {
+      linq->head_index = 0;
+    }
   }
   free_builder(link_builder);
 }
