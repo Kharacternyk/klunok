@@ -100,49 +100,37 @@ int main(int argc, const char **argv) {
 
   for (;;) {
     int status = poll(&pollfd, 1, wake_after_seconds * 1000);
-    if (status < 0) {
+    if (status < 0 || (status > 0 && pollfd.revents ^ POLLIN)) {
       throw_errno(trace);
       throw_static("Cannot poll fanotify file descriptor", trace);
-      return unwind(trace);
-    }
-    if (status > 0 && pollfd.revents ^ POLLIN) {
-      throw_errno(trace);
-      throw_static("Cannot poll fanotify file descriptor", trace);
-      return unwind(trace);
-    }
-    if (status > 0) {
+    } else if (status > 0) {
       struct fanotify_event_metadata event;
-      if (read(fanotify_fd, &event, sizeof event) < sizeof event) {
-        throw_errno(trace);
-        throw_static("Cannot read a fanotify event", trace);
-        return unwind(trace);
-      }
-      if (event.vers != FANOTIFY_METADATA_VERSION) {
-        throw_errno(trace);
-        throw_static("Kernel fanotify version does not match headers", trace);
-        return unwind(trace);
-      }
-
-      if (event.mask & FAN_OPEN_EXEC) {
-        handle_open_exec(event.pid, event.fd, handler, trace);
-        if (!ok(trace)) {
-          throw_static("Cannot handle FAN_OPEN_EXEC", trace);
-          return unwind(trace);
-        }
-      } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
-        handle_close_write(event.pid, event.fd, handler, trace);
-        if (!ok(trace)) {
-          throw_static("Cannot handle FAN_CLOSE_WRITE", trace);
-          return unwind(trace);
+      rethrow_check(trace);
+      TNEG(read(fanotify_fd, &event, sizeof event) - sizeof event, trace);
+      rethrow_static("Cannot read a fanotify event", trace);
+      if (ok(trace)) {
+        if (event.vers != FANOTIFY_METADATA_VERSION) {
+          throw_static("Kernel fanotify version does not match headers", trace);
+        } else {
+          if (event.mask & FAN_OPEN_EXEC) {
+            rethrow_check(trace);
+            handle_open_exec(event.pid, event.fd, handler, trace);
+            rethrow_static("Cannot handle FAN_OPEN_EXEC", trace);
+          } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
+            rethrow_check(trace);
+            handle_close_write(event.pid, event.fd, handler, trace);
+            rethrow_static("Cannot handle FAN_CLOSE_WRITE", trace);
+          }
+          close(event.fd);
         }
       }
-
-      close(event.fd);
     }
 
+    rethrow_check(trace);
     handle_timeout(handler, &wake_after_seconds, trace);
+    rethrow_static("Cannot handle periodical tasks", trace);
+
     if (!ok(trace)) {
-      throw_static("Cannot handle periodical tasks", trace);
       return unwind(trace);
     }
   }
