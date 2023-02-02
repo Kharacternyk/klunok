@@ -30,9 +30,12 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
     return NULL;
   }
 
-  handler->config_path = config_path ? TNULL(strdup(config_path), trace) : NULL;
-
   rethrow_check(trace);
+  if (config_path) {
+    handler->config_path = TNULL(realpath(config_path, NULL), trace);
+  } else {
+    handler->config_path = NULL;
+  }
   handler->config = load_config(config_path, trace);
   rethrow_static(messages.handler.config.cannot_load, trace);
 

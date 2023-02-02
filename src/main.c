@@ -62,16 +62,7 @@ int main(int argc, const char **argv) {
     }
   }
 
-  char *config_path = NULL;
-
-  if (argc > 1) {
-    config_path = realpath(argv[1], NULL);
-    if (!config_path) {
-      throw_errno(trace);
-      throw_static("Cannot canonicalize path of configuration file", trace);
-      return unwind(trace);
-    }
-  }
+  const char *config_path = argc > 1 ? argv[1] : NULL;
 
   const char *unprivileged_paths[] = {
       config_path,
