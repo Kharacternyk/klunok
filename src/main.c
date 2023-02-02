@@ -13,7 +13,7 @@ static int unwind(struct trace *trace) {
   int depth = -1;
   while (get_trace_message(trace)) {
     if (depth >= 0) {
-      fprintf(stderr, "%*s╰─┤because of│ ", depth * 2, "");
+      fprintf(stderr, "%*s└─┤because of│ ", depth * 2, "");
     }
     fprintf(stderr, "%s\n", get_trace_message(trace));
     pop_trace_message(trace);
@@ -21,7 +21,7 @@ static int unwind(struct trace *trace) {
   }
   if (get_dropped_trace_message_count(trace)) {
     if (depth >= 0) {
-      fprintf(stderr, "%*s╰─┤", depth * 2, "");
+      fprintf(stderr, "%*s└─┤", depth * 2, "");
     } else {
       fprintf(stderr, "│");
     }
