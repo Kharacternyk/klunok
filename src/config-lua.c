@@ -66,6 +66,10 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 
 struct config *load_config(const char *path, struct trace *trace) {
   struct config *config = TNULL(calloc(1, sizeof(struct config)), trace);
+  if (!ok(trace)) {
+    return NULL;
+  }
+
   lua_State *lua = TNULL(luaL_newstate(), trace);
 
   if (ok(trace)) {
