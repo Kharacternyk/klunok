@@ -16,7 +16,7 @@ void check_default_config(struct config *config) {
 
   assert(get_configured_debounce_seconds(config) == 60);
   assert(get_configured_path_length_guess(config) == 1024);
-  assert(get_configured_max_pid_guess(config) == 1 << 16);
+  assert(get_configured_max_pid_guess(config) == 1 << 15);
   assert(get_configured_elf_interpreter_count_guess(config) == 1);
   assert(get_configured_executable_count_guess(config) == 128);
   assert(get_configured_queue_size_guess(config) ==

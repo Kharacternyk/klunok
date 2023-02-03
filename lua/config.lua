@@ -40,7 +40,7 @@ editors = {
 }
 
 -- Not reloadable settings
-max_pid_guess = 2^16
+max_pid_guess = 2^15
 elf_interpreter_count_guess = 1
 executable_count_guess = 128
 
