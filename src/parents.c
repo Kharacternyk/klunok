@@ -21,6 +21,7 @@ void create_parents(const char *original_path, mode_t mode,
   while (slash) {
     *slash = 0;
     if (mkdir(path, mode) < 0 && errno != EEXIST) {
+      throw_context(path, trace);
       throw_errno(trace);
       free(path);
       return;
@@ -45,6 +46,7 @@ void remove_empty_parents(const char *original_path, struct trace *trace) {
     *slash = 0;
     if (rmdir(path) < 0) {
       if (errno != ENOTEMPTY) {
+        throw_context(path, trace);
         throw_errno(trace);
       }
       free(path);

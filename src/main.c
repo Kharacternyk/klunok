@@ -13,7 +13,9 @@ static int unwind(struct trace *trace) {
   int depth = -1;
   while (get_trace_message(trace)) {
     if (depth >= 0) {
-      fprintf(stderr, "%*s└─┤because of│ ", depth * 2, "");
+      const char *prefix =
+          is_trace_message_context(trace) ? "which is" : "because of";
+      fprintf(stderr, "%*s└─┤%s│ ", depth * 2, "", prefix);
     }
     fprintf(stderr, "%s\n", get_trace_message(trace));
     pop_trace_message(trace);
@@ -57,6 +59,7 @@ int main(int argc, const char **argv) {
     if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
                       FAN_OPEN_EXEC | FAN_CLOSE_WRITE, 0, mount) < 0) {
       throw_errno(trace);
+      throw_context(mount, trace);
       throw_static("Cannot watch a mount point", trace);
       return unwind(trace);
     }

@@ -10,7 +10,6 @@
 #include "timestamp.h"
 #include <assert.h>
 #include <errno.h>
-#include <fnmatch.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +36,9 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
     handler->config_path = NULL;
   }
   handler->config = load_config(config_path, trace);
+  if (config_path) {
+    rethrow_context(config_path, trace);
+  }
   rethrow_static(messages.handler.config.cannot_load, trace);
 
   if (ok(trace)) {
@@ -53,6 +55,7 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
                   get_configured_debounce_seconds(handler->config),
                   get_configured_queue_size_guess(handler->config),
                   get_configured_path_length_guess(handler->config), trace);
+    rethrow_context(get_configured_queue_path(handler->config), trace);
     rethrow_static(messages.handler.linq.cannot_load, trace);
   }
 
@@ -104,6 +107,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
       /*FIXME*/ strstr(file_path, "/.") == NULL) {
     push_to_linq(file_path, handler->linq, trace);
     if (!ok(trace)) {
+      throw_context(file_path, trace);
       throw_static(messages.handler.linq.cannot_push, trace);
       return free(file_path);
     }
@@ -112,6 +116,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   if (handler->config_path && !strcmp(file_path, handler->config_path)) {
     struct config *new_config = load_config(handler->config_path, trace);
     if (!ok(trace)) {
+      throw_context(handler->config_path, trace);
       throw_static(messages.handler.config.cannot_reload, trace);
       return free(file_path);
     }
@@ -124,6 +129,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
                     get_configured_queue_size_guess(new_config),
                     get_configured_path_length_guess(new_config), trace);
       if (!ok(trace)) {
+        throw_context(get_configured_queue_path(new_config), trace);
         throw_static(messages.handler.linq.cannot_reload, trace);
         free_config(new_config);
         return free(file_path);
@@ -163,6 +169,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       return;
     }
     if (strchr(build_string(version_builder), '/')) {
+      throw_context(build_string(version_builder), trace);
       throw_static(messages.handler.version.has_slashes, trace);
       free(path);
       free_builder(version_builder);
@@ -190,6 +197,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
         concat_string("-", version_builder, trace);
         concat_size(duplicate_count, version_builder, trace);
       } else {
+        throw_context(path, trace);
         throw_static(messages.handler.store.cannot_copy, trace);
         free(path);
         free_builder(version_builder);

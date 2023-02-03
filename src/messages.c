@@ -18,6 +18,9 @@ const struct translation messages = {
   .config = {
     .is_static = "Configuration files are not supported",
   },
+  .linq = {
+    .invalid_entry = "Queue contains an invalid entry",
+  },
   .handler = {
     .version = {
       .has_slashes = "Version string contains slash characters",

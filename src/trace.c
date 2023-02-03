@@ -10,6 +10,7 @@ struct frame {
     const char *static_message;
   };
   bool is_dynamic;
+  bool is_context;
   struct frame *next;
 };
 
@@ -32,6 +33,12 @@ const char *get_trace_message(const struct trace *trace) {
   return NULL;
 }
 
+bool is_trace_message_context(const struct trace *trace) {
+  assert(trace);
+  assert(trace->head);
+  return trace->head->is_context;
+}
+
 void pop_trace_message(struct trace *trace) {
   assert(trace);
   assert(trace->head);
@@ -43,37 +50,41 @@ void pop_trace_message(struct trace *trace) {
   trace->head = new_head;
 }
 
-void throw_static(const char *message, struct trace *trace) {
+static void throw_common(const char *message, bool is_dynamic, bool is_context,
+                         struct trace *trace) {
   assert(message);
   assert(trace);
+  assert(is_dynamic || !is_context);
   struct frame *frame = malloc(sizeof(struct frame));
   if (!frame) {
     ++trace->dropped_frame_count;
     return;
   }
-  frame->static_message = message;
-  frame->is_dynamic = false;
+  if (is_dynamic) {
+    frame->dynamic_message = strdup(message);
+    if (!frame->dynamic_message) {
+      ++trace->dropped_frame_count;
+      return free(frame);
+    }
+  } else {
+    frame->static_message = message;
+  }
+  frame->is_dynamic = is_dynamic;
+  frame->is_context = is_context;
   frame->next = trace->head;
   trace->head = frame;
 }
 
+void throw_static(const char *message, struct trace *trace) {
+  throw_common(message, false, false, trace);
+}
+
 void throw_dynamic(const char *message, struct trace *trace) {
-  assert(message);
-  assert(trace);
-  struct frame *frame = malloc(sizeof(struct frame));
-  if (!frame) {
-    ++trace->dropped_frame_count;
-    return;
-  }
-  frame->dynamic_message = strdup(message);
-  if (!frame->dynamic_message) {
-    ++trace->dropped_frame_count;
-    free(frame);
-    return;
-  }
-  frame->is_dynamic = true;
-  frame->next = trace->head;
-  trace->head = frame;
+  throw_common(message, true, false, trace);
+}
+
+void throw_context(const char *message, struct trace *trace) {
+  throw_common(message, true, true, trace);
 }
 
 void throw_errno(struct trace *trace) { throw_dynamic(strerror(errno), trace); }
@@ -129,5 +140,12 @@ void rethrow_static(const char *message, struct trace *trace) {
     if (!ok(trace)) {
       throw_static(message, trace);
     }
+  }
+}
+
+void rethrow_context(const char *message, struct trace *trace) {
+  assert(trace->post_throw_depth || trace->pre_throw_depth);
+  if (!trace->post_throw_depth && !ok(trace)) {
+    throw_context(message, trace);
   }
 }

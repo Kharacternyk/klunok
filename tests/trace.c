@@ -12,9 +12,11 @@ void test_trace() {
 
   const char *a = "abc";
   const char *b = "XYZ";
+  const char *c = "///";
 
   throw_static(a, trace);
   throw_dynamic(b, trace);
+  throw_context(c, trace);
   errno = ENOMEM;
   throw_errno(trace);
 
@@ -22,12 +24,23 @@ void test_trace() {
 
   assert(get_trace_message(trace));
   assert(!strcmp(get_trace_message(trace), strerror(ENOMEM)));
+  assert(!is_trace_message_context(trace));
+
+  pop_trace_message(trace);
+  assert(!strcmp(get_trace_message(trace), c));
+  assert(get_trace_message(trace) != c);
+  assert(is_trace_message_context(trace));
+
   pop_trace_message(trace);
   assert(!strcmp(get_trace_message(trace), b));
   assert(get_trace_message(trace) != b);
+  assert(!is_trace_message_context(trace));
+
   pop_trace_message(trace);
   assert(!strcmp(get_trace_message(trace), a));
   assert(get_trace_message(trace) == a);
+  assert(!is_trace_message_context(trace));
+
   pop_trace_message(trace);
   assert(!get_trace_message(trace));
 
@@ -51,8 +64,6 @@ void test_trace() {
   rethrow_static(a, trace);
   rethrow_static(b, trace);
   assert(ok(trace));
-
-  const char *c = "\\m/";
 
   rethrow_check(trace);
   rethrow_check(trace);
@@ -83,6 +94,19 @@ void test_trace() {
   rethrow_static(c, trace);
   assert(get_trace_message(trace) == a);
   assert(catch_static(a, trace));
+
+  rethrow_check(trace);
+  throw_static(a, trace);
+  rethrow_context(c, trace);
+  rethrow_static(b, trace);
+  pop_trace_message(trace);
+  assert(is_trace_message_context(trace));
+  catch_all(trace);
+
+  rethrow_check(trace);
+  rethrow_context(c, trace);
+  rethrow_static(b, trace);
+  assert(ok(trace));
 
   free(trace);
 }

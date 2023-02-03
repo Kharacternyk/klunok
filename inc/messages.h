@@ -16,6 +16,9 @@ struct translation {
     const char *is_static;
   } config;
   struct {
+    const char *invalid_entry;
+  } linq;
+  struct {
     struct {
       const char *has_slashes;
     } version;
