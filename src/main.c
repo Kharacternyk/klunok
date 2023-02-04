@@ -114,6 +114,8 @@ int main(int argc, const char **argv) {
       if (ok(trace)) {
         if (event.vers != FANOTIFY_METADATA_VERSION) {
           throw_static("Kernel fanotify version does not match headers", trace);
+        } else if (event.mask & FAN_Q_OVERFLOW) {
+          throw_static("Fanotify queue has overflowed", trace);
         } else {
           if (event.mask & FAN_OPEN_EXEC) {
             rethrow_check(trace);
