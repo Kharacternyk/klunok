@@ -18,6 +18,7 @@ static const char *const editors[] = {
     "code",
     "codium",
     "gedit",
+    "git",
     "gnome-text-editor",
     "howl",
     "hx",
