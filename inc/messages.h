@@ -6,6 +6,10 @@ struct translation {
     const char *overflow;
   } timestamp;
   struct {
+    const char *cannot_create_ancestor;
+    const char *cannot_remove_ancestor;
+  } parents;
+  struct {
     struct {
       const char *file_does_not_exist;
       const char *permission_denied;

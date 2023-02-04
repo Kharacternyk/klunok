@@ -1,4 +1,5 @@
 #include "parents.h"
+#include "messages.h"
 #include "unistd.h"
 #include <errno.h>
 #include <stdlib.h>
@@ -21,8 +22,9 @@ void create_parents(const char *original_path, mode_t mode,
   while (slash) {
     *slash = 0;
     if (mkdir(path, mode) < 0 && errno != EEXIST) {
-      throw_context(path, trace);
       throw_errno(trace);
+      throw_context(path, trace);
+      throw_static(messages.parents.cannot_create_ancestor, trace);
       free(path);
       return;
     }
@@ -46,8 +48,9 @@ void remove_empty_parents(const char *original_path, struct trace *trace) {
     *slash = 0;
     if (rmdir(path) < 0) {
       if (errno != ENOTEMPTY) {
-        throw_context(path, trace);
         throw_errno(trace);
+        throw_context(path, trace);
+        throw_static(messages.parents.cannot_remove_ancestor, trace);
       }
       free(path);
       return;

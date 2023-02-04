@@ -8,6 +8,10 @@ const struct translation messages = {
   .timestamp = {
     .overflow = "Version string exceeds the size limit",
   },
+  .parents = {
+    .cannot_remove_ancestor = "Cannot remove ancestor directory",
+    .cannot_create_ancestor = "Cannot create ancestor directory",
+  },
   .store = {
     .copy = {
       .file_does_not_exist = "File does not exist",
