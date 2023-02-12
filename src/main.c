@@ -1,5 +1,6 @@
 #include "handler.h"
 #include "mountinfo.h"
+#include "params.h"
 #include <grp.h>
 #include <poll.h>
 #include <stdio.h>
@@ -41,6 +42,12 @@ int main(int argc, const char **argv) {
     return EXIT_FAILURE;
   }
 
+  struct params *params = parse_params(argc, argv, trace);
+  if (!ok(trace)) {
+    throw_static("Cannot parse command line arguments", trace);
+    return unwind(trace);
+  }
+
   int fanotify_fd = fanotify_init(FAN_CLASS_NOTIF, O_RDONLY);
   if (fanotify_fd < 0) {
     throw_errno(trace);
@@ -56,8 +63,17 @@ int main(int argc, const char **argv) {
 
   for (const char *mount = get_next_block_mount(mountinfo); mount;
        mount = get_next_block_mount(mountinfo)) {
-    if (fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
-                      FAN_OPEN_EXEC | FAN_CLOSE_WRITE, 0, mount) < 0) {
+    int fanotify_flags = 0;
+
+    if (!is_in_set(mount, get_ignored_exec_mounts(params))) {
+      fanotify_flags |= FAN_OPEN_EXEC;
+    }
+    if (!is_in_set(mount, get_ignored_write_mounts(params))) {
+      fanotify_flags |= FAN_CLOSE_WRITE;
+    }
+    if (fanotify_flags &&
+        fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_MOUNT,
+                      fanotify_flags, 0, mount) < 0) {
       throw_errno(trace);
       throw_context(mount, trace);
       throw_static("Cannot watch a mount point", trace);
@@ -65,29 +81,26 @@ int main(int argc, const char **argv) {
     }
   }
 
-  const char *config_path = argc > 1 ? argv[1] : NULL;
-
-  const char *unprivileged_paths[] = {
-      config_path,
-      ".",
-      "klunok",
-  };
-  for (size_t i = 0; i < sizeof unprivileged_paths / sizeof(char *); ++i) {
-    struct stat drop_stat;
-    if (unprivileged_paths[i] && stat(unprivileged_paths[i], &drop_stat) >= 0 &&
-        drop_stat.st_gid && drop_stat.st_uid) {
-      TNEG(setgroups(0, NULL), trace);
-      TNEG(setgid(drop_stat.st_gid), trace);
-      TNEG(setuid(drop_stat.st_uid), trace);
-      break;
-    }
+  const char *privilege_dropping_path = get_privilege_dropping_path(params);
+  if (!privilege_dropping_path) {
+    privilege_dropping_path = ".";
   }
+
+  struct stat drop_stat;
+  if (stat(privilege_dropping_path, &drop_stat) >= 0 && drop_stat.st_gid &&
+      drop_stat.st_uid) {
+    TNEG(setgroups(0, NULL), trace);
+    TNEG(setgid(drop_stat.st_gid), trace);
+    TNEG(setuid(drop_stat.st_uid), trace);
+  }
+
   if (!ok(trace) || !getuid() || !getgid()) {
-    throw_static("Cannot drop privileges", trace);
+    throw_context(privilege_dropping_path, trace);
+    throw_static("Cannot drop privileges to a file owner", trace);
     return unwind(trace);
   }
 
-  struct handler *handler = load_handler(config_path, trace);
+  struct handler *handler = load_handler(get_config_path(params), trace);
   if (!ok(trace)) {
     throw_static("Cannot load handler", trace);
     return unwind(trace);

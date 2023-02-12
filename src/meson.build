@@ -9,6 +9,7 @@ components = [
   'linq',
   'messages',
   'mountinfo',
+  'params',
   'parents',
   'set',
   'store',

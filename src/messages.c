@@ -25,6 +25,10 @@ const struct translation messages = {
   .linq = {
     .invalid_entry = "Queue contains an invalid entry",
   },
+  .params = {
+    .unknown_option = "Unknown option",
+    .stray_option = "Stray option",
+  },
   .handler = {
     .version = {
       .has_slashes = "Version string contains slash characters",

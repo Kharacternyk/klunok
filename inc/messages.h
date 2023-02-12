@@ -23,6 +23,10 @@ struct translation {
     const char *invalid_entry;
   } linq;
   struct {
+    const char *unknown_option;
+    const char *stray_option;
+  } params;
+  struct {
     struct {
       const char *has_slashes;
     } version;
