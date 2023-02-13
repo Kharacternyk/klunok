@@ -42,20 +42,19 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
   rethrow_static(messages.handler.config.cannot_load, trace);
 
   if (ok(trace)) {
-    handler->elf_interpreters = create_set(
-        get_configured_elf_interpreter_count_guess(handler->config), trace);
-    handler->handled_executables = create_set(
-        get_configured_executable_count_guess(handler->config), trace);
+    handler->elf_interpreters =
+        create_set(get_elf_interpreter_count_guess(handler->config), trace);
+    handler->handled_executables =
+        create_set(get_executable_count_guess(handler->config), trace);
     handler->editor_pid_bitmap =
-        create_bitmap(get_configured_max_pid_guess(handler->config), trace);
+        create_bitmap(get_max_pid_guess(handler->config), trace);
 
     rethrow_check(trace);
-    handler->linq =
-        load_linq(get_configured_queue_path(handler->config),
-                  get_configured_debounce_seconds(handler->config),
-                  get_configured_queue_size_guess(handler->config),
-                  get_configured_path_length_guess(handler->config), trace);
-    rethrow_context(get_configured_queue_path(handler->config), trace);
+    handler->linq = load_linq(get_queue_path(handler->config),
+                              get_debounce_seconds(handler->config),
+                              get_queue_size_guess(handler->config),
+                              get_path_length_guess(handler->config), trace);
+    rethrow_context(get_queue_path(handler->config), trace);
     rethrow_static(messages.handler.linq.cannot_load, trace);
   }
 
@@ -69,8 +68,7 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
 
 void handle_open_exec(pid_t pid, int fd, struct handler *handler,
                       struct trace *trace) {
-  char *file_path =
-      deref_fd(fd, get_configured_path_length_guess(handler->config), trace);
+  char *file_path = deref_fd(fd, get_path_length_guess(handler->config), trace);
   if (!ok(trace)) {
     return;
   }
@@ -79,7 +77,7 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   ++exe_filename;
 
   if (!is_in_set(file_path, handler->elf_interpreters)) {
-    if (is_in_set(exe_filename, get_configured_editors(handler->config))) {
+    if (is_in_set(exe_filename, get_editors(handler->config))) {
       set_bit_in_bitmap(pid, handler->editor_pid_bitmap, trace);
     } else {
       unset_bit_in_bitmap(pid, handler->editor_pid_bitmap);
@@ -98,8 +96,7 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
 
 void handle_close_write(pid_t pid, int fd, struct handler *handler,
                         struct trace *trace) {
-  char *file_path =
-      deref_fd(fd, get_configured_path_length_guess(handler->config), trace);
+  char *file_path = deref_fd(fd, get_path_length_guess(handler->config), trace);
   if (!ok(trace)) {
     return;
   }
@@ -121,15 +118,13 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
       return free(file_path);
     }
 
-    if (strcmp(get_configured_queue_path(handler->config),
-               get_configured_queue_path(new_config))) {
-      struct linq *new_linq =
-          load_linq(get_configured_queue_path(new_config),
-                    get_configured_debounce_seconds(new_config),
-                    get_configured_queue_size_guess(new_config),
-                    get_configured_path_length_guess(new_config), trace);
+    if (strcmp(get_queue_path(handler->config), get_queue_path(new_config))) {
+      struct linq *new_linq = load_linq(
+          get_queue_path(new_config), get_debounce_seconds(new_config),
+          get_queue_size_guess(new_config), get_path_length_guess(new_config),
+          trace);
       if (!ok(trace)) {
-        throw_context(get_configured_queue_path(new_config), trace);
+        throw_context(get_queue_path(new_config), trace);
         throw_static(messages.handler.linq.cannot_reload, trace);
         free_config(new_config);
         return free(file_path);
@@ -158,8 +153,8 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       return;
     }
 
-    char *base_version = get_timestamp(
-        get_configured_version_pattern(handler->config), NAME_MAX, trace);
+    char *base_version =
+        get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
     struct builder *version_builder = create_builder(trace);
     concat_string(base_version, version_builder, trace);
     free(base_version);
@@ -183,7 +178,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     for (;;) {
       concat_string(extension, version_builder, trace);
       copy_to_store(path, build_string(version_builder),
-                    get_configured_store_root(handler->config), trace);
+                    get_store_root(handler->config), trace);
       catch_static(messages.store.copy.file_does_not_exist, trace);
       catch_static(messages.store.copy.permission_denied, trace);
       if (ok(trace)) {

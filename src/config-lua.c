@@ -134,43 +134,43 @@ struct config *load_config(const char *path, struct trace *trace) {
   return config;
 }
 
-const struct set *get_configured_editors(const struct config *config) {
+const struct set *get_editors(const struct config *config) {
   return config->editors;
 }
 
-const char *get_configured_store_root(const struct config *config) {
+const char *get_store_root(const struct config *config) {
   return config->store_root;
 }
 
-const char *get_configured_queue_path(const struct config *config) {
+const char *get_queue_path(const struct config *config) {
   return config->queue_path;
 }
 
-const char *get_configured_version_pattern(const struct config *config) {
+const char *get_version_pattern(const struct config *config) {
   return config->version_pattern;
 }
 
-size_t get_configured_debounce_seconds(const struct config *config) {
+size_t get_debounce_seconds(const struct config *config) {
   return config->debounce_seconds;
 }
 
-size_t get_configured_path_length_guess(const struct config *config) {
+size_t get_path_length_guess(const struct config *config) {
   return config->path_length_guess;
 }
 
-pid_t get_configured_max_pid_guess(const struct config *config) {
+pid_t get_max_pid_guess(const struct config *config) {
   return config->max_pid_guess;
 }
 
-size_t get_configured_elf_interpreter_count_guess(const struct config *config) {
+size_t get_elf_interpreter_count_guess(const struct config *config) {
   return config->elf_interpreter_count_guess;
 }
 
-size_t get_configured_executable_count_guess(const struct config *config) {
+size_t get_executable_count_guess(const struct config *config) {
   return config->executable_count_guess;
 }
 
-size_t get_configured_queue_size_guess(const struct config *config) {
+size_t get_queue_size_guess(const struct config *config) {
   return config->queue_size_guess;
 }
 

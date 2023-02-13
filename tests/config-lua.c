@@ -18,14 +18,14 @@ void test_config_lua() {
   config = load_config(TEST_ROOT "/lua/override.lua", trace);
   assert(ok(trace));
 
-  const struct set *editors = get_configured_editors(config);
+  const struct set *editors = get_editors(config);
   assert(!is_in_set("vi", editors));
   assert(is_in_set("vim", editors));
   assert(is_in_set("nvim", editors));
   assert(is_in_set("rsession", editors));
   assert(is_in_set("cat", editors));
 
-  const char *version_pattern = get_configured_version_pattern(config);
+  const char *version_pattern = get_version_pattern(config);
   assert(!strcmp(version_pattern, "override"));
 
   free_config(config);
