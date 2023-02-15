@@ -1,9 +1,9 @@
-#include "trace.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <time.h>
 
 struct linq;
+struct trace;
 
 struct linq *load_linq(const char *path, time_t debounce_seconds,
                        size_t entry_count_guess, size_t entry_length_guess,

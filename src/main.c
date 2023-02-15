@@ -1,6 +1,9 @@
 #include "handler.h"
 #include "mountinfo.h"
 #include "params.h"
+#include "set.h"
+#include "trace.h"
+#include <fcntl.h>
 #include <grp.h>
 #include <poll.h>
 #include <stdio.h>

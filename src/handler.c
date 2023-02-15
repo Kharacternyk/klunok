@@ -1,13 +1,16 @@
 #include "handler.h"
 #include "bitmap.h"
 #include "builder.h"
+#include "config.h"
 #include "deref.h"
 #include "elfinterp.h"
 #include "extension.h"
 #include "linq.h"
 #include "messages.h"
+#include "set.h"
 #include "store.h"
 #include "timestamp.h"
+#include "trace.h"
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>

@@ -1,5 +1,6 @@
 #include "mountinfo.h"
 #include "builder.h"
+#include "trace.h"
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>

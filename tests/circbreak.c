@@ -1,4 +1,5 @@
 #include "circbreak.h"
+#include "trace.h"
 
 void test_circbreak() {
   struct trace *trace = create_trace();

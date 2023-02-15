@@ -1,4 +1,5 @@
 #include "config.h"
+#include "set.h"
 #include <assert.h>
 #include <string.h>
 

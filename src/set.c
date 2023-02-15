@@ -1,5 +1,6 @@
 #include "set.h"
 #include "messages.h"
+#include "trace.h"
 #include <stdlib.h>
 #include <string.h>
 

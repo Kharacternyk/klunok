@@ -1,4 +1,5 @@
 #include "elfinterp.h"
+#include "trace.h"
 #include <elf.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,5 +1,6 @@
 #include "timestamp.h"
 #include "messages.h"
+#include "trace.h"
 #include <stdlib.h>
 #include <time.h>
 

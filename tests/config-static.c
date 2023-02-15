@@ -1,4 +1,5 @@
 #include "config.h"
+#include "trace.h"
 #include "messages.h"
 #include <assert.h>
 #include <stdlib.h>

@@ -3,6 +3,7 @@
 #include "messages.h"
 #include "parents.h"
 #include "set.h"
+#include "trace.h"
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>

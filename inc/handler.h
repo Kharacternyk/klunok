@@ -1,8 +1,8 @@
-#include "config.h"
-#include "trace.h"
 #include <time.h>
 
 struct handler;
+struct config;
+struct trace;
 
 struct handler *load_handler(const char *config_path, struct trace *trace);
 void handle_open_exec(pid_t pid, int fd, struct handler *handler,

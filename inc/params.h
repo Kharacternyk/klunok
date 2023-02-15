@@ -1,7 +1,6 @@
-#include "set.h"
-#include "trace.h"
-
 struct params;
+struct set;
+struct trace;
 
 struct params *parse_params(int argc, const char **argv, struct trace *trace);
 const char *get_config_path(const struct params *params);

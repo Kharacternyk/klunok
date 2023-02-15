@@ -1,4 +1,5 @@
 #include "deref.h"
+#include "trace.h"
 #include <assert.h>
 #include <fcntl.h>
 #include <stdlib.h>

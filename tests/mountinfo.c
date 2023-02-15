@@ -1,4 +1,5 @@
 #include "mountinfo.h"
+#include "trace.h"
 #include <assert.h>
 #include <stdlib.h>
 

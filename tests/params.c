@@ -1,4 +1,6 @@
 #include "params.h"
+#include "set.h"
+#include "trace.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>

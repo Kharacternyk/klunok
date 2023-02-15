@@ -1,7 +1,7 @@
-#include "trace.h"
 #include <stddef.h>
 
 struct builder;
+struct trace;
 
 struct builder *create_builder(struct trace *trace);
 void concat_string(const char *string, struct builder *builder,

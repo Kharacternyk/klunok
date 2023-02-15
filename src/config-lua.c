@@ -1,5 +1,7 @@
 #include "circbreak.h"
 #include "config.h"
+#include "set.h"
+#include "trace.h"
 #include <errno.h>
 #include <lauxlib.h>
 #include <lualib.h>

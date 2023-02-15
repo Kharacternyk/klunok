@@ -1,8 +1,8 @@
-#include "trace.h"
 #include <stdbool.h>
 #include <stddef.h>
 
 struct set;
+struct trace;
 
 struct set *create_set(size_t size_guess, struct trace *trace);
 bool is_in_set(const char *value, const struct set *set);

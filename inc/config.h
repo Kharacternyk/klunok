@@ -1,8 +1,9 @@
-#include "set.h"
-#include "trace.h"
 #include <fcntl.h>
+#include <stddef.h>
 
 struct config;
+struct set;
+struct trace;
 
 struct config *load_config(const char *path, struct trace *trace);
 

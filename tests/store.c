@@ -1,5 +1,6 @@
 #include "store.h"
 #include "messages.h"
+#include "trace.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>

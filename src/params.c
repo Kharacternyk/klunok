@@ -1,5 +1,7 @@
 #include "params.h"
 #include "messages.h"
+#include "set.h"
+#include "trace.h"
 #include <stdlib.h>
 
 struct params {

@@ -1,10 +1,11 @@
 #include "parents.h"
 #include "messages.h"
-#include "unistd.h"
+#include "trace.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 void create_parents(const char *original_path, mode_t mode,
                     struct trace *trace) {

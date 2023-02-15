@@ -2,6 +2,7 @@
 #include "builder.h"
 #include "messages.h"
 #include "parents.h"
+#include "trace.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
