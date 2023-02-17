@@ -1,10 +1,20 @@
+-- Helpers
+prefix = './klunok'
+--[[
+prefix_var = prefix .. '/var'
+--]]
+
 -- Reloadable settings
-store_root = './klunok/store'
-queue_path = './klunok/queue'
+--[[
+store_root = prefix .. '/store'
+queue_path = prefix_var .. '/queue'
+--]]
 version_pattern = 'v%Y-%m-%d-%H-%M'
 debounce_seconds = 60
+--[[
+queue_size_guess = debounce_seconds * 2
+--]]
 path_length_guess = 1024
-queue_size_guess = nil -- (debounce_seconds * 2)
 editors = {
   atom = true,
   code = true,

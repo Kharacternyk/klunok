@@ -1,31 +1,33 @@
-function assert_is_string(name)
-  local value = _G[name]
-  assert(type(value) == 'string', value .. ' must be a string')
+function is_string(name)
+  assert(type(_G[name]) == 'string', name .. ' must be a string')
 end
 
-function assert_is_positive(name)
-  local value = _G[name]
+function is_positive(name)
   assert(
-    math.tointeger(value) and math.tointeger(value) >= 0,
+    math.tointeger(_G[name]) and math.tointeger(_G[name]) >= 0,
     name .. ' must be a positive integer'
   )
 end
 
-assert_is_string('store_root')
-assert_is_string('queue_path')
-assert_is_string('version_pattern')
-
-assert_is_positive('debounce_seconds')
-assert_is_positive('path_length_guess')
-assert_is_positive('max_pid_guess')
-assert_is_positive('elf_interpreter_count_guess')
-assert_is_positive('executable_count_guess')
-
-if queue_size_guess == nil then
-  queue_size_guess = debounce_seconds * 2
-else
-  assert_is_positive('queue_size_guess')
+function declare(name, default, assertion)
+  if _G[name] == nil and default ~= nil then
+    _G[name] = default
+  else
+    assertion(name)
+  end
 end
+
+declare('prefix', nil, is_string)
+declare('prefix_var', prefix .. '/var', is_string)
+declare('store_root', prefix .. '/store', is_string)
+declare('queue_path', prefix_var .. '/queue', is_string)
+declare('version_pattern', nil, is_string)
+declare('debounce_seconds', nil, is_positive)
+declare('queue_size_guess', debounce_seconds * 2, is_positive)
+declare('path_length_guess', nil, is_positive)
+declare('max_pid_guess', nil, is_positive)
+declare('elf_interpreter_count_guess', nil, is_positive)
+declare('executable_count_guess', nil, is_positive)
 
 assert(type(editors) == 'table', 'editors must be a table')
 for editor, _ in pairs(editors) do

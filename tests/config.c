@@ -12,7 +12,7 @@ void check_default_config(struct config *config) {
   assert(!is_in_set("cat", editors));
 
   assert(!strcmp(get_store_root(config), "./klunok/store"));
-  assert(!strcmp(get_queue_path(config), "./klunok/queue"));
+  assert(!strcmp(get_queue_path(config), "./klunok/var/queue"));
   assert(!strcmp(get_version_pattern(config), "v%Y-%m-%d-%H-%M"));
 
   assert(get_debounce_seconds(config) == 60);

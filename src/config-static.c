@@ -1,13 +1,13 @@
 #include "config.h"
+#include "set.h"
 #include "trace.h"
 #include <errno.h>
 #include <messages.h>
 #include <stdlib.h>
 
 static const char *const store_root = "./klunok/store";
-static const char *const queue_path = "./klunok/queue";
+static const char *const queue_path = "./klunok/var/queue";
 static const char *const version_pattern = "v%Y-%m-%d-%H-%M";
-static const char *const ld_linux_glob = "ld-linux*.so*";
 static const size_t debounce_seconds = 60;
 static const size_t path_length_guess = 1024;
 static const pid_t max_pid_guess = 1 << 15;
@@ -71,47 +71,37 @@ struct config *load_config(const char *path, struct trace *trace) {
   return config;
 }
 
-const struct set *get_configured_editors(const struct config *config) {
+const struct set *get_editors(const struct config *config) {
   return config->editors;
 }
 
-const char *get_configured_store_root(const struct config *config) {
-  return store_root;
-}
+const char *get_store_root(const struct config *config) { return store_root; }
 
-const char *get_configured_queue_path(const struct config *config) {
-  return queue_path;
-}
+const char *get_queue_path(const struct config *config) { return queue_path; }
 
-const char *get_configured_version_pattern(const struct config *config) {
+const char *get_version_pattern(const struct config *config) {
   return version_pattern;
 }
 
-const char *get_configured_ld_linux_glob(const struct config *config) {
-  return ld_linux_glob;
-}
-
-size_t get_configured_debounce_seconds(const struct config *config) {
+size_t get_debounce_seconds(const struct config *config) {
   return debounce_seconds;
 }
 
-size_t get_configured_path_length_guess(const struct config *config) {
+size_t get_path_length_guess(const struct config *config) {
   return path_length_guess;
 }
 
-pid_t get_configured_max_pid_guess(const struct config *config) {
-  return max_pid_guess;
-}
+pid_t get_max_pid_guess(const struct config *config) { return max_pid_guess; }
 
-size_t get_configured_elf_interpreter_count_guess(const struct config *config) {
+size_t get_elf_interpreter_count_guess(const struct config *config) {
   return elf_interpreter_count_guess;
 }
 
-size_t get_configured_executable_count_guess(const struct config *config) {
+size_t get_executable_count_guess(const struct config *config) {
   return executable_count_guess;
 }
 
-size_t get_configured_queue_size_guess(const struct config *config) {
+size_t get_queue_size_guess(const struct config *config) {
   return queue_size_guess;
 }
 
