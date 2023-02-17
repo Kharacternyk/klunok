@@ -145,14 +145,11 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
 
 void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
                     struct trace *trace) {
-  *retry_after_seconds = 0;
   for (;;) {
+    rethrow_check(trace);
     char *path = get_linq_head(handler->linq, retry_after_seconds, trace);
-    if (!ok(trace)) {
-      throw_static(messages.handler.linq.cannot_get_head, trace);
-      return;
-    }
-    if (*retry_after_seconds) {
+    rethrow_static(messages.handler.linq.cannot_get_head, trace);
+    if (*retry_after_seconds || !ok(trace)) {
       return;
     }
 
