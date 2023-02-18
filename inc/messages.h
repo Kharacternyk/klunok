@@ -43,6 +43,10 @@ struct translation {
     struct {
       const char *cannot_copy;
     } store;
+    struct {
+      const char *cannot_open;
+      const char *cannot_write_to;
+    } journal;
   } handler;
 };
 

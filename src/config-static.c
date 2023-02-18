@@ -7,6 +7,8 @@
 
 static const char *const store_root = "./klunok/store";
 static const char *const queue_path = "./klunok/var/queue";
+static const char *const journal_path = "./klunok/var/journal";
+static const char *const journal_timestamp_pattern = "%Y-%m-%d-%H-%M";
 static const char *const version_pattern = "v%Y-%m-%d-%H-%M";
 static const size_t debounce_seconds = 60;
 static const size_t path_length_guess = 1024;
@@ -48,6 +50,14 @@ static const char *const editors[] = {
     ".pluma-wrapped",
     ".xed-wrapped",
 };
+static const char *const event_open_exec_not_editor;
+static const char *const event_open_exec_editor;
+static const char *const event_open_exec_interpreter;
+static const char *const event_close_write_not_by_editor;
+static const char *const event_close_write_by_editor;
+static const char *const event_queue_head_deleted;
+static const char *const event_queue_head_forbidden;
+static const char *const event_queue_head_stored = "";
 
 struct config {
   struct set *editors;
@@ -79,6 +89,14 @@ const char *get_store_root(const struct config *config) { return store_root; }
 
 const char *get_queue_path(const struct config *config) { return queue_path; }
 
+const char *get_journal_path(const struct config *config) {
+  return journal_path;
+}
+
+const char *get_journal_timestamp_pattern(const struct config *config) {
+  return journal_timestamp_pattern;
+}
+
 const char *get_version_pattern(const struct config *config) {
   return version_pattern;
 }
@@ -103,6 +121,38 @@ size_t get_executable_count_guess(const struct config *config) {
 
 size_t get_queue_size_guess(const struct config *config) {
   return queue_size_guess;
+}
+
+const char *get_event_open_exec_not_editor(const struct config *config) {
+  return event_open_exec_not_editor;
+}
+
+const char *get_event_open_exec_editor(const struct config *config) {
+  return event_open_exec_editor;
+}
+
+const char *get_event_open_exec_interpreter(const struct config *config) {
+  return event_open_exec_interpreter;
+}
+
+const char *get_event_close_write_not_by_editor(const struct config *config) {
+  return event_close_write_not_by_editor;
+}
+
+const char *get_event_close_write_by_editor(const struct config *config) {
+  return event_close_write_by_editor;
+}
+
+const char *get_event_queue_head_deleted(const struct config *config) {
+  return event_queue_head_deleted;
+}
+
+const char *get_event_queue_head_forbidden(const struct config *config) {
+  return event_queue_head_forbidden;
+}
+
+const char *get_event_queue_head_stored(const struct config *config) {
+  return event_queue_head_stored;
 }
 
 void free_config(struct config *config) {

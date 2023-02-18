@@ -6,6 +6,7 @@ components = [
   'elfinterp',
   'extension',
   'handler',
+  'journal',
   'linq',
   'messages',
   'mountinfo',

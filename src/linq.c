@@ -177,6 +177,8 @@ char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
     pop_from_linq(linq, trace);
     return get_linq_head(linq, retry_after_seconds, trace);
   }
+
+  *retry_after_seconds = 0;
   return target;
 }
 

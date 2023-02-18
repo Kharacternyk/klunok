@@ -46,6 +46,10 @@ const struct translation messages = {
     .store = {
       .cannot_copy = "Cannot copy file to store",
     },
+    .journal = {
+      .cannot_open = "Cannot open journal",
+      .cannot_write_to = "Cannot write to journal"
+    },
   },
 };
 /* clang-format on */
