@@ -10,8 +10,8 @@
         pkgs = import nixpkgs { inherit system; };
         klunokWithLua = lua: pkgs.callPackage ./. { inherit lua; };
         supportedKlunokBuilds = builtins.mapAttrs (name: value: klunokWithLua value) {
+          inherit (pkgs) lua5_4 lua5_3 lua5_2;
           default = pkgs.lua5_4;
-          inherit (pkgs) lua5_3;
           withoutLua = null;
         };
       in

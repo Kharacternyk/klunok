@@ -7,8 +7,9 @@ function is_nil_or_string(name)
 end
 
 function is_positive(name)
+  local value = _G[name]
   assert(
-    math.tointeger(_G[name]) and math.tointeger(_G[name]) >= 0,
+    type(value) == 'number' and math.floor(value) == value and value >= 0,
     name .. ' must be a positive integer'
   )
 end
