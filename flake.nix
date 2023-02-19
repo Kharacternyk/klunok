@@ -1,21 +1,32 @@
 {
-  outputs = { self, nixpkgs, flake-utils }: flake-utils.lib.eachDefaultSystem (system:
-    with import nixpkgs { inherit system; };
+  outputs = { self, nixpkgs, flake-utils }:
     let
-      klunok = callPackage ./. { };
+      utils = flake-utils.lib;
+      system = utils.system;
+      supportedSystems = [ system.aarch64-linux system.x86_64-linux system.i686-linux ];
     in
-    {
-      packages.default = klunok;
-      devShells.default = mkShell {
-        inputsFrom = [
-          klunok
-        ];
-        packages = [
-          gcovr
-          valgrind
-          gdb
-        ];
-      };
-    }
-  );
+    utils.eachSystem supportedSystems (system:
+      let
+        pkgs = import nixpkgs { inherit system; };
+        klunok = pkgs.callPackage ./. { };
+        klunok-lualess = pkgs.callPackage ./. { lua5_4 = null; };
+      in
+      {
+        packages = {
+          inherit klunok klunok-lualess;
+          default = klunok;
+        };
+        devShells.default = pkgs.mkShell {
+          inputsFrom = [
+            klunok
+          ];
+          packages = [
+            pkgs.gdb
+          ];
+        };
+        checks = {
+          inherit klunok klunok-lualess;
+        };
+      }
+    );
 }

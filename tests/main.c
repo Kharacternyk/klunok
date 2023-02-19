@@ -14,7 +14,9 @@ int main(int argc, const char **argv) {
   assert(test_function);
 
   const char *xdg_run_dir = getenv("XDG_RUNTIME_DIR");
-  assert(xdg_run_dir);
+  if (!xdg_run_dir) {
+    xdg_run_dir = ".";
+  }
   char *run_dir = malloc(snprintf(NULL, 0, RUN_DIR_PATTERN, xdg_run_dir) + 1);
   assert(run_dir);
   sprintf(run_dir, RUN_DIR_PATTERN, xdg_run_dir);
