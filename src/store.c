@@ -14,19 +14,23 @@
 
 char *get_store_path(const char *filesystem_path, const char *version,
                      const char *store_root, struct trace *trace) {
-  if (ok(trace)) {
-    assert(*filesystem_path == '/');
-  }
   struct builder *builder = create_builder(trace);
   concat_string(store_root, builder, trace);
+  /*FIXME needed only for simpler tests*/
+  if (ok(trace) && *filesystem_path != '/') {
+    concat_char('/', builder, trace);
+  }
   concat_string(filesystem_path, builder, trace);
-  concat_string("/", builder, trace);
+  concat_char('/', builder, trace);
   concat_string(version, builder, trace);
   return free_outer_builder(builder);
 }
 
 static void cleanup(char *store_path) {
   /*FIXME cleanup error reporting*/
+  if (!store_path) {
+    return;
+  }
   struct trace *cleanup_trace = create_trace();
   if (cleanup_trace) {
     remove_empty_parents(store_path, cleanup_trace);
@@ -36,8 +40,10 @@ static void cleanup(char *store_path) {
   free(store_path);
 }
 
-void copy_to_store(const char *filesystem_path, const char *version,
-                   const char *store_root, struct trace *trace) {
+static void copy_to_store_with_offset(const char *filesystem_path,
+                                      const char *version,
+                                      const char *store_root, off_t *offset,
+                                      struct trace *trace) {
   char *store_path =
       get_store_path(filesystem_path, version, store_root, trace);
   create_parents(store_path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH,
@@ -79,9 +85,11 @@ void copy_to_store(const char *filesystem_path, const char *version,
   }
 
   while (in_fd_stat.st_size) {
-    size_t written_size = sendfile(out_fd, in_fd, NULL, in_fd_stat.st_size);
+    size_t written_size = sendfile(out_fd, in_fd, offset, in_fd_stat.st_size);
     if (written_size > 0) {
       in_fd_stat.st_size -= written_size;
+    } else if (written_size == 0) {
+      break;
     } else {
       throw_errno(trace);
       close(out_fd);
@@ -98,4 +106,51 @@ void copy_to_store(const char *filesystem_path, const char *version,
 
   close(in_fd);
   free(store_path);
+}
+
+void copy_to_store(const char *filesystem_path, const char *version,
+                   const char *store_root, struct trace *trace) {
+  off_t offset = 0;
+  copy_to_store_with_offset(filesystem_path, version, store_root, &offset,
+                            trace);
+}
+
+void copy_delta_to_store(const char *filesystem_path, const char *version,
+                         const char *cursor_name, const char *store_root,
+                         struct trace *trace) {
+  /* FIXME avoid one-char IO */
+  char *cursor_path =
+      get_store_path(filesystem_path, cursor_name, store_root, trace);
+  create_parents(cursor_path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH,
+                 trace);
+  int cursor_fd = TNEG(open(cursor_path, O_CREAT | O_RDWR,
+                            S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH),
+                       trace);
+  off_t offset = 0;
+  for (;;) {
+    char digit = 0;
+    if (TNEG(read(cursor_fd, &digit, 1), trace) <= 0 || digit < '0' ||
+        digit > '9') {
+      break;
+    }
+    offset *= 10;
+    offset += digit - '0';
+  }
+
+  copy_to_store_with_offset(filesystem_path, version, store_root, &offset,
+                            trace);
+  TNEG(ftruncate(cursor_fd, 0), trace);
+  TNEG(lseek(cursor_fd, 0, SEEK_SET), trace);
+
+  struct builder *builder = create_builder(trace);
+  concat_size(offset, builder, trace);
+
+  for (size_t i = 0; ok(trace) && i < get_builder_length(builder); ++i) {
+    TNEG(write(cursor_fd, build_string(builder) + i, 1), trace);
+  }
+
+  if (cursor_fd >= 0) {
+    close(cursor_fd);
+  }
+  free_builder(builder);
 }
