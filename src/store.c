@@ -153,4 +153,5 @@ void copy_delta_to_store(const char *filesystem_path, const char *version,
     close(cursor_fd);
   }
   free_builder(builder);
+  free(cursor_path);
 }
