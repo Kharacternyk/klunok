@@ -15,6 +15,7 @@ extern const char _binary_lua_validation_lua_end;
 
 struct config {
   struct set *editors;
+  struct set *history_paths;
   char *store_root;
   char *queue_path;
   char *journal_path;
@@ -126,6 +127,7 @@ struct config *load_config(const char *path, struct trace *trace) {
   free_circuit_breaker(circuit_breaker);
 
   config->editors = read_lua_set(lua, "editors", trace);
+  config->history_paths = read_lua_set(lua, "history_paths", trace);
   config->store_root = read_lua_string(lua, "store_root", trace);
   config->queue_path = read_lua_string(lua, "queue_path", trace);
   config->journal_path = read_lua_string(lua, "journal_path", trace);
@@ -171,6 +173,10 @@ struct config *load_config(const char *path, struct trace *trace) {
 
 const struct set *get_editors(const struct config *config) {
   return config->editors;
+}
+
+const struct set *get_history_paths(const struct config *config) {
+  return config->history_paths;
 }
 
 const char *get_store_root(const struct config *config) {
@@ -252,6 +258,7 @@ const char *get_event_queue_head_stored(const struct config *config) {
 void free_config(struct config *config) {
   if (config) {
     free_set(config->editors);
+    free_set(config->history_paths);
     free(config->store_root);
     free(config->queue_path);
     free(config->journal_path);

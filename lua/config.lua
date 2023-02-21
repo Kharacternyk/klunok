@@ -52,6 +52,7 @@ editors = {
   ['.pluma-wrapped'] = true,
   ['.xed-wrapped'] = true,
 }
+history_paths = {}
 event_open_exec_not_editor = nil
 event_open_exec_editor = nil
 event_open_exec_interpreter = nil

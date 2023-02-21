@@ -14,6 +14,14 @@ function is_positive(name)
   )
 end
 
+function is_set_of_strings(name)
+  local value = _G[name]
+  assert(type(value) == 'table', name .. ' must be a table')
+  for key, _ in pairs(value) do
+    assert(type(key) == 'string', name .. ' must contain only string keys')
+  end
+end
+
 function declare(name, default, assertion)
   if _G[name] == nil and default ~= nil then
     _G[name] = default
@@ -35,6 +43,8 @@ declare('path_length_guess', nil, is_positive)
 declare('max_pid_guess', nil, is_positive)
 declare('elf_interpreter_count_guess', nil, is_positive)
 declare('executable_count_guess', nil, is_positive)
+declare('editors', nil, is_set_of_strings)
+declare('history_paths', nil, is_set_of_strings)
 declare('event_open_exec_not_editor', nil, is_nil_or_string)
 declare('event_open_exec_editor', nil, is_nil_or_string)
 declare('event_open_exec_interpreter', nil, is_nil_or_string)
@@ -43,8 +53,3 @@ declare('event_close_write_by_editor', nil, is_nil_or_string)
 declare('event_queue_head_deleted', nil, is_nil_or_string)
 declare('event_queue_head_forbidden', nil, is_nil_or_string)
 declare('event_queue_head_stored', nil, is_nil_or_string)
-
-assert(type(editors) == 'table', 'editors must be a table')
-for editor, _ in pairs(editors) do
-  assert(type(editor) == 'string', 'editors must contain only string keys')
-end

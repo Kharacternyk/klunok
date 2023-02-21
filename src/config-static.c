@@ -49,6 +49,7 @@ static const char *const editors[] = {
     ".pluma-wrapped",
     ".xed-wrapped",
 };
+
 static const char *const event_open_exec_not_editor;
 static const char *const event_open_exec_editor;
 static const char *const event_open_exec_interpreter;
@@ -60,6 +61,7 @@ static const char *const event_queue_head_stored = "";
 
 struct config {
   struct set *editors;
+  struct set *history_paths;
 };
 
 struct config *load_config(const char *path, struct trace *trace) {
@@ -67,12 +69,20 @@ struct config *load_config(const char *path, struct trace *trace) {
     throw_static(messages.config.is_static, trace);
     return NULL;
   }
+
   struct config *config = TNULL(calloc(1, sizeof(struct config)), trace);
+  if (!ok(trace)) {
+    return NULL;
+  }
+
   size_t editors_length = sizeof editors / sizeof editors[0];
   config->editors = create_set(editors_length, trace);
   for (size_t i = 0; ok(trace) && i < editors_length; ++i) {
     add_to_set(editors[i], config->editors, trace);
   }
+
+  config->history_paths = create_set(0, trace);
+
   if (!ok(trace)) {
     free_config(config);
     return NULL;
@@ -81,6 +91,10 @@ struct config *load_config(const char *path, struct trace *trace) {
 }
 
 const struct set *get_editors(const struct config *config) {
+  return config->editors;
+}
+
+const struct set *get_history_paths(const struct config *config) {
   return config->editors;
 }
 
@@ -157,6 +171,7 @@ const char *get_event_queue_head_stored(const struct config *config) {
 void free_config(struct config *config) {
   if (config) {
     free_set(config->editors);
+    free_set(config->history_paths);
     free(config);
   }
 }

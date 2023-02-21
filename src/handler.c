@@ -127,8 +127,9 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
 
   const char *event = get_event_close_write_not_by_editor(handler->config);
 
-  if (get_bit_in_bitmap(pid, handler->editor_pid_bitmap) &&
-      /*FIXME*/ strstr(file_path, "/.") == NULL) {
+  if (is_in_set(file_path, get_history_paths(handler->config)) ||
+      (get_bit_in_bitmap(pid, handler->editor_pid_bitmap) &&
+       /*FIXME*/ strstr(file_path, "/.") == NULL)) {
     event = get_event_close_write_by_editor(handler->config);
     rethrow_check(trace);
     push_to_linq(file_path, handler->linq, trace);
@@ -221,8 +222,14 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
     for (;;) {
       concat_string(extension, version_builder, trace);
-      copy_to_store(path, build_string(version_builder),
-                    get_store_root(handler->config), trace);
+      if (is_in_set(path, get_history_paths(handler->config))) {
+        copy_delta_to_store(path, build_string(version_builder),
+                            /*FIXME*/ "cursor", get_store_root(handler->config),
+                            trace);
+      } else {
+        copy_to_store(path, build_string(version_builder),
+                      get_store_root(handler->config), trace);
+      }
       if (catch_static(messages.store.copy.file_does_not_exist, trace)) {
         event = get_event_queue_head_deleted(handler->config);
       } else if (catch_static(messages.store.copy.permission_denied, trace)) {
