@@ -94,10 +94,10 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
 
   if (!is_in_set(file_path, handler->elf_interpreters)) {
     if (is_in_set(exe_filename, get_editors(handler->config))) {
-      set_bit_in_bitmap(pid, handler->editor_pid_bitmap, trace);
+      set_bit(pid, handler->editor_pid_bitmap, trace);
       event = get_event_open_exec_editor(handler->config);
     } else {
-      unset_bit_in_bitmap(pid, handler->editor_pid_bitmap);
+      unset_bit(pid, handler->editor_pid_bitmap);
     }
 
     if (!is_in_set(file_path, handler->handled_executables)) {
@@ -128,7 +128,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   const char *event = get_event_close_write_not_by_editor(handler->config);
 
   if (is_in_set(file_path, get_history_paths(handler->config)) ||
-      (get_bit_in_bitmap(pid, handler->editor_pid_bitmap) &&
+      (get_bit(pid, handler->editor_pid_bitmap) &&
        /*FIXME*/ strstr(file_path, "/.") == NULL)) {
     event = get_event_close_write_by_editor(handler->config);
     rethrow_check(trace);
@@ -206,8 +206,8 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       free_builder(version_builder);
       return;
     }
-    if (strchr(build_string(version_builder), '/')) {
-      throw_context(build_string(version_builder), trace);
+    if (strchr(get_string(version_builder), '/')) {
+      throw_context(get_string(version_builder), trace);
       throw_static(messages.handler.version.has_slashes, trace);
       free(path);
       free_builder(version_builder);
@@ -223,11 +223,11 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     for (;;) {
       concat_string(extension, version_builder, trace);
       if (is_in_set(path, get_history_paths(handler->config))) {
-        copy_delta_to_store(path, build_string(version_builder),
+        copy_delta_to_store(path, get_string(version_builder),
                             /*FIXME*/ "cursor", get_store_root(handler->config),
                             trace);
       } else {
-        copy_to_store(path, build_string(version_builder),
+        copy_to_store(path, get_string(version_builder),
                       get_store_root(handler->config), trace);
       }
       if (catch_static(messages.store.copy.file_does_not_exist, trace)) {

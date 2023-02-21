@@ -135,7 +135,7 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
 void push_to_linq(const char *path, struct linq *linq, struct trace *trace) {
   struct builder *link_builder = create_builder(trace);
   concat_size(linq->head_index + linq->size, link_builder, trace);
-  TNEG(symlinkat(path, linq->dirfd, build_string(link_builder)), trace);
+  TNEG(symlinkat(path, linq->dirfd, get_string(link_builder)), trace);
   add_to_set(path, linq->set, trace);
   if (ok(trace)) {
     ++linq->size;
@@ -156,7 +156,7 @@ char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
   struct builder *link_builder = create_builder(trace);
   concat_size(linq->head_index, link_builder, trace);
   struct stat link_stat;
-  TNEG(fstatat(linq->dirfd, build_string(link_builder), &link_stat,
+  TNEG(fstatat(linq->dirfd, get_string(link_builder), &link_stat,
                AT_SYMLINK_NOFOLLOW),
        trace);
   if (!ok(trace)) {
@@ -171,7 +171,7 @@ char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
     return NULL;
   }
 
-  char *target = read_entry(build_string(link_builder), linq, trace);
+  char *target = read_entry(get_string(link_builder), linq, trace);
   free_builder(link_builder);
   if (ok(trace) && !is_unique_within_set(target, linq->set)) {
     pop_from_linq(linq, trace);
@@ -186,8 +186,8 @@ void pop_from_linq(struct linq *linq, struct trace *trace) {
   assert(linq->size);
   struct builder *link_builder = create_builder(trace);
   concat_size(linq->head_index, link_builder, trace);
-  char *target = read_entry(build_string(link_builder), linq, trace);
-  TNEG(unlinkat(linq->dirfd, build_string(link_builder), 0), trace);
+  char *target = read_entry(get_string(link_builder), linq, trace);
+  TNEG(unlinkat(linq->dirfd, get_string(link_builder), 0), trace);
   remove_from_set(target, linq->set, trace);
   free(target);
   if (ok(trace)) {

@@ -62,7 +62,7 @@ void write_to_journal(const char *event, pid_t pid, const char *path,
   size_t size_written = 0;
   while (ok(trace) && get_builder_length(builder) > size_written) {
     size_written += TNEG(
-        write(journal->fd, build_string(builder), get_builder_length(builder)),
+        write(journal->fd, get_string(builder), get_builder_length(builder)),
         trace);
   }
 

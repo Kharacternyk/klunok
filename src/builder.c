@@ -78,7 +78,7 @@ void concat_size(size_t size, struct builder *builder, struct trace *trace) {
   }
 }
 
-const char *build_string(const struct builder *builder) {
+const char *get_string(const struct builder *builder) {
   return builder->buffer;
 }
 
