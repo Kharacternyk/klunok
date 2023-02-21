@@ -24,7 +24,6 @@ editors = {
   code = true,
   codium = true,
   gedit = true,
-  git = true,
   howl = true,
   hx = true,
   inkscape = true,
