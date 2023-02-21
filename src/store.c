@@ -63,7 +63,7 @@ static void copy_to_store_with_offset(const char *filesystem_path,
     return cleanup(store_path);
   }
 
-  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_EXCL, 0222);
+  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_EXCL, 0444);
   if (out_fd < 0) {
     if (errno == EEXIST) {
       throw_static(messages.store.copy.version_already_exists, trace);
@@ -120,7 +120,7 @@ void copy_delta_to_store(const char *filesystem_path, const char *version,
   char *cursor_path =
       get_store_path(filesystem_path, cursor_name, store_root, trace);
   create_parents(cursor_path, trace);
-  int cursor_fd = TNEG(open(cursor_path, O_CREAT | O_RDWR, 0622), trace);
+  int cursor_fd = TNEG(open(cursor_path, O_CREAT | O_RDWR, 0644), trace);
   off_t offset = 0;
   for (;;) {
     char digit = 0;
