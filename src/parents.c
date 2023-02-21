@@ -7,8 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-void create_parents(const char *original_path, mode_t mode,
-                    struct trace *trace) {
+void create_parents(const char *original_path, struct trace *trace) {
   char *path = TNULL(strdup(original_path), trace);
   if (!ok(trace)) {
     return;
@@ -22,7 +21,7 @@ void create_parents(const char *original_path, mode_t mode,
 
   while (slash) {
     *slash = 0;
-    if (mkdir(path, mode) < 0 && errno != EEXIST) {
+    if (mkdir(path, 0755) < 0 && errno != EEXIST) {
       throw_errno(trace);
       throw_context(path, trace);
       throw_static(messages.parents.cannot_create_ancestor, trace);

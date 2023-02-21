@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -35,9 +36,8 @@ static int compare(const struct dirent **first, const struct dirent **second) {
 }
 
 static void create_linq_path(const char *path, struct trace *trace) {
-  mode_t mode = S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH;
-  create_parents(path, mode, trace);
-  TNEG(mkdir(path, mode), trace);
+  create_parents(path, trace);
+  TNEG(mkdir(path, 0755), trace);
 }
 
 static void free_entries(struct dirent **entries, size_t entry_count) {

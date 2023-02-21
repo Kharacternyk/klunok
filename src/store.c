@@ -46,8 +46,7 @@ static void copy_to_store_with_offset(const char *filesystem_path,
                                       struct trace *trace) {
   char *store_path =
       get_store_path(filesystem_path, version, store_root, trace);
-  create_parents(store_path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH,
-                 trace);
+  create_parents(store_path, trace);
   if (!ok(trace)) {
     return cleanup(store_path);
   }
@@ -64,8 +63,7 @@ static void copy_to_store_with_offset(const char *filesystem_path,
     return cleanup(store_path);
   }
 
-  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_EXCL,
-                    S_IRUSR | S_IRGRP | S_IROTH);
+  int out_fd = open(store_path, O_CREAT | O_WRONLY | O_EXCL, 0222);
   if (out_fd < 0) {
     if (errno == EEXIST) {
       throw_static(messages.store.copy.version_already_exists, trace);
@@ -121,11 +119,8 @@ void copy_delta_to_store(const char *filesystem_path, const char *version,
   /* FIXME avoid one-char IO */
   char *cursor_path =
       get_store_path(filesystem_path, cursor_name, store_root, trace);
-  create_parents(cursor_path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH,
-                 trace);
-  int cursor_fd = TNEG(open(cursor_path, O_CREAT | O_RDWR,
-                            S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH),
-                       trace);
+  create_parents(cursor_path, trace);
+  int cursor_fd = TNEG(open(cursor_path, O_CREAT | O_RDWR, 0622), trace);
   off_t offset = 0;
   for (;;) {
     char digit = 0;

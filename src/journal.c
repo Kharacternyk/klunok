@@ -18,14 +18,12 @@ struct journal *open_journal(const char *path, const char *timestamp_pattern,
   if (!path) {
     return NULL;
   }
-  create_parents(path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, trace);
+  create_parents(path, trace);
   struct journal *journal = TNULL(malloc(sizeof(struct journal)), trace);
   if (!ok(trace)) {
     return NULL;
   }
-  journal->fd = TNEG(open(path, O_CREAT | O_WRONLY | O_APPEND,
-                          S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH),
-                     trace);
+  journal->fd = TNEG(open(path, O_CREAT | O_WRONLY | O_APPEND, 0622), trace);
   journal->timestamp_pattern = TNULL(strdup(timestamp_pattern), trace);
   if (!ok(trace)) {
     if (journal->fd > 0) {
