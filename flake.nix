@@ -8,16 +8,20 @@
     utils.eachSystem supportedSystems (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        klunokWithLua = lua: pkgs.callPackage ./. { inherit lua; };
-        supportedKlunokBuilds = builtins.mapAttrs (name: value: klunokWithLua value) {
+        supportedLuaPackages = {
           inherit (pkgs) lua5_4 lua5_3 lua5_2;
           default = pkgs.lua5_4;
           withoutLua = null;
         };
+        makeKlunokPackages = args: builtins.mapAttrs
+          (_: lua: pkgs.callPackage ./. (args // { inherit lua; }))
+          supportedLuaPackages;
+        klunokPackages = makeKlunokPackages { };
+        testedKlunokPackages = makeKlunokPackages { doCheck = true; };
       in
       {
-        packages = supportedKlunokBuilds;
-        checks = supportedKlunokBuilds;
+        packages = klunokPackages;
+        checks = testedKlunokPackages;
         devShells = builtins.mapAttrs
           (name: value: pkgs.mkShell {
             inputsFrom = [
@@ -27,7 +31,7 @@
               pkgs.gdb
             ];
           })
-          supportedKlunokBuilds;
+          testedKlunokPackages;
       }
     );
 }
