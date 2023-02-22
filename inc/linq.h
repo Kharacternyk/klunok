@@ -1,5 +1,3 @@
-#include <stdbool.h>
-#include <stddef.h>
 #include <time.h>
 
 struct linq;
