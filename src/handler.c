@@ -180,6 +180,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
         free_linq(handler->linq);
         handler->linq = new_linq;
       }
+      redebounce_linq(get_debounce_seconds(new_config), handler->linq);
     }
   }
 

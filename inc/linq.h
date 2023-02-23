@@ -10,4 +10,5 @@ void push_to_linq(const char *path, struct linq *linq, struct trace *trace);
 char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
                     struct trace *trace);
 void pop_from_linq(struct linq *linq, struct trace *trace);
+void redebounce_linq(time_t debounce_seconds, struct linq *linq);
 void free_linq(struct linq *linq);

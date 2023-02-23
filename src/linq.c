@@ -201,6 +201,10 @@ void pop_from_linq(struct linq *linq, struct trace *trace) {
   free_builder(link_builder);
 }
 
+void redebounce_linq(time_t debounce_seconds, struct linq *linq) {
+  linq->debounce_seconds = debounce_seconds;
+}
+
 void free_linq(struct linq *linq) {
   if (linq) {
     close(linq->dirfd);
