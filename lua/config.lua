@@ -41,7 +41,7 @@ journal_path = nil
 -- * Type: `string`
 -- * Default: `'%Y-%m-%d-%H-%M'`
 -- @see strftime(3)
-journal_timestamp_pattern = nil
+journal_timestamp_pattern = '%Y-%m-%d-%H-%M'
 
 --- Pattern of file versions in the store.
 --
