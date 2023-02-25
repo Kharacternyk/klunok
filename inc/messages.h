@@ -1,8 +1,5 @@
 struct translation {
   struct {
-    const char *not_in_set;
-  } set;
-  struct {
     const char *overflow;
   } timestamp;
   struct {

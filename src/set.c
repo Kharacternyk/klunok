@@ -65,13 +65,63 @@ static struct entry **get_entry(const char *value, const struct set *set) {
   return entry;
 }
 
-bool is_in_set(const char *value, const struct set *set) {
-  return *get_entry(value, set);
+static struct entry *create_entry(size_t count, const char *value,
+                                  struct entry *next, struct trace *trace) {
+  assert(count);
+  char *value_copy = TNULL(strdup(value), trace);
+  struct entry *entry = TNULL(malloc(sizeof(struct entry)), trace);
+  if (!ok(trace)) {
+    free(value_copy);
+    return NULL;
+  }
+
+  entry->next = next;
+  entry->value = value_copy;
+  entry->count = count;
+
+  return entry;
 }
 
-bool is_unique_within_set(const char *value, const struct set *set) {
+static void remove_entry(struct entry **entry) {
+  struct entry *new_next = (*entry)->next;
+  free((*entry)->value);
+  free(*entry);
+  *entry = new_next;
+}
+
+size_t get_count_in_set(const char *value, const struct set *set) {
   struct entry **entry = get_entry(value, set);
-  return !*entry || (*entry)->count == 1;
+  if (*entry) {
+    return (*entry)->count;
+  }
+  return 0;
+}
+
+void set_count_in_set(size_t count, const char *value, struct set *set,
+                      struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
+
+  struct entry **entry = get_entry(value, set);
+  if (*entry) {
+    if (!count) {
+      remove_entry(entry);
+    } else {
+      (*entry)->count = count;
+    }
+    return;
+  }
+
+  struct entry **head = get_head(value, set);
+  struct entry *new_entry = create_entry(count, value, *head, trace);
+  if (ok(trace)) {
+    *head = new_entry;
+  }
+}
+
+bool is_in_set(const char *value, const struct set *set) {
+  return get_count_in_set(value, set);
 }
 
 void add_to_set(const char *value, struct set *set, struct trace *trace) {
@@ -85,38 +135,23 @@ void add_to_set(const char *value, struct set *set, struct trace *trace) {
     return;
   }
 
-  char *value_copy = TNULL(strdup(value), trace);
-  struct entry *new_entry = TNULL(malloc(sizeof(struct entry)), trace);
-  if (!ok(trace)) {
-    return free(value_copy);
-  }
-
   struct entry **head = get_head(value, set);
-
-  new_entry->next = *head;
-  new_entry->value = value_copy;
-  new_entry->count = 1;
-
-  *head = new_entry;
+  struct entry *new_entry = create_entry(1, value, *head, trace);
+  if (ok(trace)) {
+    *head = new_entry;
+  }
 }
 
-void remove_from_set(const char *value, struct set *set, struct trace *trace) {
-  if (!ok(trace)) {
-    return;
-  }
-
+void remove_from_set(const char *value, struct set *set) {
   struct entry **entry = get_entry(value, set);
   if (!*entry) {
-    return throw_static(messages.set.not_in_set, trace);
+    return;
   }
 
   --(*entry)->count;
 
   if (!(*entry)->count) {
-    struct entry *new_next = (*entry)->next;
-    free((*entry)->value);
-    free(*entry);
-    *entry = new_next;
+    remove_entry(entry);
   }
 }
 

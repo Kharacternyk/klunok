@@ -2,9 +2,6 @@
 
 /* clang-format off */
 const struct translation messages = {
-  .set = {
-    .not_in_set = "Value is not in set",
-  },
   .timestamp = {
     .overflow = "Version string exceeds the size limit",
   },

@@ -173,7 +173,7 @@ char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
 
   char *target = read_entry(get_string(link_builder), linq, trace);
   free_builder(link_builder);
-  if (ok(trace) && !is_unique_within_set(target, linq->set)) {
+  if (ok(trace) && get_count_in_set(target, linq->set) > 1) {
     pop_from_linq(linq, trace);
     return get_linq_head(linq, retry_after_seconds, trace);
   }
@@ -188,9 +188,8 @@ void pop_from_linq(struct linq *linq, struct trace *trace) {
   concat_size(linq->head_index, link_builder, trace);
   char *target = read_entry(get_string(link_builder), linq, trace);
   TNEG(unlinkat(linq->dirfd, get_string(link_builder), 0), trace);
-  remove_from_set(target, linq->set, trace);
-  free(target);
   if (ok(trace)) {
+    remove_from_set(target, linq->set);
     --linq->size;
     if (linq->size) {
       ++linq->head_index;
@@ -198,6 +197,7 @@ void pop_from_linq(struct linq *linq, struct trace *trace) {
       linq->head_index = 0;
     }
   }
+  free(target);
   free_builder(link_builder);
 }
 
