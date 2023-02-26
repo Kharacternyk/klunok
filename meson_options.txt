@@ -1,1 +1,2 @@
 option('lua', type: 'string', value: 'lua')
+option('build_doc', type: 'boolean', value: false)

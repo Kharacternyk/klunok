@@ -10,13 +10,18 @@ if lua.found()
   foreach file: lua_split.to_list()
     filename = file.full_path().split('/')[-1]
     if filename == 'doc.lua'
-      lua_doc = custom_target(
-        output: 'doc',
-        input: ['config.ld', file],
-        command: [
-          'ldoc', '-c', '@INPUT0@', '-d', '@OUTPUT@', '@INPUT1@'
-        ]
-      )
+      if get_option('build_doc')
+        custom_target(
+          output: 'doc',
+          input: ['ldoc.lua', file],
+          command: [
+            'ldoc', '-c', '@INPUT0@', '-d', '@OUTPUT@', '@INPUT1@'
+          ],
+          install: true,
+          install_dir: 'share/klunok/lua',
+          install_tag: 'doc',
+        )
+      endif
     else
       lua_sources += custom_target(
         output: filename + '.o',

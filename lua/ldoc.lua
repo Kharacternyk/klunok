@@ -1,4 +1,3 @@
-file = 'lua/config.lua'
 project = 'klunok'
 title = 'klunok configuration'
 format = 'markdown'

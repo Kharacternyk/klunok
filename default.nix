@@ -4,6 +4,7 @@
 , pkg-config
 , lua
 , valgrind
+, ldoc ? null
 , doCheck ? false
 }: stdenv.mkDerivation {
   pname = "klunok";
@@ -12,10 +13,13 @@
 
   inherit doCheck;
 
+  mesonFlags = if ldoc != null then [ "-Dbuild_doc=true" ] else [ ];
+
   nativeBuildInputs = [
     meson
     ninja
     pkg-config
+    ldoc
   ];
   buildInputs = [
     lua

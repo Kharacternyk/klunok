@@ -13,15 +13,15 @@
           default = pkgs.lua5_4;
           withoutLua = null;
         };
-        makeKlunokPackages = args: builtins.mapAttrs
-          (_: lua: pkgs.callPackage ./. (args // { inherit lua; }))
+        ldoc = pkgs.lua53Packages.ldoc;
+        makePackages = args: builtins.mapAttrs
+          (_: lua: pkgs.callPackage ./. (args // { inherit lua ldoc; }))
           supportedLuaPackages;
-        klunokPackages = makeKlunokPackages { };
-        testedKlunokPackages = makeKlunokPackages { doCheck = true; };
+        checks = makePackages { doCheck = true; };
       in
       {
-        packages = klunokPackages;
-        checks = testedKlunokPackages;
+        inherit checks;
+        packages = makePackages { };
         devShells = builtins.mapAttrs
           (name: value: pkgs.mkShell {
             inputsFrom = [
@@ -31,7 +31,7 @@
               pkgs.gdb
             ];
           })
-          testedKlunokPackages;
+          checks;
       }
     );
 }
