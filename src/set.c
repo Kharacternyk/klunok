@@ -19,7 +19,7 @@ struct set {
 
 struct hashed_value {
   const char *value;
-  size_t hash;
+  struct entry **head;
   size_t length;
 };
 
@@ -43,33 +43,31 @@ static size_t next_hash(size_t hash, char character) {
   return hash;
 }
 
-static size_t final_hash(size_t hash) {
+static struct entry **get_head(size_t hash, const struct set *set) {
   hash += hash << 3;
   hash ^= hash >> 11;
   hash += hash << 15;
-  return hash;
+  return &(set->entries[hash % set->size]);
 }
 
-static struct hashed_value get_hashed_value(const char *value) {
+static struct hashed_value get_hashed_value(const char *value,
+                                            const struct set *set) {
+  size_t hash = 0;
   struct hashed_value hashed_value = {
       .value = value,
   };
   while (*value) {
-    hashed_value.hash = next_hash(hashed_value.hash, *value);
+    hash = next_hash(hash, *value);
     ++hashed_value.length;
     ++value;
   }
-  hashed_value.hash = final_hash(hashed_value.hash);
+  hashed_value.head = get_head(hash, set);
   return hashed_value;
-}
-
-static struct entry **get_head(size_t hash, const struct set *set) {
-  return &(set->entries[hash % set->size]);
 }
 
 static struct entry **get_entry(struct hashed_value hashed_value,
                                 const struct set *set) {
-  struct entry **entry = get_head(hashed_value.hash, set);
+  struct entry **entry = hashed_value.head;
 
   while (*entry) {
     assert((*entry)->count > 0);
@@ -87,23 +85,23 @@ static struct entry **get_entry(struct hashed_value hashed_value,
   return entry;
 }
 
-static struct entry *create_entry(size_t count,
-                                  struct hashed_value hashed_value,
-                                  struct entry *next, struct trace *trace) {
+static void insert_entry(size_t count, struct hashed_value hashed_value,
+                         struct set *set, struct trace *trace) {
   assert(count);
+  struct entry **head = hashed_value.head;
   char *value_copy = TNULL(strdup(hashed_value.value), trace);
   struct entry *entry = TNULL(malloc(sizeof(struct entry)), trace);
   if (!ok(trace)) {
     free(value_copy);
-    return NULL;
+    return;
   }
 
-  entry->next = next;
+  entry->next = *head;
   entry->value = value_copy;
   entry->count = count;
   entry->length = hashed_value.length;
 
-  return entry;
+  *head = entry;
 }
 
 static void remove_entry(struct entry **entry) {
@@ -114,7 +112,7 @@ static void remove_entry(struct entry **entry) {
 }
 
 size_t get_count_in_set(const char *value, const struct set *set) {
-  struct entry **entry = get_entry(get_hashed_value(value), set);
+  struct entry **entry = get_entry(get_hashed_value(value, set), set);
   if (*entry) {
     return (*entry)->count;
   }
@@ -127,7 +125,7 @@ void set_count_in_set(size_t count, const char *value, struct set *set,
     return;
   }
 
-  struct hashed_value hashed_value = get_hashed_value(value);
+  struct hashed_value hashed_value = get_hashed_value(value, set);
   struct entry **entry = get_entry(hashed_value, set);
   if (*entry) {
     if (!count) {
@@ -138,11 +136,7 @@ void set_count_in_set(size_t count, const char *value, struct set *set,
     return;
   }
 
-  struct entry **head = get_head(hashed_value.hash, set);
-  struct entry *new_entry = create_entry(count, hashed_value, *head, trace);
-  if (ok(trace)) {
-    *head = new_entry;
-  }
+  insert_entry(count, hashed_value, set, trace);
 }
 
 bool is_in_set(const char *value, const struct set *set) {
@@ -154,22 +148,18 @@ void add_to_set(const char *value, struct set *set, struct trace *trace) {
     return;
   }
 
-  struct hashed_value hashed_value = get_hashed_value(value);
+  struct hashed_value hashed_value = get_hashed_value(value, set);
   struct entry **entry = get_entry(hashed_value, set);
   if (*entry) {
     ++(*entry)->count;
     return;
   }
 
-  struct entry **head = get_head(hashed_value.hash, set);
-  struct entry *new_entry = create_entry(1, hashed_value, *head, trace);
-  if (ok(trace)) {
-    *head = new_entry;
-  }
+  insert_entry(1, hashed_value, set, trace);
 }
 
 void remove_from_set(const char *value, struct set *set) {
-  struct entry **entry = get_entry(get_hashed_value(value), set);
+  struct entry **entry = get_entry(get_hashed_value(value, set), set);
   if (!*entry) {
     return;
   }
@@ -184,20 +174,20 @@ void remove_from_set(const char *value, struct set *set) {
 size_t get_best_match_count_in_set(const char *value, char separator,
                                    const struct set *set) {
   size_t best_match_count = 0;
+  size_t hash = 0;
   struct hashed_value hashed_value = {
       .value = value,
   };
+
   while (*value) {
     do {
-      hashed_value.hash = next_hash(hashed_value.hash, *value);
+      hash = next_hash(hash, *value);
       ++hashed_value.length;
       ++value;
     } while (*value && *value != separator);
 
-    size_t hash = hashed_value.hash;
-    hashed_value.hash = final_hash(hash);
+    hashed_value.head = get_head(hash, set);
     struct entry **entry = get_entry(hashed_value, set);
-    hashed_value.hash = hash;
 
     if (*entry) {
       best_match_count = (*entry)->count;
