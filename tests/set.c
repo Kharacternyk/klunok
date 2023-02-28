@@ -92,6 +92,19 @@ void test_set() {
   assert(!is_in_set(s4, set));
   assert(get_count_in_set(s4, set) == 0);
 
+  assert(get_best_match_count_in_set("ab:c:de", ':', set) == 0);
+  set_count_in_set(1, "c", set, trace);
+  assert(ok(trace));
+  assert(get_best_match_count_in_set("ab:c:de", ':', set) == 0);
+  set_count_in_set(2, "ab", set, trace);
+  assert(ok(trace));
+  assert(get_best_match_count_in_set("ab:c:de", ':', set) == 2);
+  set_count_in_set(4, "ab:c", set, trace);
+  assert(ok(trace));
+  assert(get_best_match_count_in_set("ab:c:de", ':', set) == 4);
+  set_count_in_set(8, "ab:c:de", set, trace);
+  assert(get_best_match_count_in_set("ab:c:de", ':', set) == 8);
+
   free_set(set);
   free(trace);
 }
