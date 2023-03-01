@@ -13,9 +13,13 @@ extern const char _binary_lua_pre_config_lua_end;
 extern const char _binary_lua_post_config_lua_start;
 extern const char _binary_lua_post_config_lua_end;
 
+const size_t path_excluded = 1;
+const size_t path_included = 2;
+
 struct config {
   struct set *editors;
   struct set *history_paths;
+  struct set *overridden_paths;
   char *store_root;
   char *queue_path;
   char *journal_path;
@@ -55,29 +59,37 @@ static char *read_lua_string(lua_State *lua, const char *name,
   return TNULL(strdup(string), trace);
 }
 
+static void transfer_lua_set(lua_State *lua, const char *name, size_t count,
+                             struct set *set, struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
+  lua_getglobal(lua, name);
+  lua_pushnil(lua);
+
+  while (lua_next(lua, -2)) {
+    set_count_in_set(count, lua_tostring(lua, -2), set, trace);
+    if (!ok(trace)) {
+      free_set(set);
+      return;
+    }
+
+    lua_pop(lua, 1);
+  }
+}
+
+static size_t get_size_of_lua_set(lua_State *lua, const char *name) {
+  lua_getglobal(lua, name);
+  return lua_rawlen(lua, -1);
+}
+
 static struct set *read_lua_set(lua_State *lua, const char *name,
                                 struct trace *trace) {
   if (!ok(trace)) {
     return NULL;
   }
-  lua_getglobal(lua, name);
-
-  struct set *set = create_set(lua_rawlen(lua, -1), trace);
-  if (!ok(trace)) {
-    return NULL;
-  }
-
-  lua_pushnil(lua);
-  while (lua_next(lua, -2)) {
-    add_to_set(lua_tostring(lua, -2), set, trace);
-    if (!ok(trace)) {
-      free_set(set);
-      return NULL;
-    }
-
-    lua_pop(lua, 1);
-  }
-
+  struct set *set = create_set(get_size_of_lua_set(lua, name), trace);
+  transfer_lua_set(lua, name, 1, set, trace);
   return set;
 }
 
@@ -125,6 +137,15 @@ struct config *load_config(const char *path, struct trace *trace) {
   }
 
   free_circuit_breaker(circuit_breaker);
+
+  config->overridden_paths =
+      create_set(get_size_of_lua_set(lua, "excluded_paths") +
+                     get_size_of_lua_set(lua, "included_paths"),
+                 trace);
+  transfer_lua_set(lua, "excluded_paths", path_excluded,
+                   config->overridden_paths, trace);
+  transfer_lua_set(lua, "included_paths", path_included,
+                   config->overridden_paths, trace);
 
   config->editors = read_lua_set(lua, "editors", trace);
   config->history_paths = read_lua_set(lua, "history_paths", trace);
@@ -177,6 +198,10 @@ const struct set *get_editors(const struct config *config) {
 
 const struct set *get_history_paths(const struct config *config) {
   return config->history_paths;
+}
+
+const struct set *get_overridden_paths(const struct config *config) {
+  return config->overridden_paths;
 }
 
 const char *get_store_root(const struct config *config) {
@@ -259,6 +284,7 @@ void free_config(struct config *config) {
   if (config) {
     free_set(config->editors);
     free_set(config->history_paths);
+    free_set(config->overridden_paths);
     free(config->store_root);
     free(config->queue_path);
     free(config->journal_path);

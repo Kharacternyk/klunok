@@ -5,10 +5,14 @@ struct config;
 struct set;
 struct trace;
 
+extern const size_t path_excluded;
+extern const size_t path_included;
+
 struct config *load_config(const char *path, struct trace *trace);
 
 const struct set *get_editors(const struct config *config);
 const struct set *get_history_paths(const struct config *config);
+const struct set *get_overridden_paths(const struct config *config);
 const char *get_store_root(const struct config *config);
 const char *get_queue_path(const struct config *config);
 const char *get_journal_path(const struct config *config);

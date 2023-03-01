@@ -118,6 +118,25 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   free(file_path);
 }
 
+static bool should_push_to_linq(pid_t pid, const char *path,
+                                struct handler *handler) {
+  if (is_in_set(path, get_history_paths(handler->config))) {
+    return true;
+  }
+  if (!get_bit(pid, handler->editor_pid_bitmap)) {
+    return false;
+  }
+  size_t count = get_best_match_count_in_set(
+      path, '/', get_overridden_paths(handler->config));
+  if (count == path_excluded) {
+    return false;
+  }
+  if (count == path_included) {
+    return true;
+  }
+  return strstr(path, "/.") == NULL;
+}
+
 void handle_close_write(pid_t pid, int fd, struct handler *handler,
                         struct trace *trace) {
   char *file_path = deref_fd(fd, get_path_length_guess(handler->config), trace);
@@ -127,9 +146,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
 
   const char *event = get_event_close_write_not_by_editor(handler->config);
 
-  if (is_in_set(file_path, get_history_paths(handler->config)) ||
-      (get_bit(pid, handler->editor_pid_bitmap) &&
-       /*FIXME*/ strstr(file_path, "/.") == NULL)) {
+  if (should_push_to_linq(pid, file_path, handler)) {
     event = get_event_close_write_by_editor(handler->config);
     rethrow_check(trace);
     push_to_linq(file_path, handler->linq, trace);

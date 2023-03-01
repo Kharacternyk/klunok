@@ -122,6 +122,12 @@ editors, is_set_of_strings, nil, {
 -- @static
 history_paths, is_set_of_strings, nil, {}
 
+--- Paths excluded from copying to the store
+excluded_paths, is_set_of_strings, nil, {}
+
+--- Paths included in copying to the store
+included_paths, is_set_of_strings, nil, {}
+
 --- Prefix of the journal event. If `nil`, the event is not logged to the journal.
 event_open_exec_not_editor, is_nil_or_string, nil, nil
 

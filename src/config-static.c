@@ -49,7 +49,9 @@ static const char *const editors[] = {
     ".pluma-wrapped",
     ".xed-wrapped",
 };
-
+static const char *const history_paths[] = {};
+static const char *const excluded_paths[] = {};
+static const char *const included_paths[] = {};
 static const char *const event_open_exec_not_editor;
 static const char *const event_open_exec_editor;
 static const char *const event_open_exec_interpreter;
@@ -62,7 +64,11 @@ static const char *const event_queue_head_stored = "";
 struct config {
   struct set *editors;
   struct set *history_paths;
+  struct set *overridden_paths;
 };
+
+const size_t path_excluded = 1;
+const size_t path_included = 2;
 
 struct config *load_config(const char *path, struct trace *trace) {
   if (ok(trace) && path) {
@@ -75,13 +81,32 @@ struct config *load_config(const char *path, struct trace *trace) {
     return NULL;
   }
 
-  size_t editors_length = sizeof editors / sizeof editors[0];
-  config->editors = create_set(editors_length, trace);
-  for (size_t i = 0; ok(trace) && i < editors_length; ++i) {
+  /*FIXME boilerplate*/
+
+  config->editors = create_set(sizeof editors / sizeof(char *), trace);
+  for (size_t i = 0; ok(trace) && i < sizeof editors / sizeof(char *); ++i) {
     add_to_set(editors[i], config->editors, trace);
   }
 
-  config->history_paths = create_set(0, trace);
+  config->history_paths =
+      create_set(sizeof history_paths / sizeof(char *), trace);
+  for (size_t i = 0; ok(trace) && i < sizeof history_paths / sizeof(char *);
+       ++i) {
+    add_to_set(history_paths[i], config->history_paths, trace);
+  }
+
+  config->overridden_paths = create_set(
+      (sizeof excluded_paths + sizeof included_paths) / sizeof(char *), trace);
+  for (size_t i = 0; ok(trace) && i < sizeof excluded_paths / sizeof(char *);
+       ++i) {
+    set_count_in_set(path_excluded, excluded_paths[i], config->overridden_paths,
+                     trace);
+  }
+  for (size_t i = 0; ok(trace) && i < sizeof included_paths / sizeof(char *);
+       ++i) {
+    set_count_in_set(path_included, included_paths[i], config->overridden_paths,
+                     trace);
+  }
 
   if (!ok(trace)) {
     free_config(config);
@@ -96,6 +121,10 @@ const struct set *get_editors(const struct config *config) {
 
 const struct set *get_history_paths(const struct config *config) {
   return config->editors;
+}
+
+const struct set *get_overridden_paths(const struct config *config) {
+  return config->overridden_paths;
 }
 
 const char *get_store_root(const struct config *config) { return store_root; }
@@ -172,6 +201,7 @@ void free_config(struct config *config) {
   if (config) {
     free_set(config->editors);
     free_set(config->history_paths);
+    free_set(config->overridden_paths);
     free(config);
   }
 }

@@ -4,6 +4,9 @@
 #include <string.h>
 
 void check_default_config(struct config *config) {
+  assert(0 != path_excluded);
+  assert(path_included != path_excluded);
+
   const struct set *editors = get_editors(config);
   assert(is_in_set("vi", editors));
   assert(is_in_set("vim", editors));
