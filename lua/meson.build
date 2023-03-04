@@ -1,9 +1,13 @@
 if lua.found()
   lua_split = custom_target(
     output: ['pre_config.lua', 'post_config.lua', 'doc.lua'],
-    input: ['split.lua', 'config.lua'],
+    input: ['split.awk', 'config.lua'],
     command: [
-      'lua', '@INPUT0@', '@INPUT1@', '@OUTPUT0@', '@OUTPUT1@', '@OUTPUT2@'
+      'awk', '-f@INPUT0@',
+      '-vpre=@OUTPUT0@',
+      '-vpost=@OUTPUT1@',
+      '-vdoc=@OUTPUT2@',
+      '@INPUT1@'
     ]
   )
   lua_sources = []
