@@ -6,6 +6,8 @@ BEGIN {
     if (NF > 1) {
         if ($1 == "--post--") {
             printf "%s", $2 > post
+        } else if ($1 == "--pre--") {
+            printf "%s", $2 > pre
         } else {
             gsub("\n", " ", $2)
             gsub("\n", " ", $3)

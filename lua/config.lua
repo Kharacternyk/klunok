@@ -36,9 +36,14 @@ function declare(name, assertion, default)
 end
 
 ---
+--pre--
+--
+circuit_breaker_seconds = 5
 
---- Helpers
--- @section helpers
+---
+
+--- General
+-- @section general
 
 --- Prefix used by default for all of the paths.
 ---
@@ -61,9 +66,6 @@ prefix .. '/var'
 --
 nil
 ---
-
---- Reloadable settings
--- @section reloadable
 
 --- Root of the store.
 ---
@@ -133,28 +135,6 @@ is_positive
 nil
 --
 60
----
-
---- Guess of the queue size.
----
-queue_size_guess
---
-is_positive
---
-debounce_seconds * 2
---
-nil
----
-
---- Guess of the average path length in the system.
----
-path_length_guess
---
-is_positive
---
-nil
---
-1024
 ---
 
 --- Filenames of executables that are considered editors.
@@ -241,96 +221,33 @@ nil
 {}
 ---
 
---- Prefix of the journal event. If `nil`, the event is not logged to the journal.
+--- Performance tuning.
+-- Settings from this section control the trade-off between memory consumption
+-- and performance. Fiddling with these setting cannot impact klunok in any other way.
+-- @section performance
+
+--- Guess of the queue size.
 ---
-event_open_exec_not_editor
+queue_size_guess
 --
-is_nil_or_string
+is_positive
 --
-nil
+debounce_seconds * 2
 --
 nil
 ---
 
---- Prefix of the journal event. If `nil`, the event is not logged to the journal.
+--- Guess of the average path length in the system.
 ---
-event_open_exec_editor
+path_length_guess
 --
-is_nil_or_string
---
-nil
+is_positive
 --
 nil
+--
+1024
 ---
 
---- Prefix of the journal event. If `nil`, the event is not logged to the journal.
----
-event_open_exec_interpreter
---
-is_nil_or_string
---
-nil
---
-nil
----
-
---- Prefix of the journal event. If `nil`, the event is not logged to the journal.
----
-event_close_write_not_by_editor
---
-is_nil_or_string
---
-nil
---
-nil
----
-
---- Prefix of the journal event. If `nil`, the event is not logged to the journal.
----
-event_close_write_by_editor
---
-is_nil_or_string
---
-nil
---
-nil
----
-
---- Prefix of the journal event. If `nil`, the event is not logged to the journal.
----
-event_queue_head_deleted
---
-is_nil_or_string
---
-nil
---
-nil
----
-
---- Prefix of the journal event. If `nil`, the event is not logged to the journal.
----
-event_queue_head_forbidden
---
-is_nil_or_string
---
-nil
---
-nil
----
-
---- Prefix of the journal event. If `nil`, the event is not logged to the journal.
----
-event_queue_head_stored
---
-is_nil_or_string
---
-nil
---
-''
----
-
---- Not reloadable settings.
--- @section not-reloadable
 
 --- Guess of the maximum PID in the system while klunok is running.
 ---
@@ -365,5 +282,98 @@ nil
 128
 ---
 
--- Compile-time settings
-circuit_breaker_seconds = 5
+
+--- Journal events.
+-- If a setting from this section is `nil`, the corresponding event is not logged to
+-- the journal. Otherwise, the corresponding event is logged to the journal with
+-- the provided prefix. If prefix is not an empty string, it is separated from the
+-- rest of the logged line by a tab.
+-- @section events
+
+---@static
+---
+event_open_exec_not_editor
+--
+is_nil_or_string
+--
+nil
+--
+nil
+---
+
+---@static
+---
+event_open_exec_editor
+--
+is_nil_or_string
+--
+nil
+--
+nil
+---
+
+---@static
+---
+event_open_exec_interpreter
+--
+is_nil_or_string
+--
+nil
+--
+nil
+---
+
+---@static
+---
+event_close_write_not_by_editor
+--
+is_nil_or_string
+--
+nil
+--
+nil
+---
+
+---@static
+---
+event_close_write_by_editor
+--
+is_nil_or_string
+--
+nil
+--
+nil
+---
+
+---@static
+---
+event_queue_head_deleted
+--
+is_nil_or_string
+--
+nil
+--
+nil
+---
+
+---@static
+---
+event_queue_head_forbidden
+--
+is_nil_or_string
+--
+nil
+--
+nil
+---
+
+---@static
+---
+event_queue_head_stored
+--
+is_nil_or_string
+--
+nil
+--
+''
+---
