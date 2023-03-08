@@ -13,9 +13,8 @@
           default = pkgs.lua5_4;
           withoutLua = null;
         };
-        ldoc = pkgs.lua53Packages.ldoc;
         makePackages = args: builtins.mapAttrs
-          (_: lua: pkgs.callPackage ./. (args // { inherit lua ldoc; }))
+          (_: lua: pkgs.callPackage ./. (args // { inherit lua; }))
           supportedLuaPackages;
         checks = makePackages { doCheck = true; };
       in
@@ -23,9 +22,9 @@
         inherit checks;
         packages = makePackages { };
         devShells = builtins.mapAttrs
-          (name: value: pkgs.mkShell {
+          (name: package: pkgs.mkShell {
             inputsFrom = [
-              value
+              package
             ];
             packages = [
               pkgs.gdb

@@ -106,7 +106,7 @@ struct config *load_config(const char *path, struct trace *trace) {
     if (luaL_loadbuffer(lua, &_binary_lua_pre_config_lua_start,
                         &_binary_lua_pre_config_lua_end -
                             &_binary_lua_pre_config_lua_start,
-                        "default") ||
+                        "pre-config") ||
         lua_pcall(lua, 0, 0, 0)) {
       throw_dynamic(lua_tostring(lua, -1), trace);
     }
@@ -122,7 +122,7 @@ struct config *load_config(const char *path, struct trace *trace) {
           luaL_loadbuffer(lua, &_binary_lua_post_config_lua_start,
                           &_binary_lua_post_config_lua_end -
                               &_binary_lua_post_config_lua_start,
-                          "validation") ||
+                          "post-config") ||
           lua_pcall(lua, 0, 0, 0)) {
         throw_dynamic(lua_tostring(lua, -1), trace);
       }
@@ -130,7 +130,7 @@ struct config *load_config(const char *path, struct trace *trace) {
     } else if (luaL_loadbuffer(lua, &_binary_lua_post_config_lua_start,
                                &_binary_lua_post_config_lua_end -
                                    &_binary_lua_post_config_lua_start,
-                               "validation") ||
+                               "post-config") ||
                lua_pcall(lua, 0, 0, 0)) {
       throw_dynamic(lua_tostring(lua, -1), trace);
     }
