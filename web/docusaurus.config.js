@@ -15,6 +15,15 @@ const config = {
       },
     ],
   ],
+  plugins: [
+    () => ({
+      configureWebpack: () => ({
+        resolve: {
+          symlinks: false,
+        },
+      }),
+    }),
+  ],
 
   themeConfig: {
     navbar: {
