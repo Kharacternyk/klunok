@@ -18,6 +18,7 @@ const char *get_queue_path(const struct config *config);
 const char *get_journal_path(const struct config *config);
 const char *get_journal_timestamp_pattern(const struct config *config);
 const char *get_version_pattern(const struct config *config);
+const char *get_cursor_version(const struct config *config);
 size_t get_debounce_seconds(const struct config *config);
 size_t get_path_length_guess(const struct config *config);
 size_t get_elf_interpreter_count_guess(const struct config *config);

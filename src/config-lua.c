@@ -25,6 +25,7 @@ struct config {
   char *journal_path;
   char *journal_timestamp_pattern;
   char *version_pattern;
+  char *cursor_version;
   size_t debounce_seconds;
   size_t path_length_guess;
   size_t elf_interpreter_count_guess;
@@ -155,6 +156,7 @@ struct config *load_config(const char *path, struct trace *trace) {
   config->journal_timestamp_pattern =
       read_lua_string(lua, "journal_timestamp_pattern", trace);
   config->version_pattern = read_lua_string(lua, "version_pattern", trace);
+  config->cursor_version = read_lua_string(lua, "cursor_version", trace);
   config->event_open_exec_not_editor =
       read_lua_string(lua, "event_open_exec_not_editor", trace);
   config->event_open_exec_editor =
@@ -224,6 +226,10 @@ const char *get_version_pattern(const struct config *config) {
   return config->version_pattern;
 }
 
+const char *get_cursor_version(const struct config *config) {
+  return config->cursor_version;
+}
+
 size_t get_debounce_seconds(const struct config *config) {
   return config->debounce_seconds;
 }
@@ -290,6 +296,7 @@ void free_config(struct config *config) {
     free(config->journal_path);
     free(config->journal_timestamp_pattern);
     free(config->version_pattern);
+    free(config->cursor_version);
     free(config->event_open_exec_not_editor);
     free(config->event_open_exec_editor);
     free(config->event_open_exec_interpreter);

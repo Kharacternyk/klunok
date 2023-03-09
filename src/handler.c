@@ -242,8 +242,8 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       concat_string(extension, version_builder, trace);
       if (is_in_set(path, get_history_paths(handler->config))) {
         copy_delta_to_store(path, get_string(version_builder),
-                            /*FIXME*/ "cursor", get_store_root(handler->config),
-                            trace);
+                            get_cursor_version(handler->config),
+                            get_store_root(handler->config), trace);
       } else {
         copy_to_store(path, get_string(version_builder),
                       get_store_root(handler->config), trace);

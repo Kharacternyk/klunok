@@ -185,8 +185,8 @@ declare('editors', nil, is_set_of_strings)
 
 ### `history_paths`
 
-Paths to files that are assumed to be append-only and only changes to them will be stored
-as new store versions.
+Paths to files that are assumed to be always appended to.
+Only changes to these files will be stored as new store versions.
 
 ```lua title=example
 history_paths['/home/nazar/.bash_history'] = true
@@ -198,6 +198,19 @@ history_paths = {}
 
 ```lua title=post-config
 declare('history_paths', nil, is_set_of_strings)
+```
+
+### `cursor_version`
+
+Version name reserved for implementing the delta-copying of paths in
+[`history_paths`](#history_paths).
+
+```lua title=pre-config
+cursor_version = '.cursor'
+```
+
+```lua title=post-config
+declare('cursor_version', nil, is_string)
 ```
 
 ### `excluded_paths`
