@@ -1,6 +1,4 @@
-# Hello
-
-# Configuring Klunok with Lua
+# Configuring with Lua
 
 ## Setting declaration
 

@@ -24,7 +24,6 @@ const config = {
       }),
     }),
   ],
-
   themeConfig: {
     navbar: {
       title: "Klunok",
@@ -34,6 +33,10 @@ const config = {
       theme: codeTheme,
       additionalLanguages: ["lua"],
     },
+  },
+  themes: ["@docusaurus/theme-mermaid"],
+  markdown: {
+    mermaid: true,
   },
 };
 
