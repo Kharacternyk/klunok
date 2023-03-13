@@ -12,23 +12,23 @@
           default = pkgs.lua5_4;
           withoutLua = null;
         };
-        getPackages = pkgs: args: builtins.mapAttrs
-          (_: lua: pkgs.callPackage ./. ({ inherit lua; } // args))
+        inherit (builtins) mapAttrs;
+        getPackages = pkgs: mapAttrs
+          (_: lua: pkgs.callPackage ./. { inherit lua; })
           (getLuaPackages pkgs);
         pkgs = import nixpkgs { inherit system; };
         prefixAttrs = prefix: pkgs.lib.mapAttrs' (name: value: {
           inherit value;
           name = prefix + name;
         });
-        getPackages' = args: getPackages pkgs args // (
-          prefixAttrs "static-" (getPackages pkgs.pkgsStatic args)
+        packages = getPackages pkgs // (
+          prefixAttrs "static-" (getPackages pkgs.pkgsStatic)
         );
-        packages = getPackages' { };
-        checks = getPackages' { doCheck = true; };
+        checks = mapAttrs (_: package: package.override { doCheck = true; }) packages;
       in
       {
         inherit checks packages;
-        devShells = builtins.mapAttrs
+        devShells = mapAttrs
           (_: package: pkgs.mkShell {
             inputsFrom = [
               package
