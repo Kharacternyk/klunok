@@ -7,22 +7,29 @@
     in
     utils.eachSystem supportedSystems (system:
       let
-        pkgs = import nixpkgs { inherit system; };
-        supportedLuaPackages = {
+        getLuaPackages = pkgs: {
           inherit (pkgs) lua5_4 lua5_3 lua5_2;
           default = pkgs.lua5_4;
           withoutLua = null;
         };
-        makePackages = args: builtins.mapAttrs
-          (_: lua: pkgs.callPackage ./. (args // { inherit lua; }))
-          supportedLuaPackages;
-        checks = makePackages { doCheck = true; };
+        getPackages = pkgs: args: builtins.mapAttrs
+          (_: lua: pkgs.callPackage ./. ({ inherit lua; } // args))
+          (getLuaPackages pkgs);
+        pkgs = import nixpkgs { inherit system; };
+        prefixAttrs = prefix: pkgs.lib.mapAttrs' (name: value: {
+          inherit value;
+          name = prefix + name;
+        });
+        getPackages' = args: getPackages pkgs args // (
+          prefixAttrs "static-" (getPackages pkgs.pkgsStatic args)
+        );
+        packages = getPackages' { };
+        checks = getPackages' { doCheck = true; };
       in
       {
-        inherit checks;
-        packages = makePackages { };
+        inherit checks packages;
         devShells = builtins.mapAttrs
-          (name: package: pkgs.mkShell {
+          (_: package: pkgs.mkShell {
             inputsFrom = [
               package
             ];
