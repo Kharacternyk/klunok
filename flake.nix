@@ -7,14 +7,23 @@
     in
     utils.eachSystem supportedSystems (system:
       let
+        inherit (builtins) mapAttrs;
         pkgs = import nixpkgs { inherit system; };
+
+        packages =
+          let mkPackage = pkgs': pkgs'.callPackage ./. { lua = pkgs'.lua5_4; }; in
+          {
+            default = mkPackage pkgs;
+            static = mkPackage pkgs.pkgsStatic;
+          };
+
         checks =
-          let
-            mkCheck = { callPackage, lua, valgrind-light }: callPackage ./. {
-              inherit lua valgrind-light;
-              doCheck = true;
-            };
-            glibcChecks = builtins.mapAttrs
+          let mkCheck = { callPackage, lua, valgrind-light }: callPackage ./. {
+            inherit lua valgrind-light;
+            doCheck = true;
+          }; in
+          {
+            glibc = mapAttrs
               (_: lua: mkCheck {
                 inherit (pkgs) callPackage valgrind-light;
                 inherit lua;
@@ -23,31 +32,35 @@
                 inherit (pkgs) lua5_4 lua5_3 lua5_2;
                 withoutLua = null;
               };
-            muslChecks = if system == utils.system.i686-linux then { } else {
+            musl = if system == utils.system.i686-linux then { } else {
               muslWithoutLua = mkCheck {
                 inherit (pkgs.pkgsMusl) callPackage;
                 lua = null;
                 valgrind-light = null;
               };
             };
-          in
-          glibcChecks // muslChecks;
+          };
       in
       {
-        inherit checks;
-        packages =
-          let mkPackage = pkgs': pkgs'.callPackage ./. { lua = pkgs'.lua5_4; }; in
-          {
-            default = mkPackage pkgs;
-            static = mkPackage pkgs.pkgsStatic;
-          };
-        devShells = builtins.mapAttrs
-          (_: package: pkgs.mkShell {
-            inputsFrom = [
-              package
-            ];
-          })
-          checks;
+        inherit packages;
+        checks = checks.glibc // checks.musl;
+        devShells =
+          let
+            devShells =
+              let
+                mkShell = pkgs': package: pkgs'.mkShell {
+                  inputsFrom = [
+                    package
+                  ];
+                };
+              in
+              {
+                glibc = mapAttrs (_: mkShell pkgs) checks.glibc;
+                musl = mapAttrs (_: mkShell pkgs.pkgsMusl) checks.musl;
+                static.static = mkShell pkgs.pkgsStatic packages.static;
+              };
+          in
+          devShells.glibc // devShells.musl // devShells.static;
       }
     );
 }
