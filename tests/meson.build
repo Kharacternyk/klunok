@@ -1,10 +1,15 @@
 add_test_setup('fast')
 add_test_setup('gdb', gdb: true)
-add_test_setup(
-  'valgrind',
-  exe_wrapper: ['valgrind', '--error-exitcode=1', '--leak-check=full'],
-  is_default: true
-)
+
+valgrind = find_program('valgrind', required: false)
+
+if valgrind.found()
+  add_test_setup(
+    'valgrind',
+    exe_wrapper: [valgrind, '--error-exitcode=1', '--leak-check=full'],
+    is_default: true
+  )
+endif
 
 test_sources = main_sources
 foreach component: components + 'config'

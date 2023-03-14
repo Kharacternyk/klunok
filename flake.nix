@@ -7,34 +7,44 @@
     in
     utils.eachSystem supportedSystems (system:
       let
-        getLuaPackages = pkgs: {
-          inherit (pkgs) lua5_4 lua5_3 lua5_2;
-          default = pkgs.lua5_4;
-          withoutLua = null;
-        };
-        inherit (builtins) mapAttrs;
-        getPackages = pkgs: mapAttrs
-          (_: lua: pkgs.callPackage ./. { inherit lua; })
-          (getLuaPackages pkgs);
         pkgs = import nixpkgs { inherit system; };
-        prefixAttrs = prefix: pkgs.lib.mapAttrs' (name: value: {
-          inherit value;
-          name = prefix + name;
-        });
-        packages = getPackages pkgs // (
-          prefixAttrs "static-" (getPackages pkgs.pkgsStatic)
-        );
-        checks = mapAttrs (_: package: package.override { doCheck = true; }) packages;
+        checks =
+          let
+            mkCheck = { callPackage, lua, valgrind }: callPackage ./. {
+              inherit lua valgrind;
+              doCheck = true;
+            };
+            glibcChecks = builtins.mapAttrs
+              (_: lua: mkCheck {
+                inherit (pkgs) callPackage valgrind;
+                inherit lua;
+              })
+              {
+                inherit (pkgs) lua5_4 lua5_3 lua5_2;
+                withoutLua = null;
+              };
+            muslChecks = if system == utils.system.i686-linux then { } else {
+              muslWithoutLua = mkCheck {
+                inherit (pkgs.pkgsMusl) callPackage;
+                lua = null;
+                valgrind = null;
+              };
+            };
+          in
+          glibcChecks // muslChecks;
       in
       {
-        inherit checks packages;
-        devShells = mapAttrs
+        inherit checks;
+        packages =
+          let mkPackage = pkgs': pkgs'.callPackage ./. { lua = pkgs'.lua5_4; }; in
+          {
+            default = mkPackage pkgs;
+            static = mkPackage pkgs.pkgsStatic;
+          };
+        devShells = builtins.mapAttrs
           (_: package: pkgs.mkShell {
             inputsFrom = [
               package
-            ];
-            packages = [
-              pkgs.gdb
             ];
           })
           checks;
