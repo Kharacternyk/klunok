@@ -57,10 +57,15 @@
               {
                 glibc = mapAttrs (_: mkShell pkgs) checks.glibc;
                 musl = mapAttrs (_: mkShell pkgs.pkgsMusl) checks.musl;
-                static.static = mkShell pkgs.pkgsStatic packages.static;
+                default = {
+                  default = mkShell pkgs (packages.default.override {
+                    doCheck = true;
+                  });
+                  static = mkShell pkgs.pkgsStatic packages.static;
+                };
               };
           in
-          devShells.glibc // devShells.musl // devShells.static;
+          devShells.glibc // devShells.musl // devShells.default;
       }
     );
 }
