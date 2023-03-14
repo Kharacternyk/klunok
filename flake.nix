@@ -10,13 +10,13 @@
         pkgs = import nixpkgs { inherit system; };
         checks =
           let
-            mkCheck = { callPackage, lua, valgrind }: callPackage ./. {
-              inherit lua valgrind;
+            mkCheck = { callPackage, lua, valgrind-light }: callPackage ./. {
+              inherit lua valgrind-light;
               doCheck = true;
             };
             glibcChecks = builtins.mapAttrs
               (_: lua: mkCheck {
-                inherit (pkgs) callPackage valgrind;
+                inherit (pkgs) callPackage valgrind-light;
                 inherit lua;
               })
               {
@@ -27,7 +27,7 @@
               muslWithoutLua = mkCheck {
                 inherit (pkgs.pkgsMusl) callPackage;
                 lua = null;
-                valgrind = null;
+                valgrind-light = null;
               };
             };
           in
