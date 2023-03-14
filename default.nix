@@ -3,7 +3,7 @@
 , ninja
 , pkg-config
 , lua
-, valgrind
+, valgrind-light
 , doCheck ? false
 }: stdenv.mkDerivation {
   pname = "klunok";
@@ -21,6 +21,6 @@
     lua
   ];
   checkInputs = [
-    valgrind
+    valgrind-light
   ];
 }
