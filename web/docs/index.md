@@ -14,13 +14,13 @@ including Vim, Visual Studio Code, LibreOffice, and Inkscape.
 ```mermaid
 graph TD;
   subgraph "Work as you usually do…"
-  w[Edit your files];
-  s[Hit save];
+  w[Edit your files.];
+  s[Hit save.];
   end
-  q[The files are scheduled for backup];
-  b[The files are backed up];
-  w -->  s;
+  q[The files are scheduled for backup.];
+  b[The files are backed up.];
+  w --> s;
   s --> w;
-  s -.-> |"…and Klunok will take care of the rest"| q;
-  q -.-> |"…a minute (by default) passes with no further edits…"| b;
+  s -.-> |"…and Klunok will take care of the rest."| q;
+  q -.-> |"A minute passes with no further edits."| b;
 ```
