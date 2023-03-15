@@ -1,0 +1,17 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v19
+      - run: nix build .#static
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: result/bin/klunok
