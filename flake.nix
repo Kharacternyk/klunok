@@ -3,7 +3,12 @@
     let
       utils = flake-utils.lib;
       system = utils.system;
-      supportedSystems = [ system.aarch64-linux system.x86_64-linux system.i686-linux ];
+      supportedSystems = [
+        system.aarch64-linux
+        system.x86_64-linux
+        system.i686-linux
+        system.armv7l-linux
+      ];
     in
     utils.eachSystem supportedSystems (system:
       let
