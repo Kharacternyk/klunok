@@ -13,6 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v19
+      - run: nix flake check
       - run: nix build .#static
       - run: echo version=$(<version) >> $GITHUB_ENV
       - run: git tag ${{env.version}}
