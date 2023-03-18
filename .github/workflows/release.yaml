@@ -2,8 +2,10 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+    branches:
+      - master
+    paths:
+      - version
 
 jobs:
   release:
@@ -12,6 +14,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v19
       - run: nix build .#static
+      - run: echo version=$(<version) >> $GITHUB_ENV
+      - run: git tag ${{env.version}}
+      - run: git push --tags
       - uses: softprops/action-gh-release@v1
         with:
           files: result/bin/klunok
+          tag_name: ${{env.version}}
