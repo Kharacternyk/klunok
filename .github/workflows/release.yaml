@@ -15,10 +15,10 @@ jobs:
       - uses: cachix/install-nix-action@v19
       - run: nix flake check
       - run: nix build .#static
-      - run: echo version=$(<version) >> $GITHUB_ENV
-      - run: git tag ${{env.version}}
+      - run: echo tag=v$(<version) >> $GITHUB_ENV
+      - run: git tag ${{env.tag}}
       - run: git push --tags
       - uses: softprops/action-gh-release@v1
         with:
           files: result/bin/klunok
-          tag_name: ${{env.version}}
+          tag_name: ${{env.tag}}
