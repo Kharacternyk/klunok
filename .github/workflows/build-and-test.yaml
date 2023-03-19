@@ -2,11 +2,13 @@ name: "Build & Test"
 
 on:
   pull_request:
-    paths-ignore: &ignored
+    paths-ignore:
       - "web/**"
       - version
   push:
-    paths-ignore: *ignored
+    paths-ignore:
+      - "web/**"
+      - version
 
 jobs:
   build-and-test:
