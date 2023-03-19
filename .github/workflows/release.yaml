@@ -16,8 +16,9 @@ jobs:
       - run: nix flake check
       - run: nix build .#static
       - run: echo tag=v$(<version) >> $GITHUB_ENV
-      - run: git tag ${{env.tag}}
-      - run: git tag stable
+      - run: git tag ${tag}
+      - run: git tag ${tag%.*}
+      - run: git tag ${tag%.*.*}
       - run: git push --tags
       - uses: softprops/action-gh-release@v1
         with:
