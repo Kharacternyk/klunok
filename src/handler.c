@@ -1,6 +1,6 @@
 #include "handler.h"
 #include "bitmap.h"
-#include "builder.h"
+#include "buffer.h"
 #include "config.h"
 #include "deref.h"
 #include "elfinterp.h"
@@ -216,36 +216,36 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
     char *base_version =
         get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
-    struct builder *version_builder = create_builder(trace);
-    concat_string(base_version, version_builder, trace);
+    struct buffer *version_buffer = create_buffer(trace);
+    concat_string(base_version, version_buffer, trace);
     free(base_version);
     if (!ok(trace)) {
       free(path);
-      free_builder(version_builder);
+      free_buffer(version_buffer);
       return;
     }
-    if (strchr(get_string(version_builder), '/')) {
-      throw_context(get_string(version_builder), trace);
+    if (strchr(get_string(version_buffer), '/')) {
+      throw_context(get_string(version_buffer), trace);
       throw_static(messages.handler.version.has_slashes, trace);
       free(path);
-      free_builder(version_builder);
+      free_buffer(version_buffer);
       return;
     }
 
     const char *extension = get_file_extension(path);
-    size_t version_base_length = get_builder_length(version_builder);
+    size_t version_base_length = get_buffer_length(version_buffer);
     size_t duplicate_count = 0;
 
     const char *event = get_event_queue_head_stored(handler->config);
 
     for (;;) {
-      concat_string(extension, version_builder, trace);
+      concat_string(extension, version_buffer, trace);
       if (is_in_set(path, get_history_paths(handler->config))) {
-        copy_delta_to_store(path, get_string(version_builder),
+        copy_delta_to_store(path, get_string(version_buffer),
                             get_cursor_version(handler->config),
                             get_store_root(handler->config), trace);
       } else {
-        copy_to_store(path, get_string(version_builder),
+        copy_to_store(path, get_string(version_buffer),
                       get_store_root(handler->config), trace);
       }
       if (catch_static(messages.store.copy.file_does_not_exist, trace)) {
@@ -259,15 +259,15 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       } else if (catch_static(messages.store.copy.version_already_exists,
                               trace)) {
         ++duplicate_count;
-        truncate_builder(version_base_length, version_builder);
+        truncate_buffer(version_base_length, version_buffer);
         /*FIXME configure me*/
-        concat_string("-", version_builder, trace);
-        concat_size(duplicate_count, version_builder, trace);
+        concat_string("-", version_buffer, trace);
+        concat_size(duplicate_count, version_buffer, trace);
       } else {
         throw_context(path, trace);
         throw_static(messages.handler.store.cannot_copy, trace);
         free(path);
-        free_builder(version_builder);
+        free_buffer(version_buffer);
         return;
       }
     }
@@ -278,7 +278,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     rethrow_static(messages.handler.journal.cannot_write_to, trace);
 
     free(path);
-    free_builder(version_builder);
+    free_buffer(version_buffer);
   }
 }
 

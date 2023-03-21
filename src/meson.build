@@ -1,6 +1,6 @@
 components = [
   'bitmap',
-  'builder',
+  'buffer',
   'circbreak',
   'deref',
   'elfinterp',

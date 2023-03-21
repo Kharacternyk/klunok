@@ -1,5 +1,5 @@
 #include "mountinfo.h"
-#include "builder.h"
+#include "buffer.h"
 #include "trace.h"
 #include <fcntl.h>
 #include <stdlib.h>
@@ -15,19 +15,19 @@ static char *read_proc_file(const char *path, struct trace *trace) {
   long page_size = TNEG(sysconf(_SC_PAGE_SIZE), trace);
   int fd = TNEG(open(path, O_RDONLY), trace);
   char *page = TNULL(malloc(page_size + 1), trace);
-  struct builder *builder = create_builder(trace);
+  struct buffer *buffer = create_buffer(trace);
 
   ssize_t ssize;
   while ((ssize = TNEG(read(fd, page, page_size), trace)) > 0) {
     page[ssize] = 0;
-    concat_string(page, builder, trace);
+    concat_string(page, buffer, trace);
   }
 
   free(page);
   if (fd >= 0) {
     close(fd);
   }
-  return free_outer_builder(builder);
+  return free_outer_buffer(buffer);
 }
 
 struct mountinfo *create_mountinfo(struct trace *trace) {

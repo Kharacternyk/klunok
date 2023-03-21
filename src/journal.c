@@ -1,5 +1,5 @@
 #include "journal.h"
-#include "builder.h"
+#include "buffer.h"
 #include "parents.h"
 #include "timestamp.h"
 #include "trace.h"
@@ -43,31 +43,31 @@ void write_to_journal(const char *event, pid_t pid, const char *path,
   }
   char *timestamp =
       get_timestamp(journal->timestamp_pattern, /*FIXME*/ NAME_MAX, trace);
-  struct builder *builder = create_builder(trace);
+  struct buffer *buffer = create_buffer(trace);
   if (*timestamp) {
-    concat_string(timestamp, builder, trace);
-    concat_char('\t', builder, trace);
+    concat_string(timestamp, buffer, trace);
+    concat_char('\t', buffer, trace);
   }
   if (*event) {
-    concat_string(event, builder, trace);
-    concat_char('\t', builder, trace);
+    concat_string(event, buffer, trace);
+    concat_char('\t', buffer, trace);
   }
   if (pid) {
-    concat_size(pid, builder, trace);
-    concat_char('\t', builder, trace);
+    concat_size(pid, buffer, trace);
+    concat_char('\t', buffer, trace);
   }
-  concat_string(path, builder, trace);
-  concat_char('\n', builder, trace);
+  concat_string(path, buffer, trace);
+  concat_char('\n', buffer, trace);
 
   size_t size_written = 0;
-  while (ok(trace) && get_builder_length(builder) > size_written) {
-    size_written += TNEG(
-        write(journal->fd, get_string(builder), get_builder_length(builder)),
-        trace);
+  while (ok(trace) && get_buffer_length(buffer) > size_written) {
+    size_written +=
+        TNEG(write(journal->fd, get_string(buffer), get_buffer_length(buffer)),
+             trace);
   }
 
   free(timestamp);
-  free_builder(builder);
+  free_buffer(buffer);
 }
 
 void free_journal(struct journal *journal) {

@@ -1,5 +1,5 @@
 #include "store.h"
-#include "builder.h"
+#include "buffer.h"
 #include "messages.h"
 #include "parents.h"
 #include "trace.h"
@@ -14,16 +14,16 @@
 
 char *get_store_path(const char *filesystem_path, const char *version,
                      const char *store_root, struct trace *trace) {
-  struct builder *builder = create_builder(trace);
-  concat_string(store_root, builder, trace);
+  struct buffer *buffer = create_buffer(trace);
+  concat_string(store_root, buffer, trace);
   /*FIXME needed only for simpler tests*/
   if (ok(trace) && *filesystem_path != '/') {
-    concat_char('/', builder, trace);
+    concat_char('/', buffer, trace);
   }
-  concat_string(filesystem_path, builder, trace);
-  concat_char('/', builder, trace);
-  concat_string(version, builder, trace);
-  return free_outer_builder(builder);
+  concat_string(filesystem_path, buffer, trace);
+  concat_char('/', buffer, trace);
+  concat_string(version, buffer, trace);
+  return free_outer_buffer(buffer);
 }
 
 static void cleanup(char *store_path) {
@@ -137,16 +137,16 @@ void copy_delta_to_store(const char *filesystem_path, const char *version,
   TNEG(ftruncate(cursor_fd, 0), trace);
   TNEG(lseek(cursor_fd, 0, SEEK_SET), trace);
 
-  struct builder *builder = create_builder(trace);
-  concat_size(offset, builder, trace);
+  struct buffer *buffer = create_buffer(trace);
+  concat_size(offset, buffer, trace);
 
-  for (size_t i = 0; ok(trace) && i < get_builder_length(builder); ++i) {
-    TNEG(write(cursor_fd, get_string(builder) + i, 1), trace);
+  for (size_t i = 0; ok(trace) && i < get_buffer_length(buffer); ++i) {
+    TNEG(write(cursor_fd, get_string(buffer) + i, 1), trace);
   }
 
   if (cursor_fd >= 0) {
     close(cursor_fd);
   }
-  free_builder(builder);
+  free_buffer(buffer);
   free(cursor_path);
 }

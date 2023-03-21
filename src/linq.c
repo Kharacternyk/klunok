@@ -1,5 +1,5 @@
 #include "linq.h"
-#include "builder.h"
+#include "buffer.h"
 #include "messages.h"
 #include "parents.h"
 #include "set.h"
@@ -133,14 +133,14 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
 }
 
 void push_to_linq(const char *path, struct linq *linq, struct trace *trace) {
-  struct builder *link_builder = create_builder(trace);
-  concat_size(linq->head_index + linq->size, link_builder, trace);
-  TNEG(symlinkat(path, linq->dirfd, get_string(link_builder)), trace);
+  struct buffer *link_buffer = create_buffer(trace);
+  concat_size(linq->head_index + linq->size, link_buffer, trace);
+  TNEG(symlinkat(path, linq->dirfd, get_string(link_buffer)), trace);
   add_to_set(path, linq->set, trace);
   if (ok(trace)) {
     ++linq->size;
   }
-  free_builder(link_builder);
+  free_buffer(link_buffer);
 }
 
 char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
@@ -153,26 +153,26 @@ char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
     return NULL;
   }
 
-  struct builder *link_builder = create_builder(trace);
-  concat_size(linq->head_index, link_builder, trace);
+  struct buffer *link_buffer = create_buffer(trace);
+  concat_size(linq->head_index, link_buffer, trace);
   struct stat link_stat;
-  TNEG(fstatat(linq->dirfd, get_string(link_builder), &link_stat,
+  TNEG(fstatat(linq->dirfd, get_string(link_buffer), &link_stat,
                AT_SYMLINK_NOFOLLOW),
        trace);
   if (!ok(trace)) {
-    free_builder(link_builder);
+    free_buffer(link_buffer);
     return NULL;
   }
 
   time_t link_age = time(NULL) - link_stat.st_mtime;
   if (link_age < linq->debounce_seconds) {
     *retry_after_seconds = linq->debounce_seconds - link_age;
-    free_builder(link_builder);
+    free_buffer(link_buffer);
     return NULL;
   }
 
-  char *target = read_entry(get_string(link_builder), linq, trace);
-  free_builder(link_builder);
+  char *target = read_entry(get_string(link_buffer), linq, trace);
+  free_buffer(link_buffer);
   if (ok(trace) && get_count_in_set(target, linq->set) > 1) {
     pop_from_linq(linq, trace);
     return get_linq_head(linq, retry_after_seconds, trace);
@@ -184,10 +184,10 @@ char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
 
 void pop_from_linq(struct linq *linq, struct trace *trace) {
   assert(linq->size);
-  struct builder *link_builder = create_builder(trace);
-  concat_size(linq->head_index, link_builder, trace);
-  char *target = read_entry(get_string(link_builder), linq, trace);
-  TNEG(unlinkat(linq->dirfd, get_string(link_builder), 0), trace);
+  struct buffer *link_buffer = create_buffer(trace);
+  concat_size(linq->head_index, link_buffer, trace);
+  char *target = read_entry(get_string(link_buffer), linq, trace);
+  TNEG(unlinkat(linq->dirfd, get_string(link_buffer), 0), trace);
   if (ok(trace)) {
     remove_from_set(target, linq->set);
     --linq->size;
@@ -198,7 +198,7 @@ void pop_from_linq(struct linq *linq, struct trace *trace) {
     }
   }
   free(target);
-  free_builder(link_builder);
+  free_buffer(link_buffer);
 }
 
 void redebounce_linq(time_t debounce_seconds, struct linq *linq) {
