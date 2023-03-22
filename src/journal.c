@@ -60,10 +60,9 @@ void write_to_journal(const char *event, pid_t pid, const char *path,
   concat_char('\n', buffer, trace);
 
   size_t size_written = 0;
-  while (ok(trace) && get_buffer_length(buffer) > size_written) {
+  while (ok(trace) && get_length(buffer) > size_written) {
     size_written +=
-        TNEG(write(journal->fd, get_string(buffer), get_buffer_length(buffer)),
-             trace);
+        TNEG(write(journal->fd, get_string(buffer), get_length(buffer)), trace);
   }
 
   free(timestamp);

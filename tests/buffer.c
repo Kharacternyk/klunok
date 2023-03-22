@@ -14,27 +14,34 @@ void test_buffer() {
   struct buffer *buffer = create_buffer(trace);
   assert(ok(trace));
   assert(*get_string(buffer) == 0);
+  assert(get_hash(buffer) == 0);
 
   concat_string(S1, buffer, trace);
   assert(ok(trace));
   assert(!strcmp(S1, get_string(buffer)));
+  size_t hash = get_hash(buffer);
 
   concat_string(S2, buffer, trace);
   assert(ok(trace));
   assert(!strcmp(S1 S2, get_string(buffer)));
+  assert(hash != get_hash(buffer));
+  hash = get_hash(buffer);
 
-  size_t saved_length = get_buffer_length(buffer);
+  size_t saved_length = get_length(buffer);
 
   concat_size(N, buffer, trace);
   assert(ok(trace));
   assert(!strcmp(S1 S2 SN, get_string(buffer)));
+  assert(hash != get_hash(buffer));
 
-  truncate_buffer(saved_length, buffer);
+  set_length(saved_length, buffer);
   assert(!strcmp(S1 S2, get_string(buffer)));
+  assert(hash == get_hash(buffer));
 
   concat_size(0, buffer, trace);
   assert(ok(trace));
   assert(!strcmp(S1 S2 "0", get_string(buffer)));
+  assert(hash != get_hash(buffer));
 
   free_buffer(buffer);
   free(trace);

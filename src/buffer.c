@@ -7,18 +7,31 @@
 struct buffer {
   char *string;
   size_t size;
+  struct hash *hash;
 };
+
+struct hash {
+  size_t value;
+  size_t seen_length;
+};
+
+static const struct hash empty_hash;
 
 struct buffer *create_buffer(struct trace *trace) {
   struct buffer *buffer = TNULL(malloc(sizeof(struct buffer)), trace);
+  struct hash *hash = TNULL(calloc(1, sizeof(struct hash)), trace);
   char *string = TNULL(calloc(1, sizeof(char)), trace);
+
   if (!ok(trace)) {
     free(buffer);
     free(string);
     return NULL;
   }
-  buffer->size = 1;
+
   buffer->string = string;
+  buffer->size = 1;
+  buffer->hash = hash;
+
   return buffer;
 }
 
@@ -58,7 +71,7 @@ void concat_size(size_t size, struct buffer *buffer, struct trace *trace) {
   if (!ok(trace)) {
     return;
   }
-  size_t saved_length = get_buffer_length(buffer);
+  size_t saved_length = get_length(buffer);
 
   size_t power_of_ten = 1;
   while (power_of_ten <= size / 10) {
@@ -70,7 +83,7 @@ void concat_size(size_t size, struct buffer *buffer, struct trace *trace) {
     digit = '0' + size / power_of_ten;
     concat_char(digit, buffer, trace);
     if (!ok(trace)) {
-      truncate_buffer(saved_length, buffer);
+      set_length(saved_length, buffer);
       return;
     }
     size %= power_of_ten;
@@ -80,14 +93,27 @@ void concat_size(size_t size, struct buffer *buffer, struct trace *trace) {
 
 const char *get_string(const struct buffer *buffer) { return buffer->string; }
 
-size_t get_buffer_length(const struct buffer *buffer) {
-  return buffer->size - 1;
-}
+size_t get_length(const struct buffer *buffer) { return buffer->size - 1; }
 
-void truncate_buffer(size_t length, struct buffer *buffer) {
+void set_length(size_t length, struct buffer *buffer) {
   assert(length < buffer->size);
   buffer->string[length] = 0;
   buffer->size = length + 1;
+  *buffer->hash = empty_hash;
+}
+
+size_t get_hash(const struct buffer *buffer) {
+  while (buffer->hash->seen_length < get_length(buffer)) {
+    char character = buffer->string[buffer->hash->seen_length];
+    size_t hash = buffer->hash->value;
+
+    hash = character + (hash << 6) + (hash << 16) - hash;
+
+    buffer->hash->value = hash;
+    ++buffer->hash->seen_length;
+  }
+
+  return buffer->hash->value;
 }
 
 char *free_outer_buffer(struct buffer *buffer) {
@@ -95,6 +121,7 @@ char *free_outer_buffer(struct buffer *buffer) {
     return NULL;
   }
   char *result = buffer->string;
+  free(buffer->hash);
   free(buffer);
   return result;
 }
@@ -102,6 +129,7 @@ char *free_outer_buffer(struct buffer *buffer) {
 void free_buffer(struct buffer *buffer) {
   if (buffer) {
     free(buffer->string);
+    free(buffer->hash);
     free(buffer);
   }
 }

@@ -140,7 +140,7 @@ void copy_delta_to_store(const char *filesystem_path, const char *version,
   struct buffer *buffer = create_buffer(trace);
   concat_size(offset, buffer, trace);
 
-  for (size_t i = 0; ok(trace) && i < get_buffer_length(buffer); ++i) {
+  for (size_t i = 0; ok(trace) && i < get_length(buffer); ++i) {
     TNEG(write(cursor_fd, get_string(buffer) + i, 1), trace);
   }
 

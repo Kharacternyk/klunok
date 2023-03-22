@@ -233,7 +233,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     }
 
     const char *extension = get_file_extension(path);
-    size_t version_base_length = get_buffer_length(version_buffer);
+    size_t version_base_length = get_length(version_buffer);
     size_t duplicate_count = 0;
 
     const char *event = get_event_queue_head_stored(handler->config);
@@ -259,7 +259,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       } else if (catch_static(messages.store.copy.version_already_exists,
                               trace)) {
         ++duplicate_count;
-        truncate_buffer(version_base_length, version_buffer);
+        set_length(version_base_length, version_buffer);
         /*FIXME configure me*/
         concat_string("-", version_buffer, trace);
         concat_size(duplicate_count, version_buffer, trace);
