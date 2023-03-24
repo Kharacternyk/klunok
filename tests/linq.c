@@ -24,8 +24,8 @@ void test_linq() {
   push_to_linq(F1, linq, trace);
   assert(ok(trace));
   path = get_linq_head(linq, &retry_after_seconds, trace);
-  assert(!retry_after_seconds);
   assert(ok(trace));
+  assert(!retry_after_seconds);
   assert(!strcmp(path, F1));
   free(path);
 
@@ -36,24 +36,30 @@ void test_linq() {
   assert(ok(trace));
   push_to_linq(F2, linq, trace);
   assert(ok(trace));
+  push_to_linq(F1, linq, trace);
+  assert(ok(trace));
 
   path = get_linq_head(linq, &retry_after_seconds, trace);
-  assert(!retry_after_seconds);
   assert(ok(trace));
+  assert(!retry_after_seconds);
+  assert(!strcmp(path, F2));
+  free(path);
+
+  pop_from_linq(linq, trace);
+  assert(ok(trace));
+
+  path = get_linq_head(linq, &retry_after_seconds, trace);
+  assert(ok(trace));
+  assert(!retry_after_seconds);
   assert(!strcmp(path, F1));
   free(path);
 
   pop_from_linq(linq, trace);
   assert(ok(trace));
 
-  path = get_linq_head(linq, &retry_after_seconds, trace);
-  assert(!retry_after_seconds);
+  get_linq_head(linq, &retry_after_seconds, trace);
   assert(ok(trace));
-  assert(!strcmp(path, F2));
-  free(path);
-
-  pop_from_linq(linq, trace);
-  assert(ok(trace));
+  assert(retry_after_seconds < 0);
 
   free_linq(linq);
 

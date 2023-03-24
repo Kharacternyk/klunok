@@ -174,6 +174,7 @@ char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
   char *target = read_entry(get_string(link_buffer), linq, trace);
   free_buffer(link_buffer);
   if (ok(trace) && get_count_in_set(target, linq->set) > 1) {
+    free(target);
     pop_from_linq(linq, trace);
     return get_linq_head(linq, retry_after_seconds, trace);
   }
