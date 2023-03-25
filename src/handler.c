@@ -159,7 +159,7 @@ static bool should_push_to_linq(pid_t pid, const char *path,
         is_included = true;
         is_excluded = false;
       }
-    } else if (c == '.' || !is_hidden) {
+    } else if (c == '.' && !is_hidden) {
       is_hidden = *(path_cursor - 1) == '/';
     }
     if (!c) {
