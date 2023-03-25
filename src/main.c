@@ -1,3 +1,4 @@
+#include "buffer.h"
 #include "handler.h"
 #include "mountinfo.h"
 #include "params.h"
@@ -67,11 +68,15 @@ int main(int argc, const char **argv) {
   for (const char *mount = get_next_block_mount(mountinfo); mount;
        mount = get_next_block_mount(mountinfo)) {
     int fanotify_flags = 0;
+    struct buffer_view *mount_view = create_buffer_view(mount, trace);
+    if (!ok(trace)) {
+      return unwind(trace);
+    }
 
-    if (!is_in_set(mount, get_ignored_exec_mounts(params))) {
+    if (!is_in_set(mount_view, get_ignored_exec_mounts(params))) {
       fanotify_flags |= FAN_OPEN_EXEC;
     }
-    if (!is_in_set(mount, get_ignored_write_mounts(params))) {
+    if (!is_in_set(mount_view, get_ignored_write_mounts(params))) {
       fanotify_flags |= FAN_CLOSE_WRITE;
     }
     if (fanotify_flags &&
@@ -82,6 +87,8 @@ int main(int argc, const char **argv) {
       throw_static("Cannot watch a mount point", trace);
       return unwind(trace);
     }
+
+    free_buffer_view(mount_view);
   }
 
   const char *privilege_dropping_path = get_privilege_dropping_path(params);

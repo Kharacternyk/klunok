@@ -13,13 +13,11 @@ extern const char _binary_lua_pre_config_lua_end;
 extern const char _binary_lua_post_config_lua_start;
 extern const char _binary_lua_post_config_lua_end;
 
-const size_t path_excluded = 1;
-const size_t path_included = 2;
-
 struct config {
   struct set *editors;
   struct set *history_paths;
-  struct set *overridden_paths;
+  struct set *excluded_paths;
+  struct set *included_paths;
   char *store_root;
   char *queue_path;
   char *journal_path;
@@ -29,12 +27,10 @@ struct config {
   size_t debounce_seconds;
   size_t path_length_guess;
   size_t elf_interpreter_count_guess;
-  size_t executable_count_guess;
   size_t queue_size_guess;
   pid_t max_pid_guess;
   char *event_open_exec_not_editor;
   char *event_open_exec_editor;
-  char *event_open_exec_interpreter;
   char *event_close_write_not_by_editor;
   char *event_close_write_by_editor;
   char *event_queue_head_deleted;
@@ -60,37 +56,27 @@ static char *read_lua_string(lua_State *lua, const char *name,
   return TNULL(strdup(string), trace);
 }
 
-static void transfer_lua_set(lua_State *lua, const char *name, size_t count,
-                             struct set *set, struct trace *trace) {
-  if (!ok(trace)) {
-    return;
-  }
-  lua_getglobal(lua, name);
-  lua_pushnil(lua);
-
-  while (lua_next(lua, -2)) {
-    set_count_in_set(count, lua_tostring(lua, -2), set, trace);
-    if (!ok(trace)) {
-      free_set(set);
-      return;
-    }
-
-    lua_pop(lua, 1);
-  }
-}
-
-static size_t get_size_of_lua_set(lua_State *lua, const char *name) {
-  lua_getglobal(lua, name);
-  return lua_rawlen(lua, -1);
-}
-
 static struct set *read_lua_set(lua_State *lua, const char *name,
                                 struct trace *trace) {
   if (!ok(trace)) {
     return NULL;
   }
-  struct set *set = create_set(get_size_of_lua_set(lua, name), trace);
-  transfer_lua_set(lua, name, 1, set, trace);
+  lua_getglobal(lua, name);
+  struct set *set = create_set(lua_rawlen(lua, -1), trace);
+  if (!ok(trace)) {
+    return NULL;
+  }
+
+  lua_pushnil(lua);
+  while (lua_next(lua, -2)) {
+    add_to_set(lua_tostring(lua, -2), set, trace);
+    if (!ok(trace)) {
+      free_set(set);
+      return NULL;
+    }
+
+    lua_pop(lua, 1);
+  }
   return set;
 }
 
@@ -139,17 +125,10 @@ struct config *load_config(const char *path, struct trace *trace) {
 
   free_circuit_breaker(circuit_breaker);
 
-  config->overridden_paths =
-      create_set(get_size_of_lua_set(lua, "excluded_paths") +
-                     get_size_of_lua_set(lua, "included_paths"),
-                 trace);
-  transfer_lua_set(lua, "excluded_paths", path_excluded,
-                   config->overridden_paths, trace);
-  transfer_lua_set(lua, "included_paths", path_included,
-                   config->overridden_paths, trace);
-
   config->editors = read_lua_set(lua, "editors", trace);
   config->history_paths = read_lua_set(lua, "history_paths", trace);
+  config->excluded_paths = read_lua_set(lua, "excluded_paths", trace);
+  config->included_paths = read_lua_set(lua, "included_paths", trace);
   config->store_root = read_lua_string(lua, "store_root", trace);
   config->queue_path = read_lua_string(lua, "queue_path", trace);
   config->journal_path = read_lua_string(lua, "journal_path", trace);
@@ -161,8 +140,6 @@ struct config *load_config(const char *path, struct trace *trace) {
       read_lua_string(lua, "event_open_exec_not_editor", trace);
   config->event_open_exec_editor =
       read_lua_string(lua, "event_open_exec_editor", trace);
-  config->event_open_exec_interpreter =
-      read_lua_string(lua, "event_open_exec_interpreter", trace);
   config->event_close_write_not_by_editor =
       read_lua_string(lua, "event_close_write_not_by_editor", trace);
   config->event_close_write_by_editor =
@@ -187,7 +164,6 @@ struct config *load_config(const char *path, struct trace *trace) {
   config->max_pid_guess = read_lua_size(lua, "max_pid_guess");
   config->elf_interpreter_count_guess =
       read_lua_size(lua, "elf_interpreter_count_guess");
-  config->executable_count_guess = read_lua_size(lua, "executable_count_guess");
   config->queue_size_guess = read_lua_size(lua, "queue_size_guess");
 
   lua_close(lua);
@@ -202,8 +178,12 @@ const struct set *get_history_paths(const struct config *config) {
   return config->history_paths;
 }
 
-const struct set *get_overridden_paths(const struct config *config) {
-  return config->overridden_paths;
+const struct set *get_excluded_paths(const struct config *config) {
+  return config->excluded_paths;
+}
+
+const struct set *get_included_paths(const struct config *config) {
+  return config->included_paths;
 }
 
 const char *get_store_root(const struct config *config) {
@@ -246,10 +226,6 @@ size_t get_elf_interpreter_count_guess(const struct config *config) {
   return config->elf_interpreter_count_guess;
 }
 
-size_t get_executable_count_guess(const struct config *config) {
-  return config->executable_count_guess;
-}
-
 size_t get_queue_size_guess(const struct config *config) {
   return config->queue_size_guess;
 }
@@ -260,10 +236,6 @@ const char *get_event_open_exec_not_editor(const struct config *config) {
 
 const char *get_event_open_exec_editor(const struct config *config) {
   return config->event_open_exec_editor;
-}
-
-const char *get_event_open_exec_interpreter(const struct config *config) {
-  return config->event_open_exec_interpreter;
 }
 
 const char *get_event_close_write_not_by_editor(const struct config *config) {
@@ -290,7 +262,8 @@ void free_config(struct config *config) {
   if (config) {
     free_set(config->editors);
     free_set(config->history_paths);
-    free_set(config->overridden_paths);
+    free_set(config->excluded_paths);
+    free_set(config->included_paths);
     free(config->store_root);
     free(config->queue_path);
     free(config->journal_path);
@@ -299,7 +272,6 @@ void free_config(struct config *config) {
     free(config->cursor_version);
     free(config->event_open_exec_not_editor);
     free(config->event_open_exec_editor);
-    free(config->event_open_exec_interpreter);
     free(config->event_close_write_not_by_editor);
     free(config->event_close_write_by_editor);
     free(config->event_queue_head_deleted);

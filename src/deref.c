@@ -18,8 +18,8 @@ char *deref_fd(int fd, size_t length_guess, struct trace *trace) {
 
   for (;;) {
     char *target = TNULL(malloc(max_size), trace);
-    int length =
-        TNEG(readlink(get_string(link_buffer), target, max_size), trace);
+    int length = TNEG(
+        readlink(get_string(get_view(link_buffer)), target, max_size), trace);
 
     if (!ok(trace)) {
       free_buffer(link_buffer);

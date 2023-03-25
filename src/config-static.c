@@ -15,7 +15,6 @@ static const size_t debounce_seconds = 60;
 static const size_t path_length_guess = 1024;
 static const pid_t max_pid_guess = 1 << 15;
 static const size_t elf_interpreter_count_guess = 1;
-static const size_t executable_count_guess = 128;
 static const size_t queue_size_guess = 2 * debounce_seconds;
 static const char *const editors[] = {
     "atom",
@@ -55,7 +54,6 @@ static const char *const excluded_paths[] = {};
 static const char *const included_paths[] = {};
 static const char *const event_open_exec_not_editor;
 static const char *const event_open_exec_editor;
-static const char *const event_open_exec_interpreter;
 static const char *const event_close_write_not_by_editor;
 static const char *const event_close_write_by_editor;
 static const char *const event_queue_head_deleted;
@@ -65,11 +63,18 @@ static const char *const event_queue_head_stored = "";
 struct config {
   struct set *editors;
   struct set *history_paths;
-  struct set *overridden_paths;
+  struct set *excluded_paths;
+  struct set *included_paths;
 };
 
-const size_t path_excluded = 1;
-const size_t path_included = 2;
+static struct set *load_set(const char *const *array, size_t size,
+                            struct trace *trace) {
+  struct set *set = create_set(size / sizeof(char *), trace);
+  for (size_t i = 0; ok(trace) && i < size / sizeof(char *); ++i) {
+    add_to_set(editors[i], set, trace);
+  }
+  return set;
+}
 
 struct config *load_config(const char *path, struct trace *trace) {
   if (ok(trace) && path) {
@@ -82,32 +87,12 @@ struct config *load_config(const char *path, struct trace *trace) {
     return NULL;
   }
 
-  /*FIXME boilerplate*/
-
-  config->editors = create_set(sizeof editors / sizeof(char *), trace);
-  for (size_t i = 0; ok(trace) && i < sizeof editors / sizeof(char *); ++i) {
-    add_to_set(editors[i], config->editors, trace);
-  }
-
-  config->history_paths =
-      create_set(sizeof history_paths / sizeof(char *), trace);
-  for (size_t i = 0; ok(trace) && i < sizeof history_paths / sizeof(char *);
-       ++i) {
-    add_to_set(history_paths[i], config->history_paths, trace);
-  }
-
-  config->overridden_paths = create_set(
-      (sizeof excluded_paths + sizeof included_paths) / sizeof(char *), trace);
-  for (size_t i = 0; ok(trace) && i < sizeof excluded_paths / sizeof(char *);
-       ++i) {
-    set_count_in_set(path_excluded, excluded_paths[i], config->overridden_paths,
-                     trace);
-  }
-  for (size_t i = 0; ok(trace) && i < sizeof included_paths / sizeof(char *);
-       ++i) {
-    set_count_in_set(path_included, included_paths[i], config->overridden_paths,
-                     trace);
-  }
+  config->editors = load_set(editors, sizeof editors, trace);
+  config->history_paths = load_set(history_paths, sizeof history_paths, trace);
+  config->excluded_paths =
+      load_set(excluded_paths, sizeof excluded_paths, trace);
+  config->included_paths =
+      load_set(included_paths, sizeof included_paths, trace);
 
   if (!ok(trace)) {
     free_config(config);
@@ -124,8 +109,12 @@ const struct set *get_history_paths(const struct config *config) {
   return config->editors;
 }
 
-const struct set *get_overridden_paths(const struct config *config) {
-  return config->overridden_paths;
+const struct set *get_excluded_paths(const struct config *config) {
+  return config->excluded_paths;
+}
+
+const struct set *get_included_paths(const struct config *config) {
+  return config->included_paths;
 }
 
 const char *get_store_root(const struct config *config) { return store_root; }
@@ -162,10 +151,6 @@ size_t get_elf_interpreter_count_guess(const struct config *config) {
   return elf_interpreter_count_guess;
 }
 
-size_t get_executable_count_guess(const struct config *config) {
-  return executable_count_guess;
-}
-
 size_t get_queue_size_guess(const struct config *config) {
   return queue_size_guess;
 }
@@ -176,10 +161,6 @@ const char *get_event_open_exec_not_editor(const struct config *config) {
 
 const char *get_event_open_exec_editor(const struct config *config) {
   return event_open_exec_editor;
-}
-
-const char *get_event_open_exec_interpreter(const struct config *config) {
-  return event_open_exec_interpreter;
 }
 
 const char *get_event_close_write_not_by_editor(const struct config *config) {
@@ -206,7 +187,8 @@ void free_config(struct config *config) {
   if (config) {
     free_set(config->editors);
     free_set(config->history_paths);
-    free_set(config->overridden_paths);
+    free_set(config->excluded_paths);
+    free_set(config->included_paths);
     free(config);
   }
 }

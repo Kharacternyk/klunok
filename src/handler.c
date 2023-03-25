@@ -25,7 +25,6 @@ struct handler {
   struct linq *linq;
   struct bitmap *editor_pid_bitmap;
   struct set *elf_interpreters;
-  struct set *handled_executables;
 };
 
 struct handler *load_handler(const char *config_path, struct trace *trace) {
@@ -49,8 +48,6 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
   if (ok(trace)) {
     handler->elf_interpreters =
         create_set(get_elf_interpreter_count_guess(handler->config), trace);
-    handler->handled_executables =
-        create_set(get_executable_count_guess(handler->config), trace);
     handler->editor_pid_bitmap =
         create_bitmap(get_max_pid_guess(handler->config), trace);
 
@@ -92,22 +89,29 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
 
   const char *event = get_event_open_exec_not_editor(handler->config);
 
-  if (!is_in_set(file_path, handler->elf_interpreters)) {
-    if (is_in_set(exe_filename, get_editors(handler->config))) {
-      set_bit(pid, handler->editor_pid_bitmap, trace);
-      event = get_event_open_exec_editor(handler->config);
-    } else {
+  struct buffer_view *exe_filename_view =
+      create_buffer_view(exe_filename, trace);
+
+  if (!ok(trace)) {
+    free_buffer_view(exe_filename_view);
+    return;
+  }
+
+  if (is_in_set(exe_filename_view, get_editors(handler->config))) {
+    event = get_event_open_exec_editor(handler->config);
+    set_bit(pid, handler->editor_pid_bitmap, trace);
+
+    char *interpreter = get_elf_interpreter(fd, trace);
+    if (interpreter) {
+      add_to_set(interpreter, handler->elf_interpreters, trace);
+      free(interpreter);
+    }
+  } else if (get_bit(pid, handler->editor_pid_bitmap)) {
+    struct buffer_view *file_path_view = create_buffer_view(file_path, trace);
+    if (!is_in_set(file_path_view, handler->elf_interpreters)) {
       unset_bit(pid, handler->editor_pid_bitmap);
     }
-
-    if (!is_in_set(file_path, handler->handled_executables)) {
-      char *interpreter = get_elf_interpreter(fd, trace);
-      if (ok(trace) && interpreter) {
-        event = get_event_open_exec_interpreter(handler->config);
-        add_to_set(interpreter, handler->elf_interpreters, trace);
-        free(interpreter);
-      }
-    }
+    free_buffer_view(file_path_view);
   }
 
   rethrow_check(trace);
@@ -116,25 +120,56 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   rethrow_static(messages.handler.journal.cannot_write_to, trace);
 
   free(file_path);
+  free_buffer_view(exe_filename_view);
 }
 
 static bool should_push_to_linq(pid_t pid, const char *path,
-                                struct handler *handler) {
-  if (is_in_set(path, get_history_paths(handler->config))) {
+                                struct handler *handler, struct trace *trace) {
+  struct buffer *path_buffer = create_buffer(trace);
+  concat_string(path, path_buffer, trace);
+  if (!ok(trace)) {
+    free_buffer(path_buffer);
+    return false;
+  }
+  if (is_in_set(get_view(path_buffer), get_history_paths(handler->config))) {
+    free_buffer(path_buffer);
     return true;
   }
   if (!get_bit(pid, handler->editor_pid_bitmap)) {
+    free_buffer(path_buffer);
     return false;
   }
-  size_t count = get_best_match_count_in_set(
-      path, '/', get_overridden_paths(handler->config));
-  if (count == path_excluded) {
-    return false;
+
+  set_length(1, path_buffer);
+
+  bool is_included = false;
+  bool is_excluded = false;
+  bool is_hidden = false;
+
+  /*TODO period can be a separator. Also reverse lookup */
+  for (const char *path_cursor = path; ok(trace); ++path_cursor) {
+    char c = *path_cursor;
+    if (!c || c == '/') {
+      if (is_in_set(get_view(path_buffer),
+                    get_excluded_paths(handler->config))) {
+        is_excluded = true;
+        is_included = false;
+      } else if (is_in_set(get_view(path_buffer),
+                           get_included_paths(handler->config))) {
+        is_included = true;
+        is_excluded = false;
+      }
+    } else if (c == '.' || !is_hidden) {
+      is_hidden = *(path_cursor - 1) == '/';
+    }
+    if (!c) {
+      break;
+    }
   }
-  if (count == path_included) {
-    return true;
-  }
-  return strstr(path, "/.") == NULL;
+
+  free_buffer(path_buffer);
+
+  return is_included || (!is_hidden && !is_excluded);
 }
 
 void handle_close_write(pid_t pid, int fd, struct handler *handler,
@@ -146,7 +181,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
 
   const char *event = get_event_close_write_not_by_editor(handler->config);
 
-  if (should_push_to_linq(pid, file_path, handler)) {
+  if (should_push_to_linq(pid, file_path, handler, trace)) {
     event = get_event_close_write_by_editor(handler->config);
     rethrow_check(trace);
     push_to_linq(file_path, handler->linq, trace);
@@ -224,8 +259,8 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       free_buffer(version_buffer);
       return;
     }
-    if (strchr(get_string(version_buffer), '/')) {
-      throw_context(get_string(version_buffer), trace);
+    if (strchr(get_string(get_view(version_buffer)), '/')) {
+      throw_context(get_string(get_view(version_buffer)), trace);
       throw_static(messages.handler.version.has_slashes, trace);
       free(path);
       free_buffer(version_buffer);
@@ -233,19 +268,21 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     }
 
     const char *extension = get_file_extension(path);
-    size_t version_base_length = get_length(version_buffer);
+    size_t version_base_length = get_length(get_view(version_buffer));
     size_t duplicate_count = 0;
 
     const char *event = get_event_queue_head_stored(handler->config);
 
+    struct buffer_view *path_view = create_buffer_view(path, trace);
+
     for (;;) {
       concat_string(extension, version_buffer, trace);
-      if (is_in_set(path, get_history_paths(handler->config))) {
-        copy_delta_to_store(path, get_string(version_buffer),
+      if (is_in_set(path_view, get_history_paths(handler->config))) {
+        copy_delta_to_store(path, get_string(get_view(version_buffer)),
                             get_cursor_version(handler->config),
                             get_store_root(handler->config), trace);
       } else {
-        copy_to_store(path, get_string(version_buffer),
+        copy_to_store(path, get_string(get_view(version_buffer)),
                       get_store_root(handler->config), trace);
       }
       if (catch_static(messages.store.copy.file_does_not_exist, trace)) {
@@ -268,6 +305,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
         throw_static(messages.handler.store.cannot_copy, trace);
         free(path);
         free_buffer(version_buffer);
+        free_buffer_view(path_view);
         return;
       }
     }
@@ -279,6 +317,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
     free(path);
     free_buffer(version_buffer);
+    free_buffer_view(path_view);
   }
 }
 
@@ -290,7 +329,6 @@ void free_handler(struct handler *handler) {
     free_linq(handler->linq);
     free_bitmap(handler->editor_pid_bitmap);
     free_set(handler->elf_interpreters);
-    free_set(handler->handled_executables);
     free(handler);
   }
 }

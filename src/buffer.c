@@ -4,10 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct buffer {
-  char *string;
+struct buffer_view {
+  const char *string;
   size_t size;
   struct hash *hash;
+};
+
+struct buffer {
+  char *string;
+  struct buffer_view view;
 };
 
 struct hash {
@@ -17,20 +22,40 @@ struct hash {
 
 static const struct hash empty_hash;
 
+struct buffer_view *create_buffer_view(const char *string,
+                                       struct trace *trace) {
+  struct buffer_view *view = TNULL(malloc(sizeof(struct buffer_view)), trace);
+  struct hash *hash = TNULL(calloc(1, sizeof(struct hash)), trace);
+
+  if (!ok(trace)) {
+    free(view);
+    free(hash);
+    return NULL;
+  }
+
+  view->string = string;
+  view->hash = hash;
+  view->size = strlen(string) + 1;
+
+  return view;
+}
+
 struct buffer *create_buffer(struct trace *trace) {
   struct buffer *buffer = TNULL(malloc(sizeof(struct buffer)), trace);
-  struct hash *hash = TNULL(calloc(1, sizeof(struct hash)), trace);
   char *string = TNULL(calloc(1, sizeof(char)), trace);
+  struct hash *hash = TNULL(calloc(1, sizeof(struct hash)), trace);
 
   if (!ok(trace)) {
     free(buffer);
     free(string);
+    free(hash);
     return NULL;
   }
 
   buffer->string = string;
-  buffer->size = 1;
-  buffer->hash = hash;
+  buffer->view.hash = hash;
+  buffer->view.size = 1;
+  buffer->view.string = buffer->string;
 
   return buffer;
 }
@@ -42,26 +67,27 @@ void concat_string(const char *string, struct buffer *buffer,
   }
   size_t string_length = strlen(string);
   if (string_length > 0) {
-    char *new_string =
-        TNULL(realloc(buffer->string, buffer->size + string_length), trace);
+    char *new_string = TNULL(
+        realloc(buffer->string, buffer->view.size + string_length), trace);
     if (!ok(trace)) {
       return;
     }
     strcat(new_string, string);
-    buffer->string = new_string;
-    buffer->size += string_length;
+    buffer->view.string = buffer->string = new_string;
+    buffer->view.size += string_length;
   }
 }
 
 void concat_char(char c, struct buffer *buffer, struct trace *trace) {
-  char *new_string = TNULL(realloc(buffer->string, buffer->size + 1), trace);
+  char *new_string =
+      TNULL(realloc(buffer->string, buffer->view.size + 1), trace);
   if (!ok(trace)) {
     return;
   }
-  buffer->string = new_string;
-  buffer->string[buffer->size] = '\0';
-  buffer->string[buffer->size - 1] = c;
-  ++buffer->size;
+  buffer->view.string = buffer->string = new_string;
+  buffer->string[buffer->view.size] = '\0';
+  buffer->string[buffer->view.size - 1] = c;
+  ++buffer->view.size;
 }
 
 void concat_size(size_t size, struct buffer *buffer, struct trace *trace) {
@@ -71,7 +97,7 @@ void concat_size(size_t size, struct buffer *buffer, struct trace *trace) {
   if (!ok(trace)) {
     return;
   }
-  size_t saved_length = get_length(buffer);
+  size_t saved_length = get_length(&buffer->view);
 
   size_t power_of_ten = 1;
   while (power_of_ten <= size / 10) {
@@ -91,29 +117,40 @@ void concat_size(size_t size, struct buffer *buffer, struct trace *trace) {
   }
 }
 
-const char *get_string(const struct buffer *buffer) { return buffer->string; }
-
-size_t get_length(const struct buffer *buffer) { return buffer->size - 1; }
-
-void set_length(size_t length, struct buffer *buffer) {
-  assert(length < buffer->size);
-  buffer->string[length] = 0;
-  buffer->size = length + 1;
-  *buffer->hash = empty_hash;
+const struct buffer_view *get_view(const struct buffer *buffer) {
+  return &buffer->view;
 }
 
-size_t get_hash(const struct buffer *buffer) {
-  while (buffer->hash->seen_length < get_length(buffer)) {
-    char character = buffer->string[buffer->hash->seen_length];
-    size_t hash = buffer->hash->value;
+const char *get_string(const struct buffer_view *view) { return view->string; }
+
+size_t get_length(const struct buffer_view *view) { return view->size - 1; }
+
+void set_length(size_t length, struct buffer *buffer) {
+  assert(length < buffer->view.size);
+  buffer->string[length] = 0;
+  buffer->view.size = length + 1;
+  *buffer->view.hash = empty_hash;
+}
+
+size_t get_hash(const struct buffer_view *view) {
+  while (view->hash->seen_length < get_length(view)) {
+    char character = view->string[view->hash->seen_length];
+    size_t hash = view->hash->value;
 
     hash = character + (hash << 6) + (hash << 16) - hash;
 
-    buffer->hash->value = hash;
-    ++buffer->hash->seen_length;
+    view->hash->value = hash;
+    ++view->hash->seen_length;
   }
 
-  return buffer->hash->value;
+  return view->hash->value;
+}
+
+void free_buffer_view(struct buffer_view *view) {
+  if (view) {
+    free(view->hash);
+    free(view);
+  }
 }
 
 char *free_outer_buffer(struct buffer *buffer) {
@@ -121,7 +158,7 @@ char *free_outer_buffer(struct buffer *buffer) {
     return NULL;
   }
   char *result = buffer->string;
-  free(buffer->hash);
+  free(buffer->view.hash);
   free(buffer);
   return result;
 }
@@ -129,7 +166,7 @@ char *free_outer_buffer(struct buffer *buffer) {
 void free_buffer(struct buffer *buffer) {
   if (buffer) {
     free(buffer->string);
-    free(buffer->hash);
+    free(buffer->view.hash);
     free(buffer);
   }
 }

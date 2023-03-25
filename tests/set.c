@@ -1,4 +1,5 @@
 #include "set.h"
+#include "buffer.h"
 #include "messages.h"
 #include "trace.h"
 #include <assert.h>
@@ -11,99 +12,67 @@ void test_set() {
   assert(ok(trace));
 
   const char *s1 = "/home/nazar";
+  struct buffer_view *v1 = create_buffer_view(s1, trace);
+  assert(ok(trace));
 
-  assert(!is_in_set(s1, set));
-  assert(get_count_in_set(s1, set) == 0);
+  assert(!is_in_set(v1, set));
+  assert(get_count_in_set(v1, set) == 0);
   add_to_set(s1, set, trace);
   assert(ok(trace));
-  assert(is_in_set(s1, set));
+  assert(is_in_set(v1, set));
 
-  const char *s2 = "keynumber1";
+  const char *s2 = "my-data.txt";
+  struct buffer_view *v2 = create_buffer_view(s2, trace);
+  struct buffer_view *v3 = create_buffer_view(s2, trace);
+  assert(ok(trace));
 
-  assert(!is_in_set(s2, set));
+  assert(!is_in_set(v2, set));
+  assert(!is_in_set(v3, set));
   add_to_set(s2, set, trace);
   assert(ok(trace));
-  assert(is_in_set(s2, set));
-  assert(is_in_set(s1, set));
-
-  const char *s3 = "yerkn11ke1" /* hash collision with s2 */;
-
-  assert(!is_in_set(s3, set));
-  add_to_set(s3, set, trace);
-  assert(ok(trace));
-  assert(is_in_set(s3, set));
-  assert(is_in_set(s2, set));
-  assert(is_in_set(s1, set));
+  assert(is_in_set(v2, set));
+  assert(is_in_set(v3, set));
+  assert(is_in_set(v1, set));
 
   const char *s4 = "/";
+  struct buffer_view *v4 = create_buffer_view(s4, trace);
+  assert(ok(trace));
 
-  assert(!is_in_set(s4, set));
+  assert(!is_in_set(v4, set));
   add_to_set(s4, set, trace);
   assert(ok(trace));
-  assert(is_in_set(s4, set));
-  assert(is_in_set(s3, set));
-  assert(is_in_set(s2, set));
-  assert(is_in_set(s1, set));
+  assert(is_in_set(v4, set));
+  assert(is_in_set(v2, set));
+  assert(is_in_set(v1, set));
 
-  remove_from_set(s3, set);
-  assert(is_in_set(s4, set));
-  assert(!is_in_set(s3, set));
-  assert(is_in_set(s2, set));
-  assert(is_in_set(s1, set));
+  remove_from_set(v1, set);
+  assert(is_in_set(v4, set));
+  assert(is_in_set(v2, set));
+  assert(!is_in_set(v1, set));
 
-  remove_from_set(s1, set);
-  assert(is_in_set(s4, set));
-  assert(!is_in_set(s3, set));
-  assert(is_in_set(s2, set));
-  assert(!is_in_set(s1, set));
+  remove_from_set(v1, set);
+  assert(is_in_set(v4, set));
+  assert(is_in_set(v2, set));
+  assert(!is_in_set(v1, set));
 
-  remove_from_set(s1, set);
-  assert(is_in_set(s4, set));
-  assert(!is_in_set(s3, set));
-  assert(is_in_set(s2, set));
-  assert(!is_in_set(s1, set));
-
-  assert(get_count_in_set(s4, set) == 1);
+  assert(get_count_in_set(v4, set) == 1);
   add_to_set(s4, set, trace);
   assert(ok(trace));
-  assert(get_count_in_set(s4, set) == 2);
-  assert(is_in_set(s4, set));
+  assert(get_count_in_set(v4, set) == 2);
+  assert(is_in_set(v4, set));
 
-  remove_from_set(s4, set);
+  remove_from_set(v4, set);
   assert(ok(trace));
-  assert(is_in_set(s4, set));
+  assert(is_in_set(v4, set));
 
-  remove_from_set(s4, set);
+  remove_from_set(v4, set);
   assert(ok(trace));
-  assert(!is_in_set(s4, set));
+  assert(!is_in_set(v4, set));
 
-  set_count_in_set(5, s4, set, trace);
-  assert(ok(trace));
-  assert(is_in_set(s4, set));
-  assert(get_count_in_set(s4, set) == 5);
-
-  set_count_in_set(3, s4, set, trace);
-  assert(ok(trace));
-  assert(is_in_set(s4, set));
-  assert(get_count_in_set(s4, set) == 3);
-
-  set_count_in_set(0, s4, set, trace);
-  assert(ok(trace));
-  assert(!is_in_set(s4, set));
-  assert(get_count_in_set(s4, set) == 0);
-
-  assert(get_best_match_count_in_set("ab:c:de", ':', set) == 0);
-  set_count_in_set(1, "c", set, trace);
-  assert(ok(trace));
-  assert(get_best_match_count_in_set("ab:c:de", ':', set) == 0);
-  set_count_in_set(2, "ab", set, trace);
-  assert(ok(trace));
-  assert(get_best_match_count_in_set("ab:c:de", ':', set) == 2);
-  set_count_in_set(4, "ab:c", set, trace);
-  assert(ok(trace));
-  assert(get_best_match_count_in_set("ab:c:de", ':', set) == 4);
-  set_count_in_set(8, "ab:c:de", set, trace);
-  assert(get_best_match_count_in_set("ab:c:de", ':', set) == 8);
+  free_buffer_view(v1);
+  free_buffer_view(v2);
+  free_buffer_view(v3);
+  free_buffer_view(v4);
 
   free_set(set);
   free(trace);

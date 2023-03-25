@@ -44,6 +44,11 @@ void write_to_journal(const char *event, pid_t pid, const char *path,
   char *timestamp =
       get_timestamp(journal->timestamp_pattern, /*FIXME*/ NAME_MAX, trace);
   struct buffer *buffer = create_buffer(trace);
+  if (!ok(trace)) {
+    free(timestamp);
+    free_buffer(buffer);
+    return;
+  }
   if (*timestamp) {
     concat_string(timestamp, buffer, trace);
     concat_char('\t', buffer, trace);
@@ -60,9 +65,10 @@ void write_to_journal(const char *event, pid_t pid, const char *path,
   concat_char('\n', buffer, trace);
 
   size_t size_written = 0;
-  while (ok(trace) && get_length(buffer) > size_written) {
-    size_written +=
-        TNEG(write(journal->fd, get_string(buffer), get_length(buffer)), trace);
+  while (ok(trace) && get_length(get_view(buffer)) > size_written) {
+    size_written += TNEG(write(journal->fd, get_string(get_view(buffer)),
+                               get_length(get_view(buffer))),
+                         trace);
   }
 
   free(timestamp);

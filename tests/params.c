@@ -1,4 +1,5 @@
 #include "params.h"
+#include "buffer.h"
 #include "set.h"
 #include "trace.h"
 #include <assert.h>
@@ -22,12 +23,25 @@ void test_params() {
   assert(ok(trace));
   assert(!strcmp(get_config_path(params), config_path));
   assert(!strcmp(get_privilege_dropping_path(params), drop_path));
-  assert(is_in_set(ignored_path, get_ignored_write_mounts(params)));
-  assert(is_in_set(ignored_path, get_ignored_exec_mounts(params)));
-  assert(is_in_set(ignored_write_path, get_ignored_write_mounts(params)));
-  assert(!is_in_set(ignored_write_path, get_ignored_exec_mounts(params)));
-  assert(!is_in_set(ignored_exec_path, get_ignored_write_mounts(params)));
-  assert(is_in_set(ignored_exec_path, get_ignored_exec_mounts(params)));
+
+  struct buffer_view *ignored_path_view =
+      create_buffer_view(ignored_path, trace);
+  struct buffer_view *ignored_write_path_view =
+      create_buffer_view(ignored_write_path, trace);
+  struct buffer_view *ignored_exec_path_view =
+      create_buffer_view(ignored_exec_path, trace);
+  assert(ok(trace));
+
+  assert(is_in_set(ignored_path_view, get_ignored_write_mounts(params)));
+  assert(is_in_set(ignored_path_view, get_ignored_exec_mounts(params)));
+  assert(is_in_set(ignored_write_path_view, get_ignored_write_mounts(params)));
+  assert(!is_in_set(ignored_write_path_view, get_ignored_exec_mounts(params)));
+  assert(!is_in_set(ignored_exec_path_view, get_ignored_write_mounts(params)));
+  assert(is_in_set(ignored_exec_path_view, get_ignored_exec_mounts(params)));
+
+  free_buffer_view(ignored_path_view);
+  free_buffer_view(ignored_write_path_view);
+  free_buffer_view(ignored_exec_path_view);
 
   free_params(params);
   free(trace);

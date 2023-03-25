@@ -1,3 +1,4 @@
+#include "buffer.h"
 #include "config.h"
 #include "set.h"
 #include "trace.h"
@@ -21,30 +22,17 @@ void test_config_lua() {
   assert(ok(trace));
 
   const struct set *editors = get_editors(config);
-  assert(!is_in_set("vi", editors));
-  assert(is_in_set("vim", editors));
-  assert(is_in_set("nvim", editors));
-  assert(is_in_set("rsession", editors));
-  assert(is_in_set("cat", editors));
+  struct buffer_view *cat = create_buffer_view("cat", trace);
+  struct buffer_view *vi = create_buffer_view("vi", trace);
+  assert(ok(trace));
+  assert(is_in_set(cat, editors));
+  assert(!is_in_set(vi, editors));
+  free_buffer_view(cat);
+  free_buffer_view(vi);
 
   const char *version_pattern = get_version_pattern(config);
   assert(!strcmp(version_pattern, "override"));
 
-  free_config(config);
-
-  config = load_config(TEST_ROOT "/lua/path-override.lua", trace);
-  assert(ok(trace));
-  const struct set *overridden_paths = get_overridden_paths(config);
-  assert(get_best_match_count_in_set("/", '/', overridden_paths) == 0);
-  assert(get_best_match_count_in_set("/tmp", '/', overridden_paths) ==
-         path_excluded);
-  assert(get_best_match_count_in_set("/tmp/subdir", '/', overridden_paths) ==
-         path_excluded);
-  assert(get_best_match_count_in_set("/home", '/', overridden_paths) == 0);
-  assert(get_best_match_count_in_set("/home/nazar/.cache", '/',
-                                     overridden_paths) == path_excluded);
-  assert(get_best_match_count_in_set("/home/nazar/src/klunok", '/',
-                                     overridden_paths) == path_included);
   free_config(config);
 
   load_config(TEST_ROOT "/lua/broken-semantics.lua", trace);

@@ -294,18 +294,6 @@ elf_interpreter_count_guess = 1
 declare('elf_interpreter_count_guess', nil, is_positive)
 ```
 
-### `executable_count_guess`
-
-Guess of how many different executable files are run in the system while klunok is running.
-
-```lua title=pre-config
-executable_count_guess = 128
-```
-
-```lua title=post-config
-declare('executable_count_guess', nil, is_positive)
-```
-
 ## Events
 
 If a setting from this section is `nil`, the corresponding event is not logged to
@@ -320,7 +308,6 @@ event_queue_head_stored = ""
 ```lua title=post-config
 declare('event_open_exec_not_editor', nil, is_nil_or_string)
 declare('event_open_exec_editor', nil, is_nil_or_string)
-declare('event_open_exec_interpreter', nil, is_nil_or_string)
 declare('event_close_write_not_by_editor', nil, is_nil_or_string)
 declare('event_close_write_by_editor', nil, is_nil_or_string)
 declare('event_queue_head_deleted', nil, is_nil_or_string)

@@ -1,4 +1,5 @@
 #include "set.h"
+#include "buffer.h"
 #include "messages.h"
 #include "trace.h"
 #include <assert.h>
@@ -6,21 +7,14 @@
 #include <string.h>
 
 struct entry {
-  char *value;
+  struct buffer *value;
   size_t count;
-  size_t length;
   struct entry *next;
 };
 
 struct set {
   size_t size;
   struct entry **entries;
-};
-
-struct hashed_value {
-  const char *value;
-  struct entry **head;
-  size_t length;
 };
 
 struct set *create_set(size_t size_guess, struct trace *trace) {
@@ -36,130 +30,76 @@ struct set *create_set(size_t size_guess, struct trace *trace) {
   return set;
 }
 
-static size_t next_hash(size_t hash, char character) {
-  hash += character;
-  hash += hash << 10;
-  hash ^= hash >> 6;
-  return hash;
+static struct entry **get_head(const struct buffer_view *value,
+                               const struct set *set) {
+  return &(set->entries[get_hash(value) % set->size]);
 }
 
-static struct entry **get_head(size_t hash, const struct set *set) {
-  hash += hash << 3;
-  hash ^= hash >> 11;
-  hash += hash << 15;
-  return &(set->entries[hash % set->size]);
-}
-
-static struct hashed_value get_hashed_value(const char *value,
-                                            const struct set *set) {
-  size_t hash = 0;
-  struct hashed_value hashed_value = {
-      .value = value,
-  };
-  while (*value) {
-    hash = next_hash(hash, *value);
-    ++hashed_value.length;
-    ++value;
-  }
-  hashed_value.head = get_head(hash, set);
-  return hashed_value;
-}
-
-static struct entry **get_entry(struct hashed_value hashed_value,
+static struct entry **get_entry(const struct buffer_view *value,
                                 const struct set *set) {
-  struct entry **entry = hashed_value.head;
+  struct entry **entry = get_head(value, set);
 
   while (*entry) {
     assert((*entry)->count > 0);
-    bool is_equal = false;
-    if ((*entry)->length == hashed_value.length) {
-      is_equal =
-          !memcmp(hashed_value.value, (*entry)->value, hashed_value.length);
-    }
-    if (is_equal) {
+    const struct buffer_view *candidate = get_view((*entry)->value);
+
+    if (get_hash(value) == get_hash(candidate) &&
+        get_length(value) == get_length(candidate) &&
+        !strcmp(get_string(value), get_string(candidate))) {
       return entry;
     }
+
     entry = &((*entry)->next);
   }
 
   return entry;
 }
 
-static void insert_entry(size_t count, struct hashed_value hashed_value,
-                         struct set *set, struct trace *trace) {
-  assert(count);
-  struct entry **head = hashed_value.head;
-  char *value_copy = TNULL(strdup(hashed_value.value), trace);
-  struct entry *entry = TNULL(malloc(sizeof(struct entry)), trace);
-  if (!ok(trace)) {
-    free(value_copy);
-    return;
-  }
-
-  entry->next = *head;
-  entry->value = value_copy;
-  entry->count = count;
-  entry->length = hashed_value.length;
-
-  *head = entry;
-}
-
-static void remove_entry(struct entry **entry) {
-  struct entry *new_next = (*entry)->next;
-  free((*entry)->value);
-  free(*entry);
-  *entry = new_next;
-}
-
-size_t get_count_in_set(const char *value, const struct set *set) {
-  struct entry **entry = get_entry(get_hashed_value(value, set), set);
+size_t get_count_in_set(const struct buffer_view *value,
+                        const struct set *set) {
+  struct entry **entry = get_entry(value, set);
   if (*entry) {
     return (*entry)->count;
   }
   return 0;
 }
 
-void set_count_in_set(size_t count, const char *value, struct set *set,
-                      struct trace *trace) {
-  if (!ok(trace)) {
-    return;
-  }
-
-  struct hashed_value hashed_value = get_hashed_value(value, set);
-  struct entry **entry = get_entry(hashed_value, set);
-  if (*entry) {
-    if (!count) {
-      remove_entry(entry);
-    } else {
-      (*entry)->count = count;
-    }
-    return;
-  }
-
-  insert_entry(count, hashed_value, set, trace);
-}
-
-bool is_in_set(const char *value, const struct set *set) {
+bool is_in_set(const struct buffer_view *value, const struct set *set) {
   return get_count_in_set(value, set);
 }
 
 void add_to_set(const char *value, struct set *set, struct trace *trace) {
+  struct buffer *buffer = create_buffer(trace);
+  concat_string(value, buffer, trace);
   if (!ok(trace)) {
+    free_buffer(buffer);
     return;
   }
 
-  struct hashed_value hashed_value = get_hashed_value(value, set);
-  struct entry **entry = get_entry(hashed_value, set);
+  struct entry **entry = get_entry(get_view(buffer), set);
   if (*entry) {
     ++(*entry)->count;
+    free_buffer(buffer);
     return;
   }
 
-  insert_entry(1, hashed_value, set, trace);
+  struct entry **head = get_head(get_view(buffer), set);
+  struct entry *new_entry = TNULL(malloc(sizeof(struct entry)), trace);
+  if (!ok(trace)) {
+    free_buffer(buffer);
+    free(new_entry);
+    return;
+  }
+
+  new_entry->next = *head;
+  new_entry->value = buffer;
+  new_entry->count = 1;
+
+  *head = new_entry;
 }
 
-void remove_from_set(const char *value, struct set *set) {
-  struct entry **entry = get_entry(get_hashed_value(value, set), set);
+void remove_from_set(const struct buffer_view *value, struct set *set) {
+  struct entry **entry = get_entry(value, set);
   if (!*entry) {
     return;
   }
@@ -167,33 +107,11 @@ void remove_from_set(const char *value, struct set *set) {
   --(*entry)->count;
 
   if (!(*entry)->count) {
-    remove_entry(entry);
+    struct entry *new_next = (*entry)->next;
+    free_buffer((*entry)->value);
+    free(*entry);
+    *entry = new_next;
   }
-}
-
-size_t get_best_match_count_in_set(const char *value, char separator,
-                                   const struct set *set) {
-  size_t best_match_count = 0;
-  size_t hash = 0;
-  struct hashed_value hashed_value = {
-      .value = value,
-  };
-
-  while (*value) {
-    do {
-      hash = next_hash(hash, *value);
-      ++hashed_value.length;
-      ++value;
-    } while (*value && *value != separator);
-
-    hashed_value.head = get_head(hash, set);
-    struct entry **entry = get_entry(hashed_value, set);
-
-    if (*entry) {
-      best_match_count = (*entry)->count;
-    }
-  }
-  return best_match_count;
 }
 
 void free_set(struct set *set) {
@@ -204,7 +122,7 @@ void free_set(struct set *set) {
     struct entry *entry = set->entries[i];
     while (entry) {
       struct entry *next = entry->next;
-      free(entry->value);
+      free_buffer(entry->value);
       free(entry);
       entry = next;
     }
