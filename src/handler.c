@@ -97,25 +97,25 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
     return;
   }
 
-  if (is_in_set(exe_filename_view, get_editors(handler->config))) {
+  if (is_within(exe_filename_view, get_editors(handler->config))) {
     event = get_event_open_exec_editor(handler->config);
     set_bit(pid, handler->editor_pid_bitmap, trace);
 
     char *interpreter = get_elf_interpreter(fd, trace);
     if (interpreter) {
-      add_to_set(interpreter, handler->elf_interpreters, trace);
+      add(interpreter, handler->elf_interpreters, trace);
       free(interpreter);
     }
   } else if (get_bit(pid, handler->editor_pid_bitmap)) {
     struct buffer_view *file_path_view = create_buffer_view(file_path, trace);
-    if (!is_in_set(file_path_view, handler->elf_interpreters)) {
+    if (!is_within(file_path_view, handler->elf_interpreters)) {
       unset_bit(pid, handler->editor_pid_bitmap);
     }
     free_buffer_view(file_path_view);
   }
 
   rethrow_check(trace);
-  write_to_journal(event, pid, file_path, handler->journal, trace);
+  note(event, pid, file_path, handler->journal, trace);
   rethrow_context(get_journal_path(handler->config), trace);
   rethrow_static(messages.handler.journal.cannot_write_to, trace);
 
@@ -133,7 +133,7 @@ static bool should_push_to_linq(pid_t pid, const char *path,
     free_buffer(path_buffer);
     return false;
   }
-  if (is_in_set(path_view, get_history_paths(handler->config))) {
+  if (is_within(path_view, get_history_paths(handler->config))) {
     free_buffer(path_buffer);
     return true;
   }
@@ -152,10 +152,10 @@ static bool should_push_to_linq(pid_t pid, const char *path,
   for (const char *path_cursor = path; ok(trace); ++path_cursor) {
     char c = *path_cursor;
     if (!c || c == '/') {
-      if (is_in_set(path_view, get_excluded_paths(handler->config))) {
+      if (is_within(path_view, get_excluded_paths(handler->config))) {
         is_excluded = true;
         is_included = false;
-      } else if (is_in_set(path_view, get_included_paths(handler->config))) {
+      } else if (is_within(path_view, get_included_paths(handler->config))) {
         is_included = true;
         is_excluded = false;
       }
@@ -184,13 +184,13 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   if (should_push_to_linq(pid, file_path, handler, trace)) {
     event = get_event_close_write_by_editor(handler->config);
     rethrow_check(trace);
-    push_to_linq(file_path, handler->linq, trace);
+    push(file_path, handler->linq, trace);
     rethrow_context(file_path, trace);
     rethrow_static(messages.handler.linq.cannot_push, trace);
   }
 
   rethrow_check(trace);
-  write_to_journal(event, pid, file_path, handler->journal, trace);
+  note(event, pid, file_path, handler->journal, trace);
   rethrow_context(get_journal_path(handler->config), trace);
   rethrow_static(messages.handler.journal.cannot_write_to, trace);
 
@@ -232,7 +232,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
         free_linq(handler->linq);
         handler->linq = new_linq;
       }
-      redebounce_linq(get_debounce_seconds(new_config), handler->linq);
+      redebounce(get_debounce_seconds(new_config), handler->linq);
     }
   }
 
@@ -243,7 +243,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
                     struct trace *trace) {
   for (;;) {
     rethrow_check(trace);
-    char *path = get_linq_head(handler->linq, retry_after_seconds, trace);
+    char *path = get_head(handler->linq, retry_after_seconds, trace);
     rethrow_static(messages.handler.linq.cannot_get_head, trace);
     if (*retry_after_seconds || !ok(trace)) {
       return;
@@ -277,7 +277,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
     for (;;) {
       concat_string(extension, version_buffer, trace);
-      if (is_in_set(path_view, get_history_paths(handler->config))) {
+      if (is_within(path_view, get_history_paths(handler->config))) {
         copy_delta_to_store(path, get_string(get_view(version_buffer)),
                             get_cursor_version(handler->config),
                             get_store_root(handler->config), trace);
@@ -291,7 +291,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
         event = get_event_queue_head_forbidden(handler->config);
       }
       if (ok(trace)) {
-        pop_from_linq(handler->linq, trace);
+        pop_head(handler->linq, trace);
         break;
       } else if (catch_static(messages.store.copy.version_already_exists,
                               trace)) {
@@ -311,7 +311,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     }
 
     rethrow_check(trace);
-    write_to_journal(event, 0, path, handler->journal, trace);
+    note(event, 0, path, handler->journal, trace);
     rethrow_context(get_journal_path(handler->config), trace);
     rethrow_static(messages.handler.journal.cannot_write_to, trace);
 

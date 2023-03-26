@@ -62,8 +62,7 @@ static struct entry **find_entry(const struct buffer_view *value,
   return entry;
 }
 
-size_t get_count_in_set(const struct buffer_view *value,
-                        const struct set *set) {
+size_t get_count(const struct buffer_view *value, const struct set *set) {
   if (is_empty(set)) {
     return 0;
   }
@@ -74,11 +73,11 @@ size_t get_count_in_set(const struct buffer_view *value,
   return 0;
 }
 
-bool is_in_set(const struct buffer_view *value, const struct set *set) {
-  return get_count_in_set(value, set);
+bool is_within(const struct buffer_view *value, const struct set *set) {
+  return get_count(value, set);
 }
 
-void add_to_set(const char *value, struct set *set, struct trace *trace) {
+void add(const char *value, struct set *set, struct trace *trace) {
   struct buffer *buffer = create_buffer(trace);
   concat_string(value, buffer, trace);
   if (!ok(trace)) {
@@ -112,7 +111,7 @@ void add_to_set(const char *value, struct set *set, struct trace *trace) {
   *head = new_entry;
 }
 
-void remove_from_set(const struct buffer_view *value, struct set *set) {
+void pop(const struct buffer_view *value, struct set *set) {
   struct entry **head = get_head(value, set);
   struct entry **entry = find_entry(value, head);
   if (!*entry) {

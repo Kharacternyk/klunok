@@ -110,7 +110,7 @@ load_or_create_linq(const char *path, time_t debounce_seconds,
   }
   for (size_t i = 0; i < entry_count && ok(trace); ++i) {
     char *entry_target = read_entry(entries[i]->d_name, linq, trace);
-    add_to_set(entry_target, set, trace);
+    add(entry_target, set, trace);
     free(entry_target);
   }
   if (!ok(trace)) {
@@ -132,19 +132,19 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
                              entry_length_guess, true, trace);
 }
 
-void push_to_linq(const char *path, struct linq *linq, struct trace *trace) {
+void push(const char *path, struct linq *linq, struct trace *trace) {
   struct buffer *link_buffer = create_buffer(trace);
   concat_size(linq->head_index + linq->size, link_buffer, trace);
   TNEG(symlinkat(path, linq->dirfd, get_string(get_view(link_buffer))), trace);
-  add_to_set(path, linq->set, trace);
+  add(path, linq->set, trace);
   if (ok(trace)) {
     ++linq->size;
   }
   free_buffer(link_buffer);
 }
 
-char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
-                    struct trace *trace) {
+char *get_head(struct linq *linq, time_t *retry_after_seconds,
+               struct trace *trace) {
   if (!ok(trace)) {
     return NULL;
   }
@@ -176,11 +176,11 @@ char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
 
   struct buffer_view *target_view = create_buffer_view(target, trace);
 
-  if (ok(trace) && get_count_in_set(target_view, linq->set) > 1) {
+  if (ok(trace) && get_count(target_view, linq->set) > 1) {
     free(target);
     free_buffer_view(target_view);
-    pop_from_linq(linq, trace);
-    return get_linq_head(linq, retry_after_seconds, trace);
+    pop_head(linq, trace);
+    return get_head(linq, retry_after_seconds, trace);
   }
 
   free_buffer_view(target_view);
@@ -188,7 +188,7 @@ char *get_linq_head(struct linq *linq, time_t *retry_after_seconds,
   return target;
 }
 
-void pop_from_linq(struct linq *linq, struct trace *trace) {
+void pop_head(struct linq *linq, struct trace *trace) {
   assert(linq->size);
   struct buffer *link_buffer = create_buffer(trace);
   concat_size(linq->head_index, link_buffer, trace);
@@ -200,7 +200,7 @@ void pop_from_linq(struct linq *linq, struct trace *trace) {
   struct buffer_view *target_view = create_buffer_view(target, trace);
 
   if (ok(trace)) {
-    remove_from_set(target_view, linq->set);
+    pop(target_view, linq->set);
     --linq->size;
     if (linq->size) {
       ++linq->head_index;
@@ -213,7 +213,7 @@ void pop_from_linq(struct linq *linq, struct trace *trace) {
   free_buffer_view(target_view);
 }
 
-void redebounce_linq(time_t debounce_seconds, struct linq *linq) {
+void redebounce(time_t debounce_seconds, struct linq *linq) {
   linq->debounce_seconds = debounce_seconds;
 }
 

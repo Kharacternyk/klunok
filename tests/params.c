@@ -32,12 +32,12 @@ void test_params() {
       create_buffer_view(ignored_exec_path, trace);
   assert(ok(trace));
 
-  assert(is_in_set(ignored_path_view, get_ignored_write_mounts(params)));
-  assert(is_in_set(ignored_path_view, get_ignored_exec_mounts(params)));
-  assert(is_in_set(ignored_write_path_view, get_ignored_write_mounts(params)));
-  assert(!is_in_set(ignored_write_path_view, get_ignored_exec_mounts(params)));
-  assert(!is_in_set(ignored_exec_path_view, get_ignored_write_mounts(params)));
-  assert(is_in_set(ignored_exec_path_view, get_ignored_exec_mounts(params)));
+  assert(is_within(ignored_path_view, get_ignored_write_mounts(params)));
+  assert(is_within(ignored_path_view, get_ignored_exec_mounts(params)));
+  assert(is_within(ignored_write_path_view, get_ignored_write_mounts(params)));
+  assert(!is_within(ignored_write_path_view, get_ignored_exec_mounts(params)));
+  assert(!is_within(ignored_exec_path_view, get_ignored_write_mounts(params)));
+  assert(is_within(ignored_exec_path_view, get_ignored_exec_mounts(params)));
 
   free_buffer_view(ignored_path_view);
   free_buffer_view(ignored_write_path_view);

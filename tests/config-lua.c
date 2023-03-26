@@ -25,8 +25,8 @@ void test_config_lua() {
   struct buffer_view *cat = create_buffer_view("cat", trace);
   struct buffer_view *vi = create_buffer_view("vi", trace);
   assert(ok(trace));
-  assert(is_in_set(cat, editors));
-  assert(!is_in_set(vi, editors));
+  assert(is_within(cat, editors));
+  assert(!is_within(vi, editors));
   free_buffer_view(cat);
   free_buffer_view(vi);
 

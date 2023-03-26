@@ -36,16 +36,16 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
       opt = 0;
       break;
     case 'e':
-      add_to_set(argv[i], ignored_write_mounts, trace);
+      add(argv[i], ignored_write_mounts, trace);
       opt = 0;
       break;
     case 'w':
-      add_to_set(argv[i], ignored_exec_mounts, trace);
+      add(argv[i], ignored_exec_mounts, trace);
       opt = 0;
       break;
     case 'i':
-      add_to_set(argv[i], ignored_write_mounts, trace);
-      add_to_set(argv[i], ignored_exec_mounts, trace);
+      add(argv[i], ignored_write_mounts, trace);
+      add(argv[i], ignored_exec_mounts, trace);
       opt = 0;
       break;
     default:

@@ -11,9 +11,9 @@ void test_journal() {
   struct journal *journal =
       open_journal(journal_path, timestamp_pattern, trace);
   assert(ok(trace));
-  write_to_journal(NULL, 0, "", journal, trace);
+  note(NULL, 0, "", journal, trace);
   assert(ok(trace));
-  write_to_journal("3", 5, "7", journal, trace);
+  note("3", 5, "7", journal, trace);
   assert(ok(trace));
 
   struct stat journal_stat;
@@ -23,7 +23,7 @@ void test_journal() {
   free_journal(journal);
   journal = open_journal(NULL, "", trace);
   assert(ok(trace));
-  write_to_journal("blah", 0, "/", journal, trace);
+  note("blah", 0, "/", journal, trace);
   assert(ok(trace));
 
   free(trace);

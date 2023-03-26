@@ -73,10 +73,10 @@ int main(int argc, const char **argv) {
       return unwind(trace);
     }
 
-    if (!is_in_set(mount_view, get_ignored_exec_mounts(params))) {
+    if (!is_within(mount_view, get_ignored_exec_mounts(params))) {
       fanotify_flags |= FAN_OPEN_EXEC;
     }
-    if (!is_in_set(mount_view, get_ignored_write_mounts(params))) {
+    if (!is_within(mount_view, get_ignored_write_mounts(params))) {
       fanotify_flags |= FAN_CLOSE_WRITE;
     }
     if (fanotify_flags &&

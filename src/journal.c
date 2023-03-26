@@ -36,8 +36,8 @@ struct journal *open_journal(const char *path, const char *timestamp_pattern,
   return journal;
 }
 
-void write_to_journal(const char *event, pid_t pid, const char *path,
-                      const struct journal *journal, struct trace *trace) {
+void note(const char *event, pid_t pid, const char *path,
+          const struct journal *journal, struct trace *trace) {
   if (!journal || !event || !ok(trace)) {
     return;
   }
