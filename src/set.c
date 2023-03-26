@@ -14,7 +14,8 @@ struct entry {
 
 struct set {
   size_t size;
-  struct entry **entries;
+  size_t empty_head_count;
+  struct entry **heads;
 };
 
 struct set *create_set(size_t size_guess, struct trace *trace) {
@@ -26,18 +27,24 @@ struct set *create_set(size_t size_guess, struct trace *trace) {
     return NULL;
   }
   set->size = size;
-  set->entries = entries;
+  set->empty_head_count = size;
+  set->heads = entries;
   return set;
+}
+
+bool is_empty(const struct set *set) {
+  assert(set->empty_head_count <= set->size);
+  return set->empty_head_count == set->size;
 }
 
 static struct entry **get_head(const struct buffer_view *value,
                                const struct set *set) {
-  return &(set->entries[get_hash(value) % set->size]);
+  return set->heads + get_hash(value) % set->size;
 }
 
-static struct entry **get_entry(const struct buffer_view *value,
-                                const struct set *set) {
-  struct entry **entry = get_head(value, set);
+static struct entry **find_entry(const struct buffer_view *value,
+                                 struct entry **head) {
+  struct entry **entry = head;
 
   while (*entry) {
     assert((*entry)->count > 0);
@@ -57,7 +64,10 @@ static struct entry **get_entry(const struct buffer_view *value,
 
 size_t get_count_in_set(const struct buffer_view *value,
                         const struct set *set) {
-  struct entry **entry = get_entry(value, set);
+  if (is_empty(set)) {
+    return 0;
+  }
+  struct entry **entry = find_entry(value, get_head(value, set));
   if (*entry) {
     return (*entry)->count;
   }
@@ -76,19 +86,23 @@ void add_to_set(const char *value, struct set *set, struct trace *trace) {
     return;
   }
 
-  struct entry **entry = get_entry(get_view(buffer), set);
+  struct entry **head = get_head(get_view(buffer), set);
+  struct entry **entry = find_entry(get_view(buffer), head);
   if (*entry) {
     ++(*entry)->count;
     free_buffer(buffer);
     return;
   }
 
-  struct entry **head = get_head(get_view(buffer), set);
   struct entry *new_entry = TNULL(malloc(sizeof(struct entry)), trace);
   if (!ok(trace)) {
     free_buffer(buffer);
     free(new_entry);
     return;
+  }
+
+  if (!*head) {
+    --set->empty_head_count;
   }
 
   new_entry->next = *head;
@@ -99,7 +113,8 @@ void add_to_set(const char *value, struct set *set, struct trace *trace) {
 }
 
 void remove_from_set(const struct buffer_view *value, struct set *set) {
-  struct entry **entry = get_entry(value, set);
+  struct entry **head = get_head(value, set);
+  struct entry **entry = find_entry(value, head);
   if (!*entry) {
     return;
   }
@@ -111,6 +126,10 @@ void remove_from_set(const struct buffer_view *value, struct set *set) {
     free_buffer((*entry)->value);
     free(*entry);
     *entry = new_next;
+
+    if (!*head) {
+      ++set->empty_head_count;
+    }
   }
 }
 
@@ -119,7 +138,7 @@ void free_set(struct set *set) {
     return;
   }
   for (size_t i = 0; i < set->size; ++i) {
-    struct entry *entry = set->entries[i];
+    struct entry *entry = set->heads[i];
     while (entry) {
       struct entry *next = entry->next;
       free_buffer(entry->value);
@@ -127,6 +146,6 @@ void free_set(struct set *set) {
       entry = next;
     }
   }
-  free(set->entries);
+  free(set->heads);
   free(set);
 }
