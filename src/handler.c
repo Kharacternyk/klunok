@@ -127,11 +127,13 @@ static bool should_push_to_linq(pid_t pid, const char *path,
                                 struct handler *handler, struct trace *trace) {
   struct buffer *path_buffer = create_buffer(trace);
   concat_string(path, path_buffer, trace);
+  const struct buffer_view *path_view = get_view(path_buffer);
+
   if (!ok(trace)) {
     free_buffer(path_buffer);
     return false;
   }
-  if (is_in_set(get_view(path_buffer), get_history_paths(handler->config))) {
+  if (is_in_set(path_view, get_history_paths(handler->config))) {
     free_buffer(path_buffer);
     return true;
   }
@@ -150,12 +152,10 @@ static bool should_push_to_linq(pid_t pid, const char *path,
   for (const char *path_cursor = path; ok(trace); ++path_cursor) {
     char c = *path_cursor;
     if (!c || c == '/') {
-      if (is_in_set(get_view(path_buffer),
-                    get_excluded_paths(handler->config))) {
+      if (is_in_set(path_view, get_excluded_paths(handler->config))) {
         is_excluded = true;
         is_included = false;
-      } else if (is_in_set(get_view(path_buffer),
-                           get_included_paths(handler->config))) {
+      } else if (is_in_set(path_view, get_included_paths(handler->config))) {
         is_included = true;
         is_excluded = false;
       }
