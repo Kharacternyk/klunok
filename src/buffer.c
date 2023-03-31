@@ -12,6 +12,7 @@ struct buffer_view {
 
 struct buffer {
   char *string;
+  size_t capacity;
   struct buffer_view view;
 };
 
@@ -53,6 +54,7 @@ struct buffer *create_buffer(struct trace *trace) {
   }
 
   buffer->string = string;
+  buffer->capacity = 1;
   buffer->view.hash = hash;
   buffer->view.size = 1;
   buffer->view.string = buffer->string;
@@ -60,42 +62,49 @@ struct buffer *create_buffer(struct trace *trace) {
   return buffer;
 }
 
+static void ensure_capacity(size_t capacity, struct buffer *buffer,
+                            struct trace *trace) {
+  if (ok(trace) && capacity > buffer->capacity) {
+    size_t new_capacity = capacity * 2;
+    char *new_string = TNULL(realloc(buffer->string, new_capacity), trace);
+    if (ok(trace)) {
+      buffer->capacity = new_capacity;
+      buffer->view.string = buffer->string = new_string;
+    }
+  }
+}
+
 void concat_string(const char *string, struct buffer *buffer,
                    struct trace *trace) {
   if (!ok(trace)) {
     return;
   }
+
   size_t string_length = strlen(string);
-  if (string_length > 0) {
-    char *new_string = TNULL(
-        realloc(buffer->string, buffer->view.size + string_length), trace);
-    if (!ok(trace)) {
-      return;
-    }
-    strcat(new_string, string);
-    buffer->view.string = buffer->string = new_string;
-    buffer->view.size += string_length;
+  size_t new_size = buffer->view.size + string_length;
+  ensure_capacity(new_size, buffer, trace);
+
+  if (ok(trace)) {
+    strcat(buffer->string, string);
+    buffer->view.size = new_size;
   }
 }
 
 void concat_char(char c, struct buffer *buffer, struct trace *trace) {
-  char *new_string =
-      TNULL(realloc(buffer->string, buffer->view.size + 1), trace);
-  if (!ok(trace)) {
-    return;
+  ensure_capacity(buffer->view.size + 1, buffer, trace);
+  if (ok(trace)) {
+    buffer->string[buffer->view.size] = '\0';
+    buffer->string[buffer->view.size - 1] = c;
+    ++buffer->view.size;
   }
-  buffer->view.string = buffer->string = new_string;
-  buffer->string[buffer->view.size] = '\0';
-  buffer->string[buffer->view.size - 1] = c;
-  ++buffer->view.size;
 }
 
 void concat_size(size_t size, struct buffer *buffer, struct trace *trace) {
-  if (!size) {
-    return concat_char('0', buffer, trace);
-  }
   if (!ok(trace)) {
     return;
+  }
+  if (!size) {
+    return concat_char('0', buffer, trace);
   }
   size_t saved_length = get_length(&buffer->view);
 
