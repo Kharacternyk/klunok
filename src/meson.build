@@ -13,6 +13,7 @@ components = [
   'params',
   'parents',
   'set',
+  'sieve',
   'store',
   'timestamp',
   'trace',

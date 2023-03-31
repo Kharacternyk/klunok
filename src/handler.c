@@ -9,6 +9,7 @@
 #include "linq.h"
 #include "messages.h"
 #include "set.h"
+#include "sieve.h"
 #include "store.h"
 #include "timestamp.h"
 #include "trace.h"
@@ -79,6 +80,9 @@ struct handler *load_handler(const char *config_path, struct trace *trace) {
 
 void handle_open_exec(pid_t pid, int fd, struct handler *handler,
                       struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
   char *file_path = deref_fd(fd, get_path_length_guess(handler->config), trace);
   if (!ok(trace)) {
     return;
@@ -125,55 +129,47 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
 
 static bool should_push_to_linq(pid_t pid, const char *path,
                                 struct handler *handler, struct trace *trace) {
-  struct buffer *path_buffer = create_buffer(trace);
-  concat_string(path, path_buffer, trace);
-  const struct buffer_view *path_view = get_view(path_buffer);
+  if (!ok(trace)) {
+    return false;
+  }
+  const struct set *sets[] = {
+      get_included_paths(handler->config),
+      get_excluded_paths(handler->config),
+      get_history_paths(handler->config),
+  };
+  struct sieved_path *sieved_path = sieve(path, 3, sets, trace);
 
   if (!ok(trace)) {
-    free_buffer(path_buffer);
-    return false;
-  }
-  if (is_within(path_view, get_history_paths(handler->config))) {
-    free_buffer(path_buffer);
-    return true;
-  }
-  if (!get_bit(pid, handler->editor_pid_bitmap)) {
-    free_buffer(path_buffer);
+    free_sieved_path(sieved_path);
     return false;
   }
 
-  set_length(1, path_buffer);
+  const char **ends = get_sieved_ends(sieved_path);
+  bool result = false;
 
-  bool is_included = false;
-  bool is_excluded = false;
-  bool is_hidden = false;
-
-  /*TODO period can be a separator. Also reverse lookup */
-  for (const char *path_cursor = path; ok(trace); ++path_cursor) {
-    char c = *path_cursor;
-    if (!c || c == '/') {
-      if (is_within(path_view, get_excluded_paths(handler->config))) {
-        is_excluded = true;
-        is_included = false;
-      } else if (is_within(path_view, get_included_paths(handler->config))) {
-        is_included = true;
-        is_excluded = false;
-      }
-    } else if (c == '.' && !is_hidden) {
-      is_hidden = *(path_cursor - 1) == '/';
-    }
-    if (!c) {
-      break;
+  if (ends[2]) {
+    result = true;
+  } else if (get_bit(pid, handler->editor_pid_bitmap)) {
+    if (ends[0] > ends[1]) {
+      result = true;
+    } else if (ends[1] > ends[0]) {
+      result = false;
+    } else {
+      /*FIXME get_hidden_end*/
+      result = !is_hidden(sieved_path);
     }
   }
 
-  free_buffer(path_buffer);
+  free_sieved_path(sieved_path);
 
-  return is_included || (!is_hidden && !is_excluded);
+  return result;
 }
 
 void handle_close_write(pid_t pid, int fd, struct handler *handler,
                         struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
   char *file_path = deref_fd(fd, get_path_length_guess(handler->config), trace);
   if (!ok(trace)) {
     return;
@@ -241,7 +237,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
 
 void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
                     struct trace *trace) {
-  for (;;) {
+  while (ok(trace)) {
     rethrow_check(trace);
     char *path = get_head(handler->linq, retry_after_seconds, trace);
     rethrow_static(messages.handler.linq.cannot_get_head, trace);
