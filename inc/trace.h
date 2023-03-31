@@ -1,8 +1,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct trace;
-
 struct trace *create_trace();
 
 const char *get_trace_message(const struct trace *trace);

@@ -1,7 +1,5 @@
 #include <stddef.h>
 
-struct buffer;
-struct buffer_view;
 struct trace;
 
 struct buffer *create_buffer(struct trace *trace);

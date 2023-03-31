@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct set;
 struct buffer_view;
 struct trace;
 

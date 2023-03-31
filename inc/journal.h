@@ -1,6 +1,5 @@
 #include <fcntl.h>
 
-struct journal;
 struct trace;
 
 struct journal *open_journal(const char *path, const char *timestamp_pattern,

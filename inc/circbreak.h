@@ -1,6 +1,5 @@
 #include <time.h>
 
-struct circuit_breaker;
 struct trace;
 
 struct circuit_breaker *create_circuit_breaker(time_t seconds,

@@ -1,6 +1,5 @@
 #include <time.h>
 
-struct linq;
 struct trace;
 
 struct linq *load_linq(const char *path, time_t debounce_seconds,

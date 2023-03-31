@@ -1,7 +1,5 @@
 #include <time.h>
 
-struct handler;
-struct config;
 struct trace;
 
 struct handler *load_handler(const char *config_path, struct trace *trace);

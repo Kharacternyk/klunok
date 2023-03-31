@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct bitmap;
 struct trace;
 
 struct bitmap *create_bitmap(size_t size_guess, struct trace *trace);
