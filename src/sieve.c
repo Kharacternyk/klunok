@@ -6,9 +6,9 @@
 #include <stdlib.h>
 
 struct sieved_path {
-  bool is_hidden;
   size_t set_count;
   const char **ends;
+  const char *hiding_dot;
 };
 
 struct sieved_path *sieve(const char *path, size_t set_count,
@@ -26,9 +26,9 @@ struct sieved_path *sieve(const char *path, size_t set_count,
     return false;
   }
 
-  sieved_path->is_hidden = false;
   sieved_path->set_count = set_count;
   sieved_path->ends = ends;
+  sieved_path->hiding_dot = NULL;
 
   for (const char *this = path, *next = path + 1; ok(trace) && *this;
        ++this, ++next) {
@@ -41,7 +41,7 @@ struct sieved_path *sieve(const char *path, size_t set_count,
       }
     }
     if (*this == '/' && *next == '.') {
-      sieved_path->is_hidden = true;
+      sieved_path->hiding_dot = next;
     }
   }
 
@@ -50,11 +50,11 @@ struct sieved_path *sieve(const char *path, size_t set_count,
   return sieved_path;
 }
 
-bool is_hidden(const struct sieved_path *sieved_path) {
-  return sieved_path->is_hidden;
+const char *get_hiding_dot(const struct sieved_path *sieved_path) {
+  return sieved_path->hiding_dot;
 };
 
-const char **get_sieved_ends(const struct sieved_path *sieved_path) {
+const char *const *get_sieved_ends(const struct sieved_path *sieved_path) {
   return sieved_path->ends;
 }
 

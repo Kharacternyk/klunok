@@ -144,25 +144,17 @@ static bool should_push_to_linq(pid_t pid, const char *path,
     return false;
   }
 
-  const char **ends = get_sieved_ends(sieved_path);
-  bool result = false;
-
-  if (ends[2]) {
-    result = true;
-  } else if (get_bit(pid, handler->editor_pid_bitmap)) {
-    if (ends[0] > ends[1]) {
-      result = true;
-    } else if (ends[1] > ends[0]) {
-      result = false;
-    } else {
-      /*FIXME get_hidden_end*/
-      result = !is_hidden(sieved_path);
-    }
-  }
+  const char *const *ends = get_sieved_ends(sieved_path);
+  const char *included_end = ends[0];
+  const char *history_end = ends[2];
+  const char *excluded_end = ends[1] > get_hiding_dot(sieved_path)
+                                 ? ends[1]
+                                 : get_hiding_dot(sieved_path);
 
   free_sieved_path(sieved_path);
 
-  return result;
+  return history_end || (get_bit(pid, handler->editor_pid_bitmap) &&
+                         included_end >= excluded_end);
 }
 
 void handle_close_write(pid_t pid, int fd, struct handler *handler,

@@ -27,16 +27,16 @@ void test_sieve() {
       sieve(path, 3, (const struct set **)sets, trace);
   assert(ok(trace));
 
-  assert(!is_hidden(sieved_path));
+  assert(!get_hiding_dot(sieved_path));
   assert(get_sieved_ends(sieved_path)[0] == path + 22);
   assert(get_sieved_ends(sieved_path)[1] == path + 1);
   assert(get_sieved_ends(sieved_path)[2] == NULL);
   free_sieved_path(sieved_path);
 
-  sieved_path =
-      sieve("/home/nazar/.config/pacwall/pacwall.conf", 0, NULL, trace);
+  path = "/home/nazar/.config/pacwall/pacwall.conf";
+  sieved_path = sieve(path, 0, NULL, trace);
   assert(ok(trace));
-  assert(is_hidden(sieved_path));
+  assert(get_hiding_dot(sieved_path) == path + 12);
   free_sieved_path(sieved_path);
 
   for (size_t i = 0; i < 3; ++i) {
