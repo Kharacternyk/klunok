@@ -23,6 +23,10 @@ struct bitmap *create_bitmap(size_t size_guess, struct trace *trace) {
 }
 
 void set_bit(size_t bit, struct bitmap *bitmap, struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
+
   if (bit >= bitmap->size) {
     size_t new_size = bit * 2;
     bool *new_array = TNULL(calloc(new_size, sizeof(bool)), trace);

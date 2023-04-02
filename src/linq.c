@@ -49,6 +49,9 @@ static void free_entries(struct dirent **entries, size_t entry_count) {
 
 static char *read_entry(const char *entry, const struct linq *linq,
                         struct trace *trace) {
+  if (!ok(trace)) {
+    return NULL;
+  }
   size_t max_size = linq->length_guess + 1;
   for (;;) {
     rethrow_check(trace);
@@ -133,6 +136,9 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
 }
 
 void push(const char *path, struct linq *linq, struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
   struct buffer *link_buffer = create_buffer(trace);
   concat_size(linq->head_index + linq->size, link_buffer, trace);
   TNEG(symlinkat(path, linq->dirfd, get_string(get_view(link_buffer))), trace);
@@ -189,6 +195,9 @@ char *get_head(struct linq *linq, time_t *retry_after_seconds,
 }
 
 void pop_head(struct linq *linq, struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
   assert(linq->size);
   struct buffer *link_buffer = create_buffer(trace);
   concat_size(linq->head_index, link_buffer, trace);

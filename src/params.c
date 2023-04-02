@@ -13,8 +13,8 @@ struct params {
 
 struct params *parse_params(int argc, const char **argv, struct trace *trace) {
   struct params *params = TNULL(calloc(1, sizeof(struct params)), trace);
-  struct set *ignored_write_mounts = TNULL(create_set(argc / 2, trace), trace);
-  struct set *ignored_exec_mounts = TNULL(create_set(argc / 2, trace), trace);
+  struct set *ignored_write_mounts = create_set(argc / 2, trace);
+  struct set *ignored_exec_mounts = create_set(argc / 2, trace);
   char opt = 0;
 
   for (int i = 1; i < argc && ok(trace); ++i) {

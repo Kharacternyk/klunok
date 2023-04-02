@@ -19,20 +19,27 @@ struct sieved_path *sieve(const char *path, size_t set_count,
       TNULL(malloc(sizeof(struct sieved_path)), trace);
   const char **ends = TNULL(calloc(set_count, sizeof(char *)), trace);
   struct buffer *path_buffer = create_buffer(trace);
-  const struct buffer_view *path_view = get_view(path_buffer);
 
   if (!ok(trace)) {
+    free(sieved_path);
+    free(ends);
     free_buffer(path_buffer);
-    return false;
+    return NULL;
   }
 
   sieved_path->set_count = set_count;
   sieved_path->ends = ends;
   sieved_path->hiding_dot = NULL;
 
-  for (const char *this = path, *next = path + 1; ok(trace) && *this;
-       ++this, ++next) {
+  const struct buffer_view *path_view = get_view(path_buffer);
+
+  for (const char *this = path, *next = path + 1; *this; ++this, ++next) {
     concat_char(*this, path_buffer, trace);
+    if (!ok(trace)) {
+      free_buffer(path_buffer);
+      free_sieved_path(sieved_path);
+      return NULL;
+    }
     if (!*next || *next == '/' || this == path) {
       for (size_t i = 0; i < set_count; ++i) {
         if (is_within(path_view, sets[i])) {

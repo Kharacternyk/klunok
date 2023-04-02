@@ -112,7 +112,7 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
     }
   } else if (get_bit(pid, handler->editor_pid_bitmap)) {
     struct buffer_view *file_path_view = create_buffer_view(file_path, trace);
-    if (!is_within(file_path_view, handler->elf_interpreters)) {
+    if (ok(trace) && !is_within(file_path_view, handler->elf_interpreters)) {
       unset_bit(pid, handler->editor_pid_bitmap);
     }
     free_buffer_view(file_path_view);
@@ -265,7 +265,8 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
     for (;;) {
       concat_string(extension, version_buffer, trace);
-      if (is_within(path_view, get_history_paths(handler->config))) {
+      if (ok(trace) &&
+          is_within(path_view, get_history_paths(handler->config))) {
         copy_delta_to_store(path, get_string(get_view(version_buffer)),
                             get_cursor_version(handler->config),
                             get_store_root(handler->config), trace);
