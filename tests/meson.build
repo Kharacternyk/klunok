@@ -16,7 +16,7 @@ foreach component: components + 'config'
   test_sources += files(component + '.c')
 endforeach
 
-test_exe = executable(
+test_executable = executable(
   'klunok',
   test_sources,
   dependencies: lua,
@@ -28,7 +28,7 @@ test_exe = executable(
 foreach component: components
   test(
     component,
-    test_exe,
+    test_executable,
     args: 'test_' + component.underscorify(),
     should_fail: component == 'circbreak' or component == 'handler' and not lua.found(),
   )
