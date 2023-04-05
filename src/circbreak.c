@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <time.h>
 
 struct circuit_breaker {
   time_t seconds;
