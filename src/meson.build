@@ -25,4 +25,11 @@ foreach component: components
 endforeach
 main_sources = sources + 'main.c'
 
-executable('klunok', main_sources, dependencies: lua, include_directories: inc, install: true)
+executable(
+  'klunok',
+  main_sources,
+  dependencies:
+  [lua, rt],
+  include_directories: inc,
+  install: true
+)

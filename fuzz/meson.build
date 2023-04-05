@@ -13,7 +13,7 @@ if honggfuzz.found()
   fuzz_executable = executable(
     'klunok',
     fuzz_sources,
-    dependencies: lua,
+    dependencies: [lua, rt, dl],
     link_args: '-Wl,--export-dynamic',
     include_directories: inc,
   )

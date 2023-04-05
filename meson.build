@@ -1,5 +1,8 @@
 project('klunok', 'c', version: files('./version'))
 
+cc = meson.get_compiler('c')
+rt = cc.find_library('rt')
+dl = cc.find_library('dl')
 lua = dependency(get_option('lua'), required: false)
 
 subdir('lua')
