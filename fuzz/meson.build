@@ -5,31 +5,23 @@ if honggfuzz.found()
     'elfinterp',
   ]
 
-  fuzz_sources = main_sources
-  foreach component: fuzz_components + 'main'
-    fuzz_sources += files(component + '.c')
-  endforeach
-
-  fuzz_executable = executable(
-    'klunok',
-    fuzz_sources,
-    dependencies: [lua, rt, dl],
-    link_args: '-Wl,--export-dynamic',
-    include_directories: inc,
-  )
-
   foreach component: fuzz_components
+    fuzz_executable = executable(
+      component,
+      sources + files(component + '.c'),
+      dependencies: [lua, rt, dl],
+      include_directories: inc,
+    )
+
     run_target(
       'fuzz-' + component,
       command: [
         honggfuzz,
-        '-x',
         '-i',
-        '/bin/', #FIXME
+        '@BUILD_ROOT@/corpus/' + component,
         '-s',
         '--',
         fuzz_executable,
-        'fuzz_' + component.underscorify()
       ],
     )
   endforeach
