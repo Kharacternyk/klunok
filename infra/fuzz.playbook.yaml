@@ -31,8 +31,7 @@
         argv:
           - make
           - install
-    - register: klunok
-      git:
+    - git:
         repo: https://github.com/Kharacternyk/klunok
         dest: klunok
     - command:
