@@ -1,0 +1,69 @@
+- hosts: fuzz
+  tasks:
+    - become: true
+      apt:
+        update_cache: yes
+        pkg:
+          - git
+          - ninja-build
+          - pip
+          - clang
+          - make
+          - binutils-dev
+          - libunwind-dev
+          - libblocksruntime-dev
+    - become: true
+      pip:
+        name: meson
+    - register: honggfuzz
+      git:
+        repo: https://github.com/google/honggfuzz
+        dest: honggfuzz
+    - when: honggfuzz is changed
+      command:
+        chdir: honggfuzz
+        argv:
+          - make
+    - when: honggfuzz is changed
+      become: true
+      command:
+        chdir: honggfuzz
+        argv:
+          - make
+          - install
+    - register: klunok
+      git:
+        repo: https://github.com/Kharacternyk/klunok
+        dest: klunok
+    - command:
+        chdir: klunok
+        creates: build
+        argv:
+          - meson
+          - setup
+          - build
+      environment:
+        CC: hfuzz-clang
+    - register: service
+      become: true
+      copy:
+        src: fuzz.service.ini
+        dest: /etc/systemd/system/fuzz.service
+    - file:
+        path: /home/admin/klunok/build/corpus/elfinterp
+        state: directory
+    - copy:
+        remote_src: true
+        src: /bin/true
+        dest: /home/admin/klunok/build/corpus/elfinterp/true
+    - when: service is changed
+      become: true
+      command:
+        argv:
+          - systemctl
+          - daemon-reload
+    - become: true
+      service:
+        name: fuzz
+        enabled: yes
+        state: restarted
