@@ -17,6 +17,7 @@ if honggfuzz.found()
       'fuzz-' + component,
       command: [
         honggfuzz,
+        '-T',
         '-i',
         '@BUILD_ROOT@/corpus/' + component,
         '--',
