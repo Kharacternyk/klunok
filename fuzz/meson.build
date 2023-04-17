@@ -19,7 +19,6 @@ if honggfuzz.found()
         honggfuzz,
         '-i',
         '@BUILD_ROOT@/corpus/' + component,
-        '-s',
         '--',
         fuzz_executable,
       ],
