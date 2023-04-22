@@ -3,6 +3,7 @@
 #include "trace.h"
 #include <assert.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
@@ -21,8 +22,8 @@ int LLVMFuzzerTestOneInput(const char *input, size_t size) {
   }
 
   lseek(fd, 0, SEEK_SET);
-
-  get_elf_interpreter(fd, trace);
+  free(get_elf_interpreter(fd, trace));
+  close(fd);
 
   return 0;
 }
