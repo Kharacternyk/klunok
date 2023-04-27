@@ -1,10 +1,10 @@
+#include "buffer.h"
+#include "logstep.h"
+#include "trace.h"
 #include <assert.h>
 #include <dlfcn.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#define RUN_DIR_PATTERN "%s/klunok-test-XXXXXX"
 
 int main(int argc, const char **argv) {
   assert(argc > 1);
@@ -17,13 +17,20 @@ int main(int argc, const char **argv) {
   if (!xdg_run_dir) {
     xdg_run_dir = ".";
   }
-  char *run_dir = malloc(snprintf(NULL, 0, RUN_DIR_PATTERN, xdg_run_dir) + 1);
-  assert(run_dir);
-  sprintf(run_dir, RUN_DIR_PATTERN, xdg_run_dir);
-  assert(mkdtemp(run_dir));
-  fprintf(stderr, "%s\n", run_dir);
-  assert(chdir(run_dir) >= 0);
-  free(run_dir);
+
+  struct trace *trace = create_trace();
+  assert(trace);
+  struct buffer *cwd_buffer = create_buffer(trace);
+  concat_string(xdg_run_dir, cwd_buffer, trace);
+  concat_string("/klunok-test-XXXXXX", cwd_buffer, trace);
+  assert(ok(trace));
+  free(trace);
+
+  char *cwd = free_outer_buffer(cwd_buffer);
+  logstep(2, "CWD", cwd, 0);
+  assert(mkdtemp(cwd));
+  assert(chdir(cwd) >= 0);
+  free(cwd);
 
   test_function();
 }

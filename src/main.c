@@ -1,5 +1,6 @@
 #include "buffer.h"
 #include "handler.h"
+#include "logstep.h"
 #include "mountinfo.h"
 #include "params.h"
 #include "set.h"
@@ -7,62 +8,42 @@
 #include <fcntl.h>
 #include <grp.h>
 #include <poll.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/fanotify.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-static int unwind(struct trace *trace) {
-  int depth = -1;
-  while (get_trace_message(trace)) {
-    if (depth >= 0) {
-      const char *prefix =
-          is_trace_message_context(trace) ? "which is" : "because of";
-      fprintf(stderr, "%*s└─┤%s│ ", depth * 2, "", prefix);
-    }
-    fprintf(stderr, "%s\n", get_trace_message(trace));
-    pop_trace_message(trace);
-    ++depth;
-  }
-  if (get_dropped_trace_message_count(trace)) {
-    if (depth >= 0) {
-      fprintf(stderr, "%*s└─┤", depth * 2, "");
-    } else {
-      fprintf(stderr, "│");
-    }
-    fprintf(stderr, "%zd messages dropped│\n",
-            get_dropped_trace_message_count(trace));
-  }
-  catch_all(trace);
+static int fail(const struct trace *trace) {
+  unwind(2, trace);
   return EXIT_FAILURE;
 }
 
 int main(int argc, const char **argv) {
   struct trace *trace = create_trace();
   if (!trace) {
-    fprintf(stderr, "Cannot bootstrap: out of memory");
+    logstep(2, NULL, "Cannot bootsrap", 0);
+    logstep(2, "because of", "Out of memory", 1);
     return EXIT_FAILURE;
   }
 
   struct params *params = parse_params(argc, argv, trace);
   if (!ok(trace)) {
     throw_static("Cannot parse command line arguments", trace);
-    return unwind(trace);
+    return fail(trace);
   }
 
   int fanotify_fd = fanotify_init(FAN_CLASS_NOTIF, O_RDONLY);
   if (fanotify_fd < 0) {
     throw_errno(trace);
     throw_static("Cannot init fanotify", trace);
-    return unwind(trace);
+    return fail(trace);
   }
 
   struct mountinfo *mountinfo = create_mountinfo(trace);
   if (!ok(trace)) {
     throw_static("Cannot list mount points of the system", trace);
-    return unwind(trace);
+    return fail(trace);
   }
 
   for (const char *mount = get_next_block_mount(mountinfo); mount;
@@ -70,7 +51,7 @@ int main(int argc, const char **argv) {
     int fanotify_flags = 0;
     struct buffer_view *mount_view = create_buffer_view(mount, trace);
     if (!ok(trace)) {
-      return unwind(trace);
+      return fail(trace);
     }
 
     if (!is_within(mount_view, get_ignored_exec_mounts(params))) {
@@ -85,7 +66,7 @@ int main(int argc, const char **argv) {
       throw_errno(trace);
       throw_context(mount, trace);
       throw_static("Cannot watch a mount point", trace);
-      return unwind(trace);
+      return fail(trace);
     }
 
     free_buffer_view(mount_view);
@@ -107,13 +88,13 @@ int main(int argc, const char **argv) {
   if (!ok(trace) || !getuid() || !getgid()) {
     throw_context(privilege_dropping_path, trace);
     throw_static("Cannot drop privileges to a file owner", trace);
-    return unwind(trace);
+    return fail(trace);
   }
 
   struct handler *handler = load_handler(get_config_path(params), trace);
   if (!ok(trace)) {
     throw_static("Cannot load handler", trace);
-    return unwind(trace);
+    return fail(trace);
   }
 
   pid_t self = getpid();
@@ -159,7 +140,7 @@ int main(int argc, const char **argv) {
     rethrow_static("Cannot handle periodical tasks", trace);
 
     if (!ok(trace)) {
-      return unwind(trace);
+      return fail(trace);
     }
   }
 }

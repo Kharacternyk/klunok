@@ -3,11 +3,6 @@
 
 struct trace *create_trace();
 
-const char *get_trace_message(const struct trace *trace);
-bool is_trace_message_context(const struct trace *trace);
-void pop_trace_message(struct trace *trace);
-size_t get_dropped_trace_message_count(const struct trace *trace);
-
 void throw_static(const char *message, struct trace *trace);
 void throw_dynamic(const char *message, struct trace *trace);
 void throw_context(const char *message, struct trace *trace);
@@ -20,6 +15,8 @@ void catch_all(struct trace *trace);
 void rethrow_check(struct trace *trace);
 void rethrow_static(const char *message, struct trace *trace);
 void rethrow_context(const char *message, struct trace *trace);
+
+void unwind(int fd, const struct trace *trace);
 
 #define TNEG(call, trace)                                                      \
   ({                                                                           \

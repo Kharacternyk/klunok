@@ -1,4 +1,5 @@
 #include "trace.h"
+#include "logstep.h"
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -25,23 +26,7 @@ struct trace *create_trace() {
   return calloc(1, sizeof(struct trace));
 }
 
-const char *get_trace_message(const struct trace *trace) {
-  assert(trace);
-  if (trace->head) {
-    return trace->head->static_message;
-  }
-  return NULL;
-}
-
-bool is_trace_message_context(const struct trace *trace) {
-  assert(trace);
-  assert(trace->head);
-  return trace->head->is_context;
-}
-
-void pop_trace_message(struct trace *trace) {
-  assert(trace);
-  assert(trace->head);
+static void pop_trace_message(struct trace *trace) {
   struct frame *new_head = trace->head->next;
   if (trace->head->is_dynamic) {
     free(trace->head->dynamic_message);
@@ -147,5 +132,29 @@ void rethrow_context(const char *message, struct trace *trace) {
   assert(trace->post_throw_depth || trace->pre_throw_depth);
   if (!trace->post_throw_depth && !ok(trace)) {
     throw_context(message, trace);
+  }
+}
+
+void unwind(int fd, const struct trace *trace) {
+  size_t depth = 0;
+
+  for (struct frame *frame = trace->head; frame; frame = frame->next) {
+    char *prefix = NULL;
+
+    if (depth) {
+      if (frame->is_context) {
+        prefix = "which is";
+      } else {
+        prefix = "because of";
+      }
+    }
+
+    logstep(fd, prefix, frame->static_message, depth);
+    ++depth;
+  }
+
+  for (size_t i = 0; i < trace->dropped_frame_count; ++i) {
+    logstep(fd, "message dropped", NULL, depth);
+    ++depth;
   }
 }
