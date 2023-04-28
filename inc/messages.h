@@ -1,5 +1,10 @@
 struct translation {
   struct {
+    const char *because_of;
+    const char *which_is;
+    const char *message_dropped;
+  } trace;
+  struct {
     const char *overflow;
   } timestamp;
   struct {

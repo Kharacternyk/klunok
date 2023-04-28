@@ -2,6 +2,11 @@
 
 /* clang-format off */
 const struct translation messages = {
+  .trace = {
+    .because_of = "because of",
+    .which_is = "which is",
+    .message_dropped = "message_dropped",
+  },
   .timestamp = {
     .overflow = "Version string exceeds the size limit",
   },

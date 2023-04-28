@@ -1,5 +1,6 @@
 #include "trace.h"
 #include "logstep.h"
+#include "messages.h"
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -139,13 +140,13 @@ void unwind(int fd, const struct trace *trace) {
   size_t depth = 0;
 
   for (struct frame *frame = trace->head; frame; frame = frame->next) {
-    char *prefix = NULL;
+    const char *prefix = NULL;
 
     if (depth) {
       if (frame->is_context) {
-        prefix = "which is";
+        prefix = messages.trace.which_is;
       } else {
-        prefix = "because of";
+        prefix = messages.trace.because_of;
       }
     }
 
@@ -154,7 +155,7 @@ void unwind(int fd, const struct trace *trace) {
   }
 
   for (size_t i = 0; i < trace->dropped_frame_count; ++i) {
-    logstep(fd, "message dropped", NULL, depth);
+    logstep(fd, messages.trace.message_dropped, NULL, depth);
     ++depth;
   }
 }
