@@ -67,7 +67,7 @@ const struct translation messages = {
       .cannot_poll = "Cannot poll the fanotify file descriptor.",
       .cannot_read_event = "Cannot read a fanotify event.",
       .version_mismatch = "The version of a fanotify event is unsupported.",
-      .queue_overflow = "The fanotify event queue has overflown."
+      .queue_overflow = "The fanotify event queue has overflowed."
     },
     .mount = {
       .cannot_list = "Cannot list mount points.",
