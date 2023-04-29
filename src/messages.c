@@ -5,52 +5,73 @@ const struct translation messages = {
   .trace = {
     .because_of = "because of",
     .which_is = "which is",
-    .message_dropped = "message_dropped",
+    .message_dropped = "message dropped",
   },
   .timestamp = {
-    .overflow = "Version string exceeds the size limit",
+    .overflow = "A version string exceeds the size limit.",
   },
   .parents = {
-    .cannot_remove_ancestor = "Cannot remove ancestor directory",
-    .cannot_create_ancestor = "Cannot create ancestor directory",
+    .cannot_remove_ancestor = "Cannot remove an ancestor directory.",
+    .cannot_create_ancestor = "Cannot create an ancestor directory.",
   },
   .store = {
     .copy = {
-      .file_does_not_exist = "File does not exist",
-      .permission_denied = "Permission denied",
-      .version_already_exists = "Version already exists",
+      .file_does_not_exist = "The file does not exist.",
+      .permission_denied = "Permission denied.",
+      .version_already_exists = "The version already exists.",
     },
   },
   .config = {
-    .is_static = "Configuration files are not supported",
+    .is_static = "Configuration files are not supported.",
   },
   .linq = {
-    .invalid_entry = "Queue contains an invalid entry",
+    .invalid_entry = "The queue contains an invalid entry.",
   },
   .params = {
-    .unknown_option = "Unknown option",
-    .stray_option = "Stray option",
+    .unknown_option = "An unknown option has been passed.",
+    .stray_option = "A stray option has been passed.",
   },
   .handler = {
     .version = {
-      .has_slashes = "Version string contains slash characters",
+      .has_slashes = "Slash characters found in a version string.",
     },
     .config = {
-      .cannot_load = "Cannot load configuration file",
-      .cannot_reload = "Cannot reload configuration file",
+      .cannot_load = "Cannot load the configuration file.",
+      .cannot_reload = "Cannot reload the configuration file.",
     },
     .linq = {
-      .cannot_load = "Cannot load debouncing link queue",
-      .cannot_reload = "Cannot reload debouncing link queue",
-      .cannot_get_head = "Cannot get head of debouncing link queue",
-      .cannot_push = "Cannot push file to debouncing link queue",
+      .cannot_load = "Cannot load the debouncing link queue.",
+      .cannot_reload = "Cannot reload the debouncing link queue.",
+      .cannot_get_head = "Cannot get the head of the debouncing link queue.",
+      .cannot_push = "Cannot push a file to the debouncing link queue.",
     },
     .store = {
-      .cannot_copy = "Cannot copy file to store",
+      .cannot_copy = "Cannot copy a file to the store.",
     },
     .journal = {
-      .cannot_open = "Cannot open journal",
-      .cannot_write_to = "Cannot write to journal"
+      .cannot_open = "Cannot open the journal.",
+      .cannot_write_to = "Cannot write to the journal."
+    },
+  },
+  .main = {
+    .cannot_bootstrap = "Cannot bootstrap.",
+    .out_of_memory = "There is not enough memory.",
+    .cannot_parse_cli = "Cannot parse the command line arguments.",
+    .cannot_drop_privileges = "Cannot drop privileges.",
+    .cannot_load_handler = "Cannot load the event handler.",
+    .cannot_handle_exec = "Cannot handle a file execution event.",
+    .cannot_handle_write = "Cannot handle a file write event.",
+    .cannot_handle_timeout = "Cannot handle the periodical tasks.",
+    .fanotify = {
+      .cannot_init = "Cannot initialize fanotify.",
+      .cannot_poll = "Cannot poll the fanotify file descriptor.",
+      .cannot_read_event = "Cannot read a fanotify event.",
+      .version_mismatch = "The version of a fanotify event is unsupported.",
+      .queue_overflow = "The fanotify event queue has overflown."
+    },
+    .mount = {
+      .cannot_list = "Cannot list mount points.",
+      .cannot_watch = "Cannot watch a mount point.",
     },
   },
 };

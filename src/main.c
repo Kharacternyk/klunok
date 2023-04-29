@@ -1,6 +1,7 @@
 #include "buffer.h"
 #include "handler.h"
 #include "logstep.h"
+#include "messages.h"
 #include "mountinfo.h"
 #include "params.h"
 #include "set.h"
@@ -22,27 +23,27 @@ static int fail(const struct trace *trace) {
 int main(int argc, const char **argv) {
   struct trace *trace = create_trace();
   if (!trace) {
-    logstep(2, NULL, "Cannot bootsrap", 0);
-    logstep(2, "because of", "Out of memory", 1);
+    logstep(2, NULL, messages.main.cannot_bootstrap, 0);
+    logstep(2, messages.trace.because_of, messages.main.out_of_memory, 1);
     return EXIT_FAILURE;
   }
 
   struct params *params = parse_params(argc, argv, trace);
   if (!ok(trace)) {
-    throw_static("Cannot parse command line arguments", trace);
+    throw_static(messages.main.cannot_parse_cli, trace);
     return fail(trace);
   }
 
   int fanotify_fd = fanotify_init(FAN_CLASS_NOTIF, O_RDONLY);
   if (fanotify_fd < 0) {
     throw_errno(trace);
-    throw_static("Cannot init fanotify", trace);
+    throw_static(messages.main.fanotify.cannot_init, trace);
     return fail(trace);
   }
 
   struct mountinfo *mountinfo = create_mountinfo(trace);
   if (!ok(trace)) {
-    throw_static("Cannot list mount points of the system", trace);
+    throw_static(messages.main.mount.cannot_list, trace);
     return fail(trace);
   }
 
@@ -65,7 +66,7 @@ int main(int argc, const char **argv) {
                       fanotify_flags, 0, mount) < 0) {
       throw_errno(trace);
       throw_context(mount, trace);
-      throw_static("Cannot watch a mount point", trace);
+      throw_static(messages.main.mount.cannot_watch, trace);
       return fail(trace);
     }
 
@@ -87,13 +88,13 @@ int main(int argc, const char **argv) {
 
   if (!ok(trace) || !getuid() || !getgid()) {
     throw_context(privilege_dropping_path, trace);
-    throw_static("Cannot drop privileges to a file owner", trace);
+    throw_static(messages.main.cannot_drop_privileges, trace);
     return fail(trace);
   }
 
   struct handler *handler = load_handler(get_config_path(params), trace);
   if (!ok(trace)) {
-    throw_static("Cannot load handler", trace);
+    throw_static(messages.main.cannot_load_handler, trace);
     return fail(trace);
   }
 
@@ -109,26 +110,26 @@ int main(int argc, const char **argv) {
     int status = poll(&pollfd, 1, wake_after_seconds * 1000);
     if (status < 0 || (status > 0 && pollfd.revents ^ POLLIN)) {
       throw_errno(trace);
-      throw_static("Cannot poll fanotify file descriptor", trace);
+      throw_static(messages.main.fanotify.cannot_poll, trace);
     } else if (status > 0) {
       struct fanotify_event_metadata event;
       rethrow_check(trace);
       TNEG(read(fanotify_fd, &event, sizeof event) - sizeof event, trace);
-      rethrow_static("Cannot read a fanotify event", trace);
+      rethrow_static(messages.main.fanotify.cannot_read_event, trace);
       if (ok(trace)) {
         if (event.vers != FANOTIFY_METADATA_VERSION) {
-          throw_static("Kernel fanotify version does not match headers", trace);
+          throw_static(messages.main.fanotify.version_mismatch, trace);
         } else if (event.mask & FAN_Q_OVERFLOW) {
-          throw_static("Fanotify queue has overflowed", trace);
+          throw_static(messages.main.fanotify.queue_overflow, trace);
         } else {
           if (event.mask & FAN_OPEN_EXEC) {
             rethrow_check(trace);
             handle_open_exec(event.pid, event.fd, handler, trace);
-            rethrow_static("Cannot handle FAN_OPEN_EXEC", trace);
+            rethrow_static(messages.main.cannot_handle_exec, trace);
           } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
             rethrow_check(trace);
             handle_close_write(event.pid, event.fd, handler, trace);
-            rethrow_static("Cannot handle FAN_CLOSE_WRITE", trace);
+            rethrow_static(messages.main.cannot_handle_write, trace);
           }
           close(event.fd);
         }
@@ -137,7 +138,7 @@ int main(int argc, const char **argv) {
 
     rethrow_check(trace);
     handle_timeout(handler, &wake_after_seconds, trace);
-    rethrow_static("Cannot handle periodical tasks", trace);
+    rethrow_static(messages.main.cannot_handle_timeout, trace);
 
     if (!ok(trace)) {
       return fail(trace);

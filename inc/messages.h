@@ -50,6 +50,27 @@ struct translation {
       const char *cannot_write_to;
     } journal;
   } handler;
+  struct {
+    const char *cannot_bootstrap;
+    const char *out_of_memory;
+    const char *cannot_parse_cli;
+    const char *cannot_drop_privileges;
+    const char *cannot_load_handler;
+    const char *cannot_handle_exec;
+    const char *cannot_handle_write;
+    const char *cannot_handle_timeout;
+    struct {
+      const char *cannot_init;
+      const char *cannot_poll;
+      const char *cannot_read_event;
+      const char *version_mismatch;
+      const char *queue_overflow;
+    } fanotify;
+    struct {
+      const char *cannot_list;
+      const char *cannot_watch;
+    } mount;
+  } main;
 };
 
 extern const struct translation messages;
