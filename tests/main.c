@@ -27,8 +27,8 @@ int main(int argc, const char **argv) {
   free(trace);
 
   char *cwd = free_outer_buffer(cwd_buffer);
-  logstep(2, "CWD", cwd, 0);
   assert(mkdtemp(cwd));
+  logstep(2, "CWD", cwd, 0);
   assert(chdir(cwd) >= 0);
   free(cwd);
 
