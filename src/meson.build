@@ -8,6 +8,7 @@ components = [
   'handler',
   'journal',
   'linq',
+  'list',
   'logstep',
   'messages',
   'mountinfo',
