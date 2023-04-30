@@ -1,16 +1,17 @@
 #include "buffer.h"
 #include "handler.h"
+#include "list.h"
 #include "logstep.h"
 #include "messages.h"
 #include "mountinfo.h"
 #include "params.h"
 #include "set.h"
 #include "trace.h"
+#include <assert.h>
 #include <fcntl.h>
 #include <grp.h>
 #include <poll.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/fanotify.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -33,6 +34,9 @@ int main(int argc, const char **argv) {
     throw_static(messages.main.cannot_parse_cli, trace);
     return fail(trace);
   }
+  assert(peek(get_write_mounts(params)));
+  assert(peek(get_exec_mounts(params)));
+  assert(get_privilege_dropping_path(params));
 
   int fanotify_fd = fanotify_init(FAN_CLASS_NOTIF, O_RDONLY);
   if (fanotify_fd < 0) {
@@ -41,53 +45,48 @@ int main(int argc, const char **argv) {
     return fail(trace);
   }
 
-  struct mountinfo *mountinfo = create_mountinfo(trace);
+  struct mountinfo *mountinfo = load_mountinfo(trace);
   if (!ok(trace)) {
     throw_static(messages.main.mount.cannot_list, trace);
     return fail(trace);
   }
 
-  for (const char *mount = get_next_block_mount(mountinfo); mount;
-       mount = get_next_block_mount(mountinfo)) {
-    int fanotify_flags = 0;
-    struct buffer_view *mount_view = create_buffer_view(mount, trace);
-    if (!ok(trace)) {
-      return fail(trace);
-    }
-
-    if (!is_within(mount_view, get_ignored_exec_mounts(params))) {
-      fanotify_flags |= FAN_OPEN_EXEC;
-    }
-    if (!is_within(mount_view, get_ignored_write_mounts(params))) {
-      fanotify_flags |= FAN_CLOSE_WRITE;
-    }
-    if (fanotify_flags &&
-        fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_MOUNT,
-                      fanotify_flags, 0, mount) < 0) {
-      throw_errno(trace);
+  for (const struct list_item *write_mount = peek(get_write_mounts(params));
+       write_mount; write_mount = get_next(write_mount)) {
+    char *mount = make_mount(get_value(write_mount), mountinfo, trace);
+    if (TNEG(fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_MOUNT,
+                           FAN_CLOSE_WRITE, 0, mount),
+             trace) < 0) {
       throw_context(mount, trace);
       throw_static(messages.main.mount.cannot_watch, trace);
       return fail(trace);
     }
-
-    free_buffer_view(mount_view);
+    free(mount);
   }
 
-  const char *privilege_dropping_path = get_privilege_dropping_path(params);
-  if (!privilege_dropping_path) {
-    privilege_dropping_path = ".";
+  for (const struct list_item *exec_mount = peek(get_exec_mounts(params));
+       exec_mount; exec_mount = get_next(exec_mount)) {
+    char *mount = make_mount(get_value(exec_mount), mountinfo, trace);
+    if (TNEG(fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_MOUNT,
+                           FAN_OPEN_EXEC, 0, mount),
+             trace) < 0) {
+      throw_context(mount, trace);
+      throw_static(messages.main.mount.cannot_watch, trace);
+      return fail(trace);
+    }
+    free(mount);
   }
 
   struct stat drop_stat;
-  if (stat(privilege_dropping_path, &drop_stat) >= 0 && drop_stat.st_gid &&
-      drop_stat.st_uid) {
+  if (stat(get_privilege_dropping_path(params), &drop_stat) >= 0 &&
+      drop_stat.st_gid && drop_stat.st_uid) {
     TNEG(setgroups(0, NULL), trace);
     TNEG(setgid(drop_stat.st_gid), trace);
     TNEG(setuid(drop_stat.st_uid), trace);
   }
 
   if (!ok(trace) || !getuid() || !getgid()) {
-    throw_context(privilege_dropping_path, trace);
+    throw_context(get_privilege_dropping_path(params), trace);
     throw_static(messages.main.cannot_drop_privileges, trace);
     return fail(trace);
   }

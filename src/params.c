@@ -1,20 +1,21 @@
 #include "params.h"
+#include "list.h"
 #include "messages.h"
-#include "set.h"
 #include "trace.h"
 #include <stdlib.h>
+#include <unistd.h>
 
 struct params {
   const char *config_path;
   const char *privilege_dropping_path;
-  struct set *ignored_write_mounts;
-  struct set *ignored_exec_mounts;
+  struct list *write_mounts;
+  struct list *exec_mounts;
 };
 
 struct params *parse_params(int argc, const char **argv, struct trace *trace) {
   struct params *params = TNULL(calloc(1, sizeof(struct params)), trace);
-  struct set *ignored_write_mounts = create_set(argc / 2, trace);
-  struct set *ignored_exec_mounts = create_set(argc / 2, trace);
+  struct list *write_mounts = create_list(trace);
+  struct list *exec_mounts = create_list(trace);
   char opt = 0;
 
   for (int i = 1; i < argc && ok(trace); ++i) {
@@ -35,17 +36,17 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
       params->privilege_dropping_path = argv[i];
       opt = 0;
       break;
-    case 'e':
-      add(argv[i], ignored_write_mounts, trace);
-      opt = 0;
-      break;
     case 'w':
-      add(argv[i], ignored_exec_mounts, trace);
+      join(argv[i], write_mounts, trace);
       opt = 0;
       break;
-    case 'i':
-      add(argv[i], ignored_write_mounts, trace);
-      add(argv[i], ignored_exec_mounts, trace);
+    case 'e':
+      join(argv[i], exec_mounts, trace);
+      opt = 0;
+      break;
+    case 'b':
+      join(argv[i], write_mounts, trace);
+      join(argv[i], exec_mounts, trace);
       opt = 0;
       break;
     default:
@@ -59,15 +60,25 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
     throw_static(messages.params.stray_option, trace);
   }
 
+  if (ok(trace) && !peek(exec_mounts)) {
+    join("/", exec_mounts, trace);
+  }
+  if (ok(trace) && !peek(write_mounts)) {
+    join(".", write_mounts, trace);
+  }
+  if (ok(trace) && !params->privilege_dropping_path) {
+    params->privilege_dropping_path = ".";
+  }
+
   if (!ok(trace)) {
-    free_set(ignored_exec_mounts);
-    free_set(ignored_write_mounts);
+    free_list(exec_mounts);
+    free_list(write_mounts);
     free(params);
     return NULL;
   }
 
-  params->ignored_exec_mounts = ignored_exec_mounts;
-  params->ignored_write_mounts = ignored_write_mounts;
+  params->exec_mounts = exec_mounts;
+  params->write_mounts = write_mounts;
   return params;
 }
 
@@ -79,18 +90,18 @@ const char *get_privilege_dropping_path(const struct params *params) {
   return params->privilege_dropping_path;
 }
 
-const struct set *get_ignored_write_mounts(const struct params *params) {
-  return params->ignored_write_mounts;
+const struct list *get_write_mounts(const struct params *params) {
+  return params->write_mounts;
 }
 
-const struct set *get_ignored_exec_mounts(const struct params *params) {
-  return params->ignored_exec_mounts;
+const struct list *get_exec_mounts(const struct params *params) {
+  return params->exec_mounts;
 }
 
 void free_params(struct params *params) {
   if (params) {
-    free_set(params->ignored_write_mounts);
-    free_set(params->ignored_exec_mounts);
+    free_list(params->write_mounts);
+    free_list(params->exec_mounts);
     free(params);
   }
 }

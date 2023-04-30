@@ -1,15 +1,26 @@
 #include "mountinfo.h"
 #include "buffer.h"
+#include "set.h"
 #include "trace.h"
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mount.h>
 #include <unistd.h>
 
 struct mountinfo {
-  char *proc_mounts_content;
-  char *cursor;
+  struct set *mounts;
 };
+
+static size_t count_lines(const char *string) {
+  size_t count = 0;
+  for (const char *cursor = string; *cursor; ++cursor) {
+    if (*cursor == '\n') {
+      ++count;
+    }
+  }
+  return count;
+}
 
 static char *read_proc_file(const char *path, struct trace *trace) {
   long page_size = TNEG(sysconf(_SC_PAGE_SIZE), trace);
@@ -30,33 +41,56 @@ static char *read_proc_file(const char *path, struct trace *trace) {
   return free_outer_buffer(buffer);
 }
 
-struct mountinfo *create_mountinfo(struct trace *trace) {
+struct mountinfo *load_mountinfo(struct trace *trace) {
   struct mountinfo *mountinfo = TNULL(malloc(sizeof(struct mountinfo)), trace);
   char *proc_mounts_content = read_proc_file("/proc/self/mounts", trace);
   if (!ok(trace)) {
     free(mountinfo);
-    free(proc_mounts_content);
     return NULL;
   }
-  mountinfo->proc_mounts_content = proc_mounts_content;
-  mountinfo->cursor = proc_mounts_content;
+
+  char *cursor = proc_mounts_content;
+  mountinfo->mounts = create_set(count_lines(proc_mounts_content), trace);
+
+  for (char *record = strsep(&cursor, "\n"); ok(trace) && record;
+       record = strsep(&cursor, "\n")) {
+    strsep(&record, " ");
+    if (record) {
+      add(strsep(&record, " "), mountinfo->mounts, trace);
+    }
+  }
+
+  free(proc_mounts_content);
+
+  if (!ok(trace)) {
+    free_mountinfo(mountinfo);
+    return NULL;
+  }
+
   return mountinfo;
 }
 
-const char *get_next_block_mount(struct mountinfo *mountinfo) {
-  for (char *record = strsep(&mountinfo->cursor, "\n"); record;
-       record = strsep(&mountinfo->cursor, "\n")) {
-    if (*record == '/') {
-      strsep(&record, " ");
-      return strsep(&record, " ");
-    }
+char *make_mount(const char *path, const struct mountinfo *mountinfo,
+                 struct trace *trace) {
+  char *resolved_path = TNULL(realpath(path, NULL), trace);
+  struct buffer_view *view = create_buffer_view(resolved_path, trace);
+  if (!ok(trace)) {
+    free(resolved_path);
+    return NULL;
   }
-  return NULL;
+  if (is_within(view, mountinfo->mounts)) {
+    free_buffer_view(view);
+    return resolved_path;
+  }
+  free_buffer_view(view);
+  TNEG(mount(resolved_path, resolved_path, NULL, MS_BIND, NULL), trace);
+  add(resolved_path, mountinfo->mounts, trace);
+  return resolved_path;
 }
 
 void free_mountinfo(struct mountinfo *mountinfo) {
   if (mountinfo) {
-    free(mountinfo->proc_mounts_content);
+    free_set(mountinfo->mounts);
     free(mountinfo);
   }
 }

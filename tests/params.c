@@ -1,6 +1,6 @@
 #include "params.h"
 #include "buffer.h"
-#include "set.h"
+#include "list.h"
 #include "trace.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -10,13 +10,11 @@ void test_params() {
   struct trace *trace = create_trace();
   const char *config_path = "config.lua";
   const char *drop_path = "/home/nazar";
-  const char *ignored_path = "/mnt";
-  const char *ignored_write_path = "/nix/store";
-  const char *ignored_exec_path = "/tmp";
-  const char *argv[] = {
-      "klunok",     "-c", config_path,       "-d", drop_path,          "-i",
-      ignored_path, "-w", ignored_exec_path, "-e", ignored_write_path,
-  };
+  const char *write_mount = "/home/nazar/src";
+  const char *exec_mount = "/nix/store";
+  const char *both_mount = "/home/nazar/.local/bin";
+  const char *argv[] = {"klunok",    "-c", config_path, "-d", drop_path, "-w",
+                        write_mount, "-e", exec_mount,  "-b", both_mount};
   int argc = sizeof argv / sizeof *argv;
 
   struct params *params = parse_params(argc, argv, trace);
@@ -24,25 +22,25 @@ void test_params() {
   assert(!strcmp(get_config_path(params), config_path));
   assert(!strcmp(get_privilege_dropping_path(params), drop_path));
 
-  struct buffer_view *ignored_path_view =
-      create_buffer_view(ignored_path, trace);
-  struct buffer_view *ignored_write_path_view =
-      create_buffer_view(ignored_write_path, trace);
-  struct buffer_view *ignored_exec_path_view =
-      create_buffer_view(ignored_exec_path, trace);
-  assert(ok(trace));
+  /*FIXME we shouldn't test the orer*/
 
-  assert(is_within(ignored_path_view, get_ignored_write_mounts(params)));
-  assert(is_within(ignored_path_view, get_ignored_exec_mounts(params)));
-  assert(is_within(ignored_write_path_view, get_ignored_write_mounts(params)));
-  assert(!is_within(ignored_write_path_view, get_ignored_exec_mounts(params)));
-  assert(!is_within(ignored_exec_path_view, get_ignored_write_mounts(params)));
-  assert(is_within(ignored_exec_path_view, get_ignored_exec_mounts(params)));
+  assert(!strcmp(get_value(peek(get_write_mounts(params))), both_mount));
+  assert(!strcmp(get_value(get_next(peek(get_write_mounts(params)))),
+                 write_mount));
 
-  free_buffer_view(ignored_path_view);
-  free_buffer_view(ignored_write_path_view);
-  free_buffer_view(ignored_exec_path_view);
+  assert(!strcmp(get_value(peek(get_exec_mounts(params))), both_mount));
+  assert(
+      !strcmp(get_value(get_next(peek(get_exec_mounts(params)))), exec_mount));
 
   free_params(params);
+
+  const char *empty_argv[] = {"klunok"};
+  params = parse_params(1, empty_argv, trace);
+  assert(ok(trace));
+  assert(peek(get_write_mounts(params)));
+  assert(peek(get_exec_mounts(params)));
+  assert(get_privilege_dropping_path(params));
+  free_params(params);
+
   free(trace);
 }

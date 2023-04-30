@@ -2,22 +2,18 @@
 #include "trace.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 void test_mountinfo() {
   struct trace *trace = create_trace();
-  struct mountinfo *mountinfo = create_mountinfo(trace);
+  struct mountinfo *mountinfo = load_mountinfo(trace);
   assert(ok(trace));
-  int block_mount_count = 0;
-  for (;;) {
-    const char *mount = get_next_block_mount(mountinfo);
-    if (!mount) {
-      break;
-    }
-    ++block_mount_count;
-    assert(*mount == '/');
-  }
-  /*FIXME can fail in the cloud*/
-  assert(block_mount_count);
+
+  char *mount = make_mount("/", mountinfo, trace);
+  assert(ok(trace));
+  assert(!strcmp(mount, "/"));
+
   free_mountinfo(mountinfo);
+  free(mount);
   free(trace);
 }
