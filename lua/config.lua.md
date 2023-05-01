@@ -1,4 +1,4 @@
-# Configuring with Lua
+# Configuration
 
 ## Setting declaration
 

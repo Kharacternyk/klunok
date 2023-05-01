@@ -18,7 +18,13 @@ You can download a self-contained binary from
 You can also browse past releases at
 <https://github.com/Kharacternyk/klunok/releases>.
 
-Once downloaded, you can copy the binary to somewhere in you `$PATH`, for example:
+Once downloaded, mark the file as executable:
+
+```bash
+chmod +x ~/Downloads/klunok
+```
+
+Also, you can copy the binary to somewhere in you `$PATH`, for example:
 
 ```bash
 sudo cp ~/Downloads/klunok /bin/
