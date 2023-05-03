@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 You can choose from three installation methods.
 Please navigate to the one you prefer via the tabs below.
 
-<Tabs>
+<Tabs queryString="method">
   <TabItem value="binary" label="Static binary">
 
 You can download a self-contained binary from
@@ -56,10 +56,43 @@ Instead use `github:Kharacternyk/klunok/v1` for the latest stable version.
   </TabItem>
   <TabItem value="source" label="From source">
 
-There are no detailed instructions for this one, yet.
-If you are familiar with C and the Meson build system,
-we're sure you know what to do once you get the source from
-<https://github.com/Kharacternyk/klunok>.
+To install from source you need a C compiler and the Meson build system.
+Meson also depends on the Ninja build system.
+You can install them, for example, with `apt`:
+
+```bash
+sudo apt install gcc meson ninja-build
+```
+
+The version of Meson installed with `apt` may be not new enough to build Klunok.
+In this case, you can install Meson with `pip`:
+
+```bash
+sudo apt install pip
+sudo pip install meson
+```
+
+An optional, but recommended dependency is Lua.
+Lua allows configuring Klunok without recompiling it.
+Klunok should work with Lua version 5.2 or newer.
+Installing Lua with `apt` looks like this:
+
+```bash
+sudo apt install lua5.4
+```
+
+Once the dependencies are installed, get the source from
+[GitHub](https://github.com/Kharacternyk/klunok) and install Klunok with Meson.
+The whole process may look like this:
+
+```bash
+git clone https://github.com/Kharacternyk/klunok
+git checkout v1
+cd klunok
+meson setup build -Dbuildtype=release
+cd build
+sudo meson install
+```
 
   </TabItem>
 </Tabs>
