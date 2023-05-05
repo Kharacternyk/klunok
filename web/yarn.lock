@@ -1149,7 +1149,7 @@
     core-js-pure "^3.25.1"
     regenerator-runtime "^0.13.11"
 
-"@babel/runtime@^7.1.2", "@babel/runtime@^7.10.3", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.18.6", "@babel/runtime@^7.20.13", "@babel/runtime@^7.8.4":
+"@babel/runtime@^7.1.2", "@babel/runtime@^7.10.3", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.18.6", "@babel/runtime@^7.20.13", "@babel/runtime@^7.21.0", "@babel/runtime@^7.8.4":
   version "7.21.5"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.21.5.tgz#8492dddda9644ae3bda3b45eabe87382caee7200"
   integrity sha512-8jI69toZqqcsnqGGqwGS4Qb1VwLOEp4hz+CXPywcvjs60u3B4Pom/U/7rm4W8tMOYEB+E9wgD0mW1l3r8qlI9Q==
@@ -2537,6 +2537,14 @@ asap@~2.0.3:
   resolved "https://registry.yarnpkg.com/asap/-/asap-2.0.6.tgz#e50347611d7e690943208bbdafebcbc2fb866d46"
   integrity sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==
 
+asciinema-player@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/asciinema-player/-/asciinema-player-3.3.0.tgz#45616fa8dc3950c2be12b51d0a365ea2b9a845c2"
+  integrity sha512-4uyCGe83+5gZ06jgIGyV4vl0TS3egBgW0NXyCpDuDDvmzDGHEG8OICChrTecmTvajgLyq8YQet9nI7SYkVt8vQ==
+  dependencies:
+    "@babel/runtime" "^7.21.0"
+    solid-js "^1.3.0"
+
 at-least-node@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/at-least-node/-/at-least-node-1.0.0.tgz#602cd4b46e844ad4effc92a8011a3c46e0238dc2"
@@ -3349,7 +3357,7 @@ csso@^4.2.0:
   dependencies:
     css-tree "^1.1.2"
 
-csstype@^3.0.2:
+csstype@^3.0.2, csstype@^3.1.0:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.1.2.tgz#1d4bf9d572f11c14031f0436e1c10bc1f571f50b"
   integrity sha512-I7K1Uu0MBPzaFKg4nI5Q7Vs2t+3gWWW648spaF+Rg7pI9ds18Ugn+lvg4SHczUdKlHI5LWBXyqfS8+DufyBsgQ==
@@ -6970,6 +6978,11 @@ serialize-javascript@^6.0.0, serialize-javascript@^6.0.1:
   dependencies:
     randombytes "^2.1.0"
 
+seroval@^0.5.0:
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/seroval/-/seroval-0.5.1.tgz#e6d17365cdaaae7e50815c7e0bcd7102facdadf3"
+  integrity sha512-ZfhQVB59hmIauJG5Ydynupy8KHyr5imGNtdDhbZG68Ufh1Ynkv9KOYOAABf71oVbQxJ8VkWnMHAjEHE7fWkH5g==
+
 serve-handler@^6.1.3:
   version "6.1.5"
   resolved "https://registry.yarnpkg.com/serve-handler/-/serve-handler-6.1.5.tgz#a4a0964f5c55c7e37a02a633232b6f0d6f068375"
@@ -7116,6 +7129,14 @@ sockjs@^0.3.24:
     faye-websocket "^0.11.3"
     uuid "^8.3.2"
     websocket-driver "^0.7.4"
+
+solid-js@^1.3.0:
+  version "1.7.4"
+  resolved "https://registry.yarnpkg.com/solid-js/-/solid-js-1.7.4.tgz#d2d2a2c88285956b330df59d36c3cdf09adcb465"
+  integrity sha512-hD/bzIpaa7DL/LGRRTLFvejQuxQaoXyH+DBgPputJW7zvFigCewQIoDvbwDR4VHTsa8VsMDPzV8BT0F9OqsS1Q==
+  dependencies:
+    csstype "^3.1.0"
+    seroval "^0.5.0"
 
 sort-css-media-queries@2.1.0:
   version "2.1.0"

@@ -2,6 +2,8 @@
 sidebar_position: 3
 ---
 
+import Asciinema from '../src/asciinema.jsx';
+
 # Usage
 
 Klunok uses the Linux kernel fanotify API, which as of now requires root privileges.
@@ -31,3 +33,7 @@ it watches for file edits in the current working directory and its descendants.
 When it thinks that the current version of a file is more or less stable
 (the file hasn't been edited for one minute),
 it copies the file to the `klunok/store` directory.
+
+Here is a simple demo:
+
+<Asciinema src="/casts/demo.cast" />
