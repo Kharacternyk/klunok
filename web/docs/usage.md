@@ -36,4 +36,4 @@ it copies the file to the `klunok/store` directory.
 
 Here is a simple demo:
 
-<Asciinema src="/casts/demo.cast" />
+<Asciinema src="/demo.cast" />

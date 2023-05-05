@@ -12,6 +12,9 @@ const config = {
         docs: {
           routeBasePath: "/",
         },
+        theme: {
+          customCss: [require.resolve("./css/custom.css")],
+        },
       },
     ],
   ],
@@ -27,7 +30,9 @@ const config = {
   themeConfig: {
     navbar: {
       title: "Klunok",
-      //TODO Logo
+      logo: {
+        src: "logo.svg",
+      },
     },
     prism: {
       theme: codeTheme,
