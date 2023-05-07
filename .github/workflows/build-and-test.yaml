@@ -3,12 +3,12 @@ name: "Build & Test"
 on:
   pull_request:
     paths-ignore:
-      - "infra/**"
+      - "misc/**"
       - "web/**"
       - version
   push:
     paths-ignore:
-      - "infra/**"
+      - "misc/**"
       - "web/**"
       - version
 
