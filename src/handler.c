@@ -259,9 +259,11 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     concat_string(get_offset_store_root(handler->config), offset_path, trace);
     concat_string(path, offset_path, trace);
 
+    bool is_history_path = false;
     size_t offset = 0;
     struct buffer_view *path_view = create_buffer_view(path, trace);
     if (ok(trace) && is_within(path_view, get_history_paths(handler->config))) {
+      is_history_path = true;
       offset = read_counter(get_string(get_view(offset_path)), trace);
     }
     free_buffer_view(path_view);
@@ -281,15 +283,21 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
     for (;;) {
       concat_string(extension, store_path, trace);
-      offset = copy_file(get_string(get_view(store_path)), path, offset, trace);
+      size_t new_offset =
+          copy_file(get_string(get_view(store_path)), path, offset, trace);
+      if (!is_history_path) {
+        new_offset = 0;
+      }
       if (catch_static(messages.copy.source_does_not_exist, trace)) {
         event = get_event_queue_head_deleted(handler->config);
       } else if (catch_static(messages.copy.source_permission_denied, trace)) {
         event = get_event_queue_head_forbidden(handler->config);
+      } else {
+        write_counter(get_string(get_view(offset_path)), new_offset, trace);
       }
-      write_counter(get_string(get_view(offset_path)), offset, trace);
-      pop_head(handler->linq, trace);
+
       if (ok(trace)) {
+        pop_head(handler->linq, trace);
         break;
       } else if (catch_static(messages.copy.destination_already_exists,
                               trace)) {
