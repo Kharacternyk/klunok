@@ -8,9 +8,9 @@
 static const char *const store_root = "./klunok/store";
 static const char *const queue_path = "./klunok/var/queue";
 static const char *const journal_path = "./klunok/var/journal";
+static const char *const offset_store_root = "./klunok/var/offsets";
 static const char *const journal_timestamp_pattern = "%Y-%m-%d-%H-%M";
 static const char *const version_pattern = "v%Y-%m-%d-%H-%M";
-static const char *const cursor_version = ".cursor";
 static const size_t debounce_seconds = 60;
 static const size_t path_length_guess = 1024;
 static const pid_t max_pid_guess = 1 << 15;
@@ -133,8 +133,8 @@ const char *get_version_pattern(const struct config *config) {
   return version_pattern;
 }
 
-const char *get_cursor_version(const struct config *config) {
-  return cursor_version;
+const char *get_offset_store_root(const struct config *config) {
+  return offset_store_root;
 }
 
 size_t get_debounce_seconds(const struct config *config) {

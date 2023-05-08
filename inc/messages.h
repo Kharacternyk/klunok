@@ -12,12 +12,10 @@ struct translation {
     const char *cannot_remove_ancestor;
   } parents;
   struct {
-    struct {
-      const char *file_does_not_exist;
-      const char *permission_denied;
-      const char *version_already_exists;
-    } copy;
-  } store;
+    const char *source_does_not_exist;
+    const char *source_permission_denied;
+    const char *destination_already_exists;
+  } copy;
   struct {
     const char *is_static;
   } config;

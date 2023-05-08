@@ -14,12 +14,10 @@ const struct translation messages = {
     .cannot_remove_ancestor = "Cannot remove an ancestor directory",
     .cannot_create_ancestor = "Cannot create an ancestor directory",
   },
-  .store = {
-    .copy = {
-      .file_does_not_exist = "The file does not exist",
-      .permission_denied = "Permission denied",
-      .version_already_exists = "The version already exists",
-    },
+  .copy = {
+    .source_does_not_exist = "The file does not exist",
+    .source_permission_denied = "Permission denied",
+    .destination_already_exists = "The destination already exists",
   },
   .config = {
     .is_static = "Configuration files are not supported",

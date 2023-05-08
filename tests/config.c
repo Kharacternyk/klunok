@@ -21,9 +21,9 @@ void check_default_config(struct config *config) {
   assert(!strcmp(get_store_root(config), "./klunok/store"));
   assert(!strcmp(get_queue_path(config), "./klunok/var/queue"));
   assert(!strcmp(get_journal_path(config), "./klunok/var/journal"));
+  assert(!strcmp(get_offset_store_root(config), "./klunok/var/offsets"));
   assert(!strcmp(get_journal_timestamp_pattern(config), "%Y-%m-%d-%H-%M"));
   assert(!strcmp(get_version_pattern(config), "v%Y-%m-%d-%H-%M"));
-  assert(!strcmp(get_cursor_version(config), ".cursor"));
 
   assert(get_debounce_seconds(config) == 60);
   assert(get_path_length_guess(config) == 1024);

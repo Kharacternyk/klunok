@@ -2,6 +2,8 @@ components = [
   'bitmap',
   'buffer',
   'circbreak',
+  'copy',
+  'counter',
   'deref',
   'elfinterp',
   'extension',
@@ -16,7 +18,6 @@ components = [
   'parents',
   'set',
   'sieve',
-  'store',
   'timestamp',
   'trace',
 ] + ('config-' + (lua.found() ? 'lua' : 'static'))

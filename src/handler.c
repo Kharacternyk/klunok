@@ -2,6 +2,8 @@
 #include "bitmap.h"
 #include "buffer.h"
 #include "config.h"
+#include "copy.h"
+#include "counter.h"
 #include "deref.h"
 #include "elfinterp.h"
 #include "extension.h"
@@ -10,7 +12,6 @@
 #include "messages.h"
 #include "set.h"
 #include "sieve.h"
-#include "store.h"
 #include "timestamp.h"
 #include "trace.h"
 #include <assert.h>
@@ -239,62 +240,70 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
     char *base_version =
         get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
-    struct buffer *version_buffer = create_buffer(trace);
-    concat_string(base_version, version_buffer, trace);
-    free(base_version);
-    if (!ok(trace)) {
-      free(path);
-      free_buffer(version_buffer);
-      return;
-    }
-    if (strchr(get_string(get_view(version_buffer)), '/')) {
-      throw_context(get_string(get_view(version_buffer)), trace);
+    if (strchr(base_version, '/')) {
+      throw_context(base_version, trace);
       throw_static(messages.handler.version.has_slashes, trace);
       free(path);
-      free_buffer(version_buffer);
+      free(base_version);
+      return;
+    }
+
+    struct buffer *store_path = create_buffer(trace);
+    concat_string(get_store_root(handler->config), store_path, trace);
+    concat_string(path, store_path, trace);
+    concat_char('/', store_path, trace);
+    concat_string(base_version, store_path, trace);
+    free(base_version);
+
+    struct buffer *offset_path = create_buffer(trace);
+    concat_string(get_offset_store_root(handler->config), offset_path, trace);
+    concat_string(path, offset_path, trace);
+
+    size_t offset = 0;
+    struct buffer_view *path_view = create_buffer_view(path, trace);
+    if (ok(trace) && is_within(path_view, get_history_paths(handler->config))) {
+      offset = read_counter(get_string(get_view(offset_path)), trace);
+    }
+    free_buffer_view(path_view);
+
+    if (!ok(trace)) {
+      free(path);
+      free_buffer(store_path);
+      free_buffer(offset_path);
       return;
     }
 
     const char *extension = get_file_extension(path);
-    size_t version_base_length = get_length(get_view(version_buffer));
+    size_t store_path_base_length = get_length(get_view(store_path));
     size_t duplicate_count = 0;
 
     const char *event = get_event_queue_head_stored(handler->config);
 
-    struct buffer_view *path_view = create_buffer_view(path, trace);
-
     for (;;) {
-      concat_string(extension, version_buffer, trace);
-      if (ok(trace) &&
-          is_within(path_view, get_history_paths(handler->config))) {
-        copy_delta_to_store(path, get_string(get_view(version_buffer)),
-                            get_cursor_version(handler->config),
-                            get_store_root(handler->config), trace);
-      } else {
-        copy_to_store(path, get_string(get_view(version_buffer)),
-                      get_store_root(handler->config), trace);
-      }
-      if (catch_static(messages.store.copy.file_does_not_exist, trace)) {
+      concat_string(extension, store_path, trace);
+      offset = copy_file(get_string(get_view(store_path)), path, offset, trace);
+      if (catch_static(messages.copy.source_does_not_exist, trace)) {
         event = get_event_queue_head_deleted(handler->config);
-      } else if (catch_static(messages.store.copy.permission_denied, trace)) {
+      } else if (catch_static(messages.copy.source_permission_denied, trace)) {
         event = get_event_queue_head_forbidden(handler->config);
       }
+      write_counter(get_string(get_view(offset_path)), offset, trace);
+      pop_head(handler->linq, trace);
       if (ok(trace)) {
-        pop_head(handler->linq, trace);
         break;
-      } else if (catch_static(messages.store.copy.version_already_exists,
+      } else if (catch_static(messages.copy.destination_already_exists,
                               trace)) {
         ++duplicate_count;
-        set_length(version_base_length, version_buffer);
+        set_length(store_path_base_length, store_path);
         /*FIXME configure me*/
-        concat_string("-", version_buffer, trace);
-        concat_size(duplicate_count, version_buffer, trace);
+        concat_string("-", store_path, trace);
+        concat_size(duplicate_count, store_path, trace);
       } else {
         throw_context(path, trace);
         throw_static(messages.handler.store.cannot_copy, trace);
         free(path);
-        free_buffer(version_buffer);
-        free_buffer_view(path_view);
+        free_buffer(store_path);
+        free_buffer(offset_path);
         return;
       }
     }
@@ -305,8 +314,8 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     rethrow_static(messages.handler.journal.cannot_write_to, trace);
 
     free(path);
-    free_buffer(version_buffer);
-    free_buffer_view(path_view);
+    free_buffer(store_path);
+    free_buffer(offset_path);
   }
 }
 

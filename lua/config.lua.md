@@ -200,17 +200,13 @@ history_paths = {}
 declare('history_paths', nil, is_set_of_strings)
 ```
 
-### `cursor_version`
+### `offset_store_root`
 
-Version name reserved for implementing the delta-copying of paths in
+Root of an auxiliary store used for keeping track of offsets of
 [`history_paths`](#history_paths).
 
-```lua title=pre-config
-cursor_version = '.cursor'
-```
-
 ```lua title=post-config
-declare('cursor_version', nil, is_string)
+declare('offset_store_root', prefix_var .. '/offsets', is_string)
 ```
 
 ### `excluded_paths`
