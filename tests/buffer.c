@@ -9,8 +9,7 @@
 #define N 1230
 #define SN "1230"
 
-void test_buffer() {
-  struct trace *trace = create_trace();
+void test_buffer(struct trace *trace) {
   struct buffer *buffer = create_buffer(trace);
   assert(ok(trace));
   const struct buffer_view *view = get_view(buffer);
@@ -45,5 +44,4 @@ void test_buffer() {
   assert(hash != get_hash(view));
 
   free_buffer(buffer);
-  free(trace);
 }

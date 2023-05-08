@@ -4,10 +4,9 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
-void test_journal() {
+void test_journal(struct trace *trace) {
   const char *journal_path = "./var/journal";
   const char *timestamp_pattern = "1";
-  struct trace *trace = create_trace();
   struct journal *journal =
       open_journal(journal_path, timestamp_pattern, trace);
   assert(ok(trace));
@@ -25,6 +24,4 @@ void test_journal() {
   assert(ok(trace));
   note("blah", 0, "/", journal, trace);
   assert(ok(trace));
-
-  free(trace);
 }

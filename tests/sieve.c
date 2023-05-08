@@ -4,9 +4,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-void test_sieve() {
-  struct trace *trace = create_trace();
-
+void test_sieve(struct trace *trace) {
   struct set *sets[] = {
       create_set(0, trace),
       create_set(0, trace),
@@ -42,5 +40,4 @@ void test_sieve() {
   for (size_t i = 0; i < 3; ++i) {
     free_set(sets[i]);
   }
-  free(trace);
 }

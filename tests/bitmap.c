@@ -3,8 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-void test_bitmap() {
-  struct trace *trace = create_trace();
+void test_bitmap(struct trace *trace) {
   struct bitmap *bitmap = create_bitmap(0, trace);
 
   assert(ok(trace));
@@ -21,5 +20,4 @@ void test_bitmap() {
   assert(get_bit(2048, bitmap));
 
   free_bitmap(bitmap);
-  free(trace);
 }

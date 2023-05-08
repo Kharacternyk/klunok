@@ -5,8 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void test_deref() {
-  struct trace *trace = create_trace();
+void test_deref(struct trace *trace) {
   const char *path = "/dev/null";
   int fd = open(path, O_RDONLY);
   char *deref_path = deref_fd(fd, 0, trace);
@@ -16,5 +15,4 @@ void test_deref() {
   assert(!strcmp(deref_path, path));
 
   free(deref_path);
-  free(trace);
 }

@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void test_list() {
-  struct trace *trace = create_trace();
+void test_list(struct trace *trace) {
   struct list *list = create_list(trace);
   assert(ok(trace));
   assert(!peek(list));
@@ -29,5 +28,4 @@ void test_list() {
   assert(!strcmp(get_value(peek(list)), next_head));
 
   free_list(list);
-  free(trace);
 }

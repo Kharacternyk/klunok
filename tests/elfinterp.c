@@ -5,11 +5,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-void test_elfinterp() {
+void test_elfinterp(struct trace *trace) {
   int fd = open(TEST_ROOT "/meson.build", O_RDONLY);
   assert(fd >= 0);
 
-  struct trace *trace = create_trace();
   assert(!get_elf_interpreter(fd, trace));
   assert(ok(trace));
 
@@ -22,5 +21,4 @@ void test_elfinterp() {
 
   close(fd);
   free(interpreter);
-  free(trace);
 }

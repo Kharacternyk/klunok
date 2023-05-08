@@ -11,8 +11,7 @@
 #define EMPTY "empty"
 #define IN_STORE(PATH) "./klunok/store/" PATH "/version"
 
-void test_handler() {
-  struct trace *trace = create_trace();
+void test_handler(struct trace *trace) {
   struct handler *handler = load_handler(CONFIG, trace);
   assert(ok(trace));
 
@@ -77,5 +76,4 @@ void test_handler() {
 
   close(fd);
   free_handler(handler);
-  free(trace);
 }

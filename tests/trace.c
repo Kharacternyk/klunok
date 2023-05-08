@@ -4,11 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void test_trace() {
-  struct trace *trace = create_trace();
-  assert(trace);
-  assert(ok(trace));
-
+void test_trace(struct trace *trace) {
   const char *a = "abc";
   const char *b = "XYZ";
   const char *c = "///";
@@ -73,6 +69,4 @@ void test_trace() {
   assert(!catch_static(b, trace));
   assert(!catch_static(c, trace));
   assert(catch_static(a, trace));
-
-  free(trace);
 }

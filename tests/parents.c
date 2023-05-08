@@ -6,10 +6,7 @@
 
 #define DIRECTORY "parents/abc/defgh/123"
 
-void test_parents() {
-  struct trace *trace = create_trace();
-
-  rmdir(DIRECTORY);
+void test_parents(struct trace *trace) {
   assert(access(DIRECTORY, F_OK) != 0);
   create_parents(DIRECTORY "/file", trace);
   assert(ok(trace));
@@ -17,6 +14,4 @@ void test_parents() {
   remove_empty_parents(DIRECTORY "/file", trace);
   assert(ok(trace));
   assert(access(DIRECTORY, F_OK) != 0);
-
-  free(trace);
 }

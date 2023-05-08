@@ -8,9 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-void test_copy() {
-  struct trace *trace = create_trace();
-
+void test_copy(struct trace *trace) {
   const char *destination = "path/to/dest";
   const char *source = TEST_ROOT "/meson.build";
 
@@ -41,6 +39,4 @@ void test_copy() {
   assert(stat(log_destination, &log_destination_stat) >= 0);
 
   assert(new_offset == log_destination_stat.st_size + offset);
-
-  free(trace);
 }

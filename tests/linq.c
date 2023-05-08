@@ -10,8 +10,7 @@
 #define F1 TEST_ROOT "/meson.build"
 #define F2 TEST_ROOT "/linq.c"
 
-void test_linq() {
-  struct trace *trace = create_trace();
+void test_linq(struct trace *trace) {
   struct linq *linq = load_linq(INSTANT_LINQ_PATH, 0, 0, 0, trace);
   assert(ok(trace));
 
@@ -73,5 +72,4 @@ void test_linq() {
   assert(ok(trace));
 
   free_linq(linq);
-  free(trace);
 }

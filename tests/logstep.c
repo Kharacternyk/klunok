@@ -18,7 +18,7 @@ static void assert_fd_content(int fd, const char *content) {
   assert(!lseek(fd, 0, SEEK_SET));
 }
 
-void test_logstep() {
+void test_logstep(void *unused) {
   int fd = memfd_create("", O_RDWR);
   logstep(fd, "prefix", "message", 0);
   assert_fd_content(fd, "│prefix│ message\n");

@@ -5,8 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void test_timestamp() {
-  struct trace *trace = create_trace();
+void test_timestamp(struct trace *trace) {
   char *timestamp = get_timestamp("abc", 7, trace);
   assert(ok(trace));
   assert(!strcmp(timestamp, "abc"));
@@ -29,6 +28,5 @@ void test_timestamp() {
 
   timestamp = get_timestamp("%Y", 3, trace);
   assert(catch_static(messages.timestamp.overflow, trace));
-  free(trace);
   free(timestamp);
 }

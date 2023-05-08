@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void test_mountinfo() {
-  struct trace *trace = create_trace();
+void test_mountinfo(struct trace *trace) {
   struct mountinfo *mountinfo = load_mountinfo(trace);
   assert(ok(trace));
 
@@ -15,5 +14,4 @@ void test_mountinfo() {
 
   free_mountinfo(mountinfo);
   free(mount);
-  free(trace);
 }

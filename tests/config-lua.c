@@ -8,8 +8,7 @@
 
 void check_default_config(struct config *config);
 
-void test_config_lua() {
-  struct trace *trace = create_trace();
+void test_config_lua(struct trace *trace) {
   struct config *config = load_config(NULL, trace);
   assert(ok(trace));
   check_default_config(config);
@@ -42,6 +41,4 @@ void test_config_lua() {
   load_config(TEST_ROOT "/lua/broken-syntax.lua", trace);
   assert(!ok(trace));
   catch_all(trace);
-
-  free(trace);
 }

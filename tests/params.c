@@ -6,8 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void test_params() {
-  struct trace *trace = create_trace();
+void test_params(struct trace *trace) {
   const char *config_path = "config.lua";
   const char *drop_path = "/home/nazar";
   const char *write_mount = "/home/nazar/src";
@@ -22,7 +21,7 @@ void test_params() {
   assert(!strcmp(get_config_path(params), config_path));
   assert(!strcmp(get_privilege_dropping_path(params), drop_path));
 
-  /*FIXME we shouldn't test the orer*/
+  /*FIXME we shouldn't test the order*/
 
   assert(!strcmp(get_value(peek(get_write_mounts(params))), both_mount));
   assert(!strcmp(get_value(get_next(peek(get_write_mounts(params)))),
@@ -41,6 +40,4 @@ void test_params() {
   assert(peek(get_exec_mounts(params)));
   assert(get_privilege_dropping_path(params));
   free_params(params);
-
-  free(trace);
 }

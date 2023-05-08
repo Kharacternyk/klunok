@@ -6,8 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void test_set() {
-  struct trace *trace = create_trace();
+void test_set(struct trace *trace) {
   struct set *set = create_set(0, trace);
   assert(ok(trace));
 
@@ -75,5 +74,4 @@ void test_set() {
   free_buffer_view(v4);
 
   free_set(set);
-  free(trace);
 }
