@@ -22,6 +22,7 @@
 
 struct handler {
   char *config_path;
+  size_t common_parent_path_length;
   struct config *config;
   struct journal *journal;
   struct linq *linq;
@@ -29,11 +30,15 @@ struct handler {
   struct set *elf_interpreters;
 };
 
-struct handler *load_handler(const char *config_path, struct trace *trace) {
+struct handler *load_handler(const char *config_path,
+                             size_t common_parent_path_length,
+                             struct trace *trace) {
   struct handler *handler = TNULL(calloc(1, sizeof(struct handler)), trace);
   if (!ok(trace)) {
     return NULL;
   }
+
+  handler->common_parent_path_length = common_parent_path_length;
 
   try(trace);
   if (config_path) {
@@ -250,7 +255,8 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
     struct buffer *store_path = create_buffer(trace);
     concat_string(get_store_root(handler->config), store_path, trace);
-    concat_string(path, store_path, trace);
+    concat_char('/', store_path, trace);
+    concat_string(path + handler->common_parent_path_length, store_path, trace);
     concat_char('/', store_path, trace);
     concat_string(base_version, store_path, trace);
     free(base_version);

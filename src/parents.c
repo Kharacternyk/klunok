@@ -1,6 +1,7 @@
 #include "parents.h"
 #include "messages.h"
 #include "trace.h"
+#include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,4 +62,22 @@ void remove_empty_parents(const char *original_path, struct trace *trace) {
   }
 
   free(path);
+}
+
+static bool is_separator(char c) { return !c || c == '/'; }
+
+size_t get_common_parent_path_length(const char *first, const char *second) {
+  assert(*first == '/');
+  assert(*first == *second);
+
+  for (size_t i = 1, result = 1; /*keep going*/; ++i) {
+    if (is_separator(first[i]) && is_separator(second[i])) {
+      result = i + 1;
+      if (!first[i] || !second[i]) {
+        return result;
+      }
+    } else if (first[i] != second[i]) {
+      return result;
+    }
+  }
 }

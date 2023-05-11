@@ -5,6 +5,7 @@
 #include "messages.h"
 #include "mountinfo.h"
 #include "params.h"
+#include "parents.h"
 #include "set.h"
 #include "trace.h"
 #include <assert.h>
@@ -12,6 +13,7 @@
 #include <grp.h>
 #include <poll.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/fanotify.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -51,6 +53,9 @@ int main(int argc, const char **argv) {
     return fail(trace);
   }
 
+  char *previous_mount = NULL;
+  size_t common_parent_path_length = 0;
+
   for (const struct list_item *write_mount = peek(get_write_mounts(params));
        write_mount; write_mount = get_next(write_mount)) {
     char *mount = make_mount(get_value(write_mount), mountinfo, trace);
@@ -61,7 +66,22 @@ int main(int argc, const char **argv) {
       throw_static(messages.main.mount.cannot_watch, trace);
       return fail(trace);
     }
-    free(mount);
+
+    if (previous_mount) {
+      size_t length = get_common_parent_path_length(previous_mount, mount);
+      if (length < common_parent_path_length) {
+        common_parent_path_length = length;
+      }
+      free(previous_mount);
+    } else {
+      previous_mount = mount;
+      common_parent_path_length = strlen(mount) + 1;
+    }
+
+    if (!get_next(write_mount)) {
+      free(mount);
+      previous_mount = NULL;
+    }
   }
 
   for (const struct list_item *exec_mount = peek(get_exec_mounts(params));
@@ -91,7 +111,8 @@ int main(int argc, const char **argv) {
     return fail(trace);
   }
 
-  struct handler *handler = load_handler(get_config_path(params), trace);
+  struct handler *handler =
+      load_handler(get_config_path(params), common_parent_path_length, trace);
   if (!ok(trace)) {
     throw_static(messages.main.cannot_load_handler, trace);
     return fail(trace);

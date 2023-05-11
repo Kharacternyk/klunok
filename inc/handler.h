@@ -2,7 +2,9 @@
 
 struct trace;
 
-struct handler *load_handler(const char *config_path, struct trace *trace);
+struct handler *load_handler(const char *config_path,
+                             size_t common_parent_path_length,
+                             struct trace *trace);
 void handle_open_exec(pid_t pid, int fd, struct handler *handler,
                       struct trace *trace);
 void handle_close_write(pid_t pid, int fd, struct handler *handler,
