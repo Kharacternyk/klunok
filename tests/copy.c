@@ -19,11 +19,15 @@ void test_copy(struct trace *trace) {
 
   assert(!access(destination, F_OK));
 
+  try(trace);
   copy_file(destination, source, 0, trace);
   assert(catch_static(messages.copy.destination_already_exists, trace));
+  finally(trace);
 
+  try(trace);
   copy_file("won't-exist", TEST_ROOT "/I-do-not-exist", 0, trace);
   assert(catch_static(messages.copy.source_does_not_exist, trace));
+  finally(trace);
 
   const char *log_destination = "path/to/log.txt";
   size_t offset = 12;

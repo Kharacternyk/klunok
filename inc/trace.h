@@ -3,17 +3,20 @@
 
 struct trace *create_trace();
 
+bool ok(const struct trace *trace);
+void try(struct trace *trace);
+
 void throw_static(const char *message, struct trace *trace);
 void throw_dynamic(const char *message, struct trace *trace);
 void throw_context(const char *message, struct trace *trace);
 void throw_errno(struct trace *trace);
 
-bool ok(const struct trace *trace);
 bool catch_static(const char *message, struct trace *trace);
-void catch_all(struct trace *trace);
 
-void rethrow_check(struct trace *trace);
-void rethrow_static(const char *message, struct trace *trace);
+void finally(struct trace *trace);
+void finally_catch_all(struct trace *trace);
+void finally_rethrow_static(const char *message, struct trace *trace);
+
 void rethrow_context(const char *message, struct trace *trace);
 
 void unwind(int fd, const struct trace *trace);

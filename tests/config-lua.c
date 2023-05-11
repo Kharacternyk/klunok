@@ -34,11 +34,13 @@ void test_config_lua(struct trace *trace) {
 
   free_config(config);
 
+  try(trace);
   load_config(TEST_ROOT "/lua/broken-semantics.lua", trace);
   assert(!ok(trace));
-  catch_all(trace);
+  finally_catch_all(trace);
 
+  try(trace);
   load_config(TEST_ROOT "/lua/broken-syntax.lua", trace);
   assert(!ok(trace));
-  catch_all(trace);
+  finally_catch_all(trace);
 }

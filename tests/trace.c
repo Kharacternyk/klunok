@@ -9,24 +9,38 @@ void test_trace(struct trace *trace) {
   const char *b = "XYZ";
   const char *c = "///";
 
+  try(trace);
   throw_static(a, trace);
   assert(!catch_static(b, trace));
   assert(catch_static(a, trace));
+  finally(trace);
 
+  try(trace);
+  throw_static(a, trace);
+  try(trace);
+  assert(!catch_static(a, trace));
+  finally(trace);
+  assert(catch_static(a, trace));
+  finally(trace);
+
+  try(trace);
   throw_dynamic(b, trace);
   assert(!catch_static(b, trace));
-  catch_all(trace);
+  finally_catch_all(trace);
 
+  try(trace);
   throw_context(c, trace);
   assert(!catch_static(c, trace));
-  catch_all(trace);
+  finally_catch_all(trace);
 
+  try(trace);
   assert(ok(trace));
   errno = ENOMEM;
   throw_errno(trace);
   assert(!ok(trace));
-  catch_all(trace);
+  finally_catch_all(trace);
 
+  try(trace);
   throw_static(a, trace);
   assert(!catch_static(b, trace));
   throw_static(b, trace);
@@ -34,38 +48,38 @@ void test_trace(struct trace *trace) {
   throw_static(a, trace);
   assert(!catch_static(b, trace));
   assert(catch_static(a, trace));
-  catch_all(trace);
+  finally_catch_all(trace);
   assert(ok(trace));
 
-  rethrow_check(trace);
-  rethrow_check(trace);
-  rethrow_static(a, trace);
-  rethrow_static(b, trace);
+  try(trace);
+  try(trace);
+  finally_rethrow_static(a, trace);
+  finally_rethrow_static(b, trace);
   assert(ok(trace));
 
-  rethrow_check(trace);
-  rethrow_check(trace);
+  try(trace);
+  try(trace);
   throw_static(a, trace);
-  rethrow_static(b, trace);
-  rethrow_static(c, trace);
+  finally_rethrow_static(b, trace);
+  finally_rethrow_static(c, trace);
   assert(!catch_static(a, trace));
   assert(!catch_static(b, trace));
   assert(catch_static(c, trace));
 
-  rethrow_check(trace);
+  try(trace);
   throw_static(a, trace);
-  rethrow_check(trace);
-  rethrow_static(b, trace);
-  rethrow_static(c, trace);
+  try(trace);
+  finally_rethrow_static(b, trace);
+  finally_rethrow_static(c, trace);
   assert(!catch_static(a, trace));
   assert(!catch_static(b, trace));
   assert(catch_static(c, trace));
 
   throw_static(a, trace);
-  rethrow_check(trace);
-  rethrow_check(trace);
-  rethrow_static(b, trace);
-  rethrow_static(c, trace);
+  try(trace);
+  try(trace);
+  finally_rethrow_static(b, trace);
+  finally_rethrow_static(c, trace);
   assert(!catch_static(b, trace));
   assert(!catch_static(c, trace));
   assert(catch_static(a, trace));

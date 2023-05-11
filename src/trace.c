@@ -75,20 +75,23 @@ void throw_context(const char *message, struct trace *trace) {
 
 void throw_errno(struct trace *trace) { throw_dynamic(strerror(errno), trace); }
 
-size_t get_dropped_trace_message_count(const struct trace *trace) {
-  assert(trace);
-  return trace->dropped_frame_count;
-}
-
 bool ok(const struct trace *trace) {
   assert(trace);
   return !trace->head && !trace->dropped_frame_count;
 }
 
+void try(struct trace *trace) {
+  if (ok(trace)) {
+    ++trace->pre_throw_depth;
+  } else {
+    ++trace->post_throw_depth;
+  }
+}
+
 bool catch_static(const char *message, struct trace *trace) {
   assert(message);
   assert(trace);
-  if (trace->dropped_frame_count) {
+  if (trace->dropped_frame_count || trace->post_throw_depth) {
     return false;
   }
   if (trace->head && !trace->head->is_dynamic &&
@@ -101,31 +104,31 @@ bool catch_static(const char *message, struct trace *trace) {
   return false;
 }
 
-void catch_all(struct trace *trace) {
+static bool decrement_depth(struct trace *trace) {
+  if (trace->post_throw_depth) {
+    --trace->post_throw_depth;
+    return false;
+  } else {
+    assert(trace->pre_throw_depth);
+    --trace->pre_throw_depth;
+    return true;
+  }
+}
+
+void finally_catch_all(struct trace *trace) {
   assert(trace);
   trace->dropped_frame_count = 0;
   while (trace->head) {
     pop_trace_message(trace);
   }
+  decrement_depth(trace);
 }
 
-void rethrow_check(struct trace *trace) {
-  if (ok(trace)) {
-    ++trace->pre_throw_depth;
-  } else {
-    ++trace->post_throw_depth;
-  }
-}
+void finally(struct trace *trace) { decrement_depth(trace); }
 
-void rethrow_static(const char *message, struct trace *trace) {
-  if (trace->post_throw_depth) {
-    --trace->post_throw_depth;
-  } else {
-    assert(trace->pre_throw_depth);
-    --trace->pre_throw_depth;
-    if (!ok(trace)) {
-      throw_static(message, trace);
-    }
+void finally_rethrow_static(const char *message, struct trace *trace) {
+  if (decrement_depth(trace) && !ok(trace)) {
+    throw_static(message, trace);
   }
 }
 

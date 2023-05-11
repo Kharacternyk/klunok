@@ -13,8 +13,9 @@ static void cleanup(const char *destination) {
   /*FIXME cleanup error reporting*/
   struct trace *cleanup_trace = create_trace();
   if (cleanup_trace) {
+    try(cleanup_trace);
     remove_empty_parents(destination, cleanup_trace);
-    catch_all(cleanup_trace);
+    finally_catch_all(cleanup_trace);
     free(cleanup_trace);
   }
 }

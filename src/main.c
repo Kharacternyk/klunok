@@ -112,9 +112,9 @@ int main(int argc, const char **argv) {
       throw_static(messages.main.fanotify.cannot_poll, trace);
     } else if (status > 0) {
       struct fanotify_event_metadata event;
-      rethrow_check(trace);
+      try(trace);
       TNEG(read(fanotify_fd, &event, sizeof event) - sizeof event, trace);
-      rethrow_static(messages.main.fanotify.cannot_read_event, trace);
+      finally_rethrow_static(messages.main.fanotify.cannot_read_event, trace);
       if (ok(trace)) {
         if (event.vers != FANOTIFY_METADATA_VERSION) {
           throw_static(messages.main.fanotify.version_mismatch, trace);
@@ -122,22 +122,22 @@ int main(int argc, const char **argv) {
           throw_static(messages.main.fanotify.queue_overflow, trace);
         } else {
           if (event.mask & FAN_OPEN_EXEC) {
-            rethrow_check(trace);
+            try(trace);
             handle_open_exec(event.pid, event.fd, handler, trace);
-            rethrow_static(messages.main.cannot_handle_exec, trace);
+            finally_rethrow_static(messages.main.cannot_handle_exec, trace);
           } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
-            rethrow_check(trace);
+            try(trace);
             handle_close_write(event.pid, event.fd, handler, trace);
-            rethrow_static(messages.main.cannot_handle_write, trace);
+            finally_rethrow_static(messages.main.cannot_handle_write, trace);
           }
           close(event.fd);
         }
       }
     }
 
-    rethrow_check(trace);
+    try(trace);
     handle_timeout(handler, &wake_after_seconds, trace);
-    rethrow_static(messages.main.cannot_handle_timeout, trace);
+    finally_rethrow_static(messages.main.cannot_handle_timeout, trace);
 
     if (!ok(trace)) {
       return fail(trace);

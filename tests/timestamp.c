@@ -26,7 +26,10 @@ void test_timestamp(struct trace *trace) {
   assert(strlen(timestamp) == 14);
   free(timestamp);
 
+  try(trace);
   timestamp = get_timestamp("%Y", 3, trace);
   assert(catch_static(messages.timestamp.overflow, trace));
+  finally(trace);
+
   free(timestamp);
 }
