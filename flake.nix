@@ -37,7 +37,7 @@
                 inherit (pkgs) lua5_4 lua5_3 lua5_2;
                 withoutLua = null;
               };
-            musl = if system == utils.system.i686-linux then { } else {
+            musl = if !pkgs.stdenv.buildPlatform.is64bit then { } else {
               muslWithoutLua = mkCheck {
                 inherit (pkgs.pkgsMusl) callPackage;
                 lua = null;
