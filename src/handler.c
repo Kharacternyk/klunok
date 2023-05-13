@@ -143,7 +143,8 @@ static bool should_push_to_linq(pid_t pid, const char *path,
       get_excluded_paths(handler->config),
       get_history_paths(handler->config),
   };
-  struct sieved_path *sieved_path = sieve(path, 3, sets, trace);
+  struct sieved_path *sieved_path =
+      sieve(path, handler->common_parent_path_length, sets, 3, trace);
 
   if (!ok(trace)) {
     free_sieved_path(sieved_path);
@@ -268,11 +269,18 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     bool is_history_path = false;
     size_t offset = 0;
     struct buffer_view *path_view = create_buffer_view(path, trace);
-    if (ok(trace) && is_within(path_view, get_history_paths(handler->config))) {
+    struct buffer_view *relative_path_view =
+        create_buffer_view(path + handler->common_parent_path_length, trace);
+
+    if (ok(trace) &&
+        (is_within(path_view, get_history_paths(handler->config)) ||
+         is_within(relative_path_view, get_history_paths(handler->config)))) {
       is_history_path = true;
       offset = read_counter(get_string(get_view(offset_path)), trace);
     }
+
     free_buffer_view(path_view);
+    free_buffer_view(relative_path_view);
 
     if (!ok(trace)) {
       free(path);
