@@ -238,18 +238,21 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
                     struct trace *trace) {
   while (ok(trace)) {
     try(trace);
-    char *path = get_head(handler->linq, retry_after_seconds, trace);
+    char *absolute_path = get_head(handler->linq, retry_after_seconds, trace);
     finally_rethrow_static(messages.handler.linq.cannot_get_head, trace);
     if (*retry_after_seconds || !ok(trace)) {
       return;
     }
+
+    const char *relative_path =
+        absolute_path + handler->common_parent_path_length;
 
     char *base_version =
         get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
     if (strchr(base_version, '/')) {
       throw_context(base_version, trace);
       throw_static(messages.handler.version.has_slashes, trace);
-      free(path);
+      free(absolute_path);
       free(base_version);
       return;
     }
@@ -257,39 +260,41 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     struct buffer *store_path = create_buffer(trace);
     concat_string(get_store_root(handler->config), store_path, trace);
     concat_char('/', store_path, trace);
-    concat_string(path + handler->common_parent_path_length, store_path, trace);
+    concat_string(relative_path, store_path, trace);
     concat_char('/', store_path, trace);
     concat_string(base_version, store_path, trace);
     free(base_version);
 
     struct buffer *offset_path = create_buffer(trace);
     concat_string(get_offset_store_root(handler->config), offset_path, trace);
-    concat_string(path, offset_path, trace);
+    concat_char('/', offset_path, trace);
+    concat_string(relative_path, offset_path, trace);
 
     bool is_history_path = false;
     size_t offset = 0;
-    struct buffer_view *path_view = create_buffer_view(path, trace);
+    struct buffer_view *absolute_path_view =
+        create_buffer_view(absolute_path, trace);
     struct buffer_view *relative_path_view =
-        create_buffer_view(path + handler->common_parent_path_length, trace);
+        create_buffer_view(relative_path, trace);
 
     if (ok(trace) &&
-        (is_within(path_view, get_history_paths(handler->config)) ||
+        (is_within(absolute_path_view, get_history_paths(handler->config)) ||
          is_within(relative_path_view, get_history_paths(handler->config)))) {
       is_history_path = true;
       offset = read_counter(get_string(get_view(offset_path)), trace);
     }
 
-    free_buffer_view(path_view);
+    free_buffer_view(absolute_path_view);
     free_buffer_view(relative_path_view);
 
     if (!ok(trace)) {
-      free(path);
+      free(absolute_path);
       free_buffer(store_path);
       free_buffer(offset_path);
       return;
     }
 
-    const char *extension = get_file_extension(path);
+    const char *extension = get_file_extension(relative_path);
     size_t store_path_base_length = get_length(get_view(store_path));
     size_t duplicate_count = 0;
 
@@ -299,8 +304,11 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       concat_string(extension, store_path, trace);
 
       try(trace);
-      size_t new_offset =
-          copy_file(get_string(get_view(store_path)), path, offset, trace);
+      size_t new_offset = copy_file(get_string(get_view(store_path)),
+                                    absolute_path, offset, trace);
+      if (!is_history_path) {
+        new_offset = 0;
+      }
       if (catch_static(messages.copy.source_does_not_exist, trace)) {
         event = get_event_queue_head_deleted(handler->config);
       } else if (catch_static(messages.copy.source_permission_denied, trace)) {
@@ -318,17 +326,13 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
       }
       finally(trace);
 
-      if (!is_history_path) {
-        new_offset = 0;
-      }
-
       if (ok(trace)) {
         pop_head(handler->linq, trace);
         break;
       } else {
-        throw_context(path, trace);
+        throw_context(absolute_path, trace);
         throw_static(messages.handler.store.cannot_copy, trace);
-        free(path);
+        free(absolute_path);
         free_buffer(store_path);
         free_buffer(offset_path);
         return;
@@ -336,11 +340,11 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     }
 
     try(trace);
-    note(event, 0, path, handler->journal, trace);
+    note(event, 0, relative_path, handler->journal, trace);
     rethrow_context(get_journal_path(handler->config), trace);
     finally_rethrow_static(messages.handler.journal.cannot_write_to, trace);
 
-    free(path);
+    free(absolute_path);
     free_buffer(store_path);
     free_buffer(offset_path);
   }
