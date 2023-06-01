@@ -119,7 +119,7 @@ int main(int argc, const char **argv) {
   }
 
   pid_t self = getpid();
-  time_t wake_after_seconds = 0;
+  time_t pause = 0;
   struct pollfd pollfd = {
       .fd = fanotify_fd,
       .events = POLLIN,
@@ -127,7 +127,7 @@ int main(int argc, const char **argv) {
   };
 
   for (;;) {
-    int status = poll(&pollfd, 1, wake_after_seconds * 1000);
+    int status = poll(&pollfd, 1, pause * 1000);
     if (status < 0 || (status > 0 && pollfd.revents ^ POLLIN)) {
       throw_errno(trace);
       throw_static(messages.main.fanotify.cannot_poll, trace);
@@ -157,7 +157,7 @@ int main(int argc, const char **argv) {
     }
 
     try(trace);
-    handle_timeout(handler, &wake_after_seconds, trace);
+    pause = handle_timeout(handler, trace);
     finally_rethrow_static(messages.main.cannot_handle_timeout, trace);
 
     if (!ok(trace)) {

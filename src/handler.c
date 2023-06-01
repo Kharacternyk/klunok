@@ -234,27 +234,33 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   free(file_path);
 }
 
-void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
-                    struct trace *trace) {
+time_t handle_timeout(struct handler *handler, struct trace *trace) {
   while (ok(trace)) {
     try(trace);
-    char *absolute_path = get_head(handler->linq, retry_after_seconds, trace);
+    struct linq_head *head = get_head(handler->linq, trace);
     finally_rethrow_static(messages.handler.linq.cannot_get_head, trace);
-    if (*retry_after_seconds || !ok(trace)) {
-      return;
+    if (!ok(trace)) {
+      return 0;
+    }
+
+    time_t pause = get_pause(head);
+
+    if (pause) {
+      free_linq_head(head);
+      return pause;
     }
 
     const char *relative_path =
-        absolute_path + handler->common_parent_path_length;
+        get_path(head) + handler->common_parent_path_length;
 
     char *base_version =
         get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
     if (strchr(base_version, '/')) {
       throw_context(base_version, trace);
       throw_static(messages.handler.version.has_slashes, trace);
-      free(absolute_path);
+      free_linq_head(head);
       free(base_version);
-      return;
+      return 0;
     }
 
     struct buffer *store_path = create_buffer(trace);
@@ -273,7 +279,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     bool is_history_path = false;
     size_t offset = 0;
     struct buffer_view *absolute_path_view =
-        create_buffer_view(absolute_path, trace);
+        create_buffer_view(get_path(head), trace);
     struct buffer_view *relative_path_view =
         create_buffer_view(relative_path, trace);
 
@@ -288,10 +294,10 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     free_buffer_view(relative_path_view);
 
     if (!ok(trace)) {
-      free(absolute_path);
+      free_linq_head(head);
       free_buffer(store_path);
       free_buffer(offset_path);
-      return;
+      return 0;
     }
 
     const char *extension = get_file_extension(relative_path);
@@ -305,7 +311,7 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
 
       try(trace);
       size_t new_offset = copy_file(get_string(get_view(store_path)),
-                                    absolute_path, offset, trace);
+                                    get_path(head), offset, trace);
       if (!is_history_path) {
         new_offset = 0;
       }
@@ -330,12 +336,12 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
         pop_head(handler->linq, trace);
         break;
       } else {
-        throw_context(absolute_path, trace);
+        throw_context(get_path(head), trace);
         throw_static(messages.handler.store.cannot_copy, trace);
-        free(absolute_path);
+        free_linq_head(head);
         free_buffer(store_path);
         free_buffer(offset_path);
-        return;
+        return 0;
       }
     }
 
@@ -344,10 +350,12 @@ void handle_timeout(struct handler *handler, time_t *retry_after_seconds,
     rethrow_context(get_journal_path(handler->config), trace);
     finally_rethrow_static(messages.handler.journal.cannot_write_to, trace);
 
-    free(absolute_path);
+    free_linq_head(head);
     free_buffer(store_path);
     free_buffer(offset_path);
   }
+
+  return 0;
 }
 
 void free_handler(struct handler *handler) {

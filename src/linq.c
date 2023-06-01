@@ -24,6 +24,11 @@ struct linq {
   struct set *set;
 };
 
+struct linq_head {
+  char *path;
+  time_t pause;
+};
+
 static int dot_filter(const struct dirent *dirent) {
   const char *name = dirent->d_name;
   return !(name[0] == '.' &&
@@ -149,14 +154,15 @@ void push(const char *path, struct linq *linq, struct trace *trace) {
   free_buffer(link_buffer);
 }
 
-char *get_head(struct linq *linq, time_t *retry_after_seconds,
-               struct trace *trace) {
+struct linq_head *get_head(struct linq *linq, struct trace *trace) {
+  struct linq_head *head = TNULL(malloc(sizeof(struct linq_head)), trace);
   if (!ok(trace)) {
     return NULL;
   }
+
   if (!linq->size) {
-    *retry_after_seconds = -1;
-    return NULL;
+    head->pause = -1;
+    return head;
   }
 
   struct buffer *link = create_buffer(trace);
@@ -168,14 +174,15 @@ char *get_head(struct linq *linq, time_t *retry_after_seconds,
        trace);
   if (!ok(trace)) {
     free_buffer(link);
+    free(head);
     return NULL;
   }
 
   time_t link_age = time(NULL) - link_stat.st_mtime;
   if (link_age < linq->debounce_seconds) {
-    *retry_after_seconds = linq->debounce_seconds - link_age;
     free_buffer(link);
-    return NULL;
+    head->pause = linq->debounce_seconds - link_age;
+    return head;
   }
 
   char *target = read_entry(get_string(get_view(link)), linq, trace);
@@ -185,14 +192,23 @@ char *get_head(struct linq *linq, time_t *retry_after_seconds,
 
   if (ok(trace) && get_count(target_view, linq->set) > 1) {
     free(target);
+    free(head);
     free_buffer_view(target_view);
     pop_head(linq, trace);
-    return get_head(linq, retry_after_seconds, trace);
+    return get_head(linq, trace);
   }
 
   free_buffer_view(target_view);
-  *retry_after_seconds = 0;
-  return target;
+
+  if (!ok(trace)) {
+    free(head);
+    return NULL;
+  }
+
+  head->pause = 0;
+  head->path = target;
+
+  return head;
 }
 
 void pop_head(struct linq *linq, struct trace *trace) {
@@ -222,6 +238,10 @@ void pop_head(struct linq *linq, struct trace *trace) {
   free_buffer_view(target_view);
 }
 
+const char *get_path(const struct linq_head *head) { return head->path; }
+
+time_t get_pause(const struct linq_head *head) { return head->pause; }
+
 void redebounce(time_t debounce_seconds, struct linq *linq) {
   linq->debounce_seconds = debounce_seconds;
 }
@@ -231,5 +251,14 @@ void free_linq(struct linq *linq) {
     close(linq->dirfd);
     free_set(linq->set);
     free(linq);
+  }
+}
+
+void free_linq_head(struct linq_head *head) {
+  if (head) {
+    if (!head->pause) {
+      free(head->path);
+    }
+    free(head);
   }
 }

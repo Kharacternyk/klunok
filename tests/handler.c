@@ -17,10 +17,9 @@ void test_handler(struct trace *trace) {
   struct handler *handler = load_handler(CONFIG, 1, trace);
   assert(ok(trace));
 
-  time_t retry_after_seconds = 0;
-  handle_timeout(handler, &retry_after_seconds, trace);
+  time_t pause = handle_timeout(handler, trace);
   assert(ok(trace));
-  assert(retry_after_seconds < 0);
+  assert(pause < 0);
 
   int fd = open(CONFIG, O_RDONLY);
   assert(fd >= 0);
@@ -36,9 +35,9 @@ void test_handler(struct trace *trace) {
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
 
-  handle_timeout(handler, &retry_after_seconds, trace);
+  pause = handle_timeout(handler, trace);
   assert(ok(trace));
-  assert(retry_after_seconds < 0);
+  assert(pause < 0);
 
   assert(access(IN_STORE(F1) ".lua", F_OK) == 0);
   assert(access(IN_STORE(F2) ".lua", F_OK) == 0);
@@ -46,9 +45,9 @@ void test_handler(struct trace *trace) {
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
 
-  handle_timeout(handler, &retry_after_seconds, trace);
+  pause = handle_timeout(handler, trace);
   assert(ok(trace));
-  assert(retry_after_seconds < 0);
+  assert(pause < 0);
 
   assert(access(IN_STORE(F2) "-1.lua", F_OK) == 0);
 
@@ -60,9 +59,9 @@ void test_handler(struct trace *trace) {
 
   assert(unlink(EMPTY) >= 0);
 
-  handle_timeout(handler, &retry_after_seconds, trace);
+  pause = handle_timeout(handler, trace);
   assert(ok(trace));
-  assert(retry_after_seconds < 0);
+  assert(pause < 0);
   assert(access(IN_STORE(EMPTY), F_OK) != 0);
 
   close(fd);
@@ -71,9 +70,9 @@ void test_handler(struct trace *trace) {
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
 
-  handle_timeout(handler, &retry_after_seconds, trace);
+  pause = handle_timeout(handler, trace);
   assert(ok(trace));
-  assert(retry_after_seconds < 0);
+  assert(pause < 0);
   assert(access(IN_STORE(EMPTY), F_OK) != 0);
 
   close(fd);
@@ -87,7 +86,7 @@ void test_handler(struct trace *trace) {
   assert(ok(trace));
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
-  handle_timeout(handler, &retry_after_seconds, trace);
+  handle_timeout(handler, trace);
   assert(ok(trace));
   assert(access(IN_STORE(CONFIG_BASE) ".lua", F_OK) == 0);
 
