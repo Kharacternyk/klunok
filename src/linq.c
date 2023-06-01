@@ -159,26 +159,27 @@ char *get_head(struct linq *linq, time_t *retry_after_seconds,
     return NULL;
   }
 
-  struct buffer *link_buffer = create_buffer(trace);
-  concat_size(linq->head_index, link_buffer, trace);
-  char *link = free_outer_buffer(link_buffer);
+  struct buffer *link = create_buffer(trace);
+  concat_size(linq->head_index, link, trace);
 
   struct stat link_stat;
-  TNEG(fstatat(linq->dirfd, link, &link_stat, AT_SYMLINK_NOFOLLOW), trace);
+  TNEG(fstatat(linq->dirfd, get_string(get_view(link)), &link_stat,
+               AT_SYMLINK_NOFOLLOW),
+       trace);
   if (!ok(trace)) {
-    free(link);
+    free_buffer(link);
     return NULL;
   }
 
   time_t link_age = time(NULL) - link_stat.st_mtime;
   if (link_age < linq->debounce_seconds) {
     *retry_after_seconds = linq->debounce_seconds - link_age;
-    free(link);
+    free_buffer(link);
     return NULL;
   }
 
-  char *target = read_entry(link, linq, trace);
-  free(link);
+  char *target = read_entry(get_string(get_view(link)), linq, trace);
+  free_buffer(link);
 
   struct buffer_view *target_view = create_buffer_view(target, trace);
 
@@ -199,12 +200,11 @@ void pop_head(struct linq *linq, struct trace *trace) {
     return;
   }
   assert(linq->size);
-  struct buffer *link_buffer = create_buffer(trace);
-  concat_size(linq->head_index, link_buffer, trace);
-  char *link = free_outer_buffer(link_buffer);
-  char *target = read_entry(link, linq, trace);
+  struct buffer *link = create_buffer(trace);
+  concat_size(linq->head_index, link, trace);
+  char *target = read_entry(get_string(get_view(link)), linq, trace);
 
-  TNEG(unlinkat(linq->dirfd, link, 0), trace);
+  TNEG(unlinkat(linq->dirfd, get_string(get_view(link)), 0), trace);
 
   struct buffer_view *target_view = create_buffer_view(target, trace);
 
@@ -218,7 +218,7 @@ void pop_head(struct linq *linq, struct trace *trace) {
     }
   }
   free(target);
-  free(link);
+  free_buffer(link);
   free_buffer_view(target_view);
 }
 
