@@ -1,8 +1,13 @@
 struct trace;
 
-struct params *parse_params(int argc, const char **argv, struct trace *trace);
-const char *get_config_path(const struct params *params);
-const char *get_privilege_dropping_path(const struct params *params);
-const struct list *get_write_mounts(const struct params *params);
-const struct list *get_exec_mounts(const struct params *params);
+struct params *parse_params(int argc, const char **argv, struct trace *trace)
+    __attribute__((warn_unused_result));
+const char *get_config_path(const struct params *params)
+    __attribute__((pure, warn_unused_result));
+const char *get_privilege_dropping_path(const struct params *params)
+    __attribute__((pure, warn_unused_result));
+const struct list *get_write_mounts(const struct params *params)
+    __attribute__((pure, warn_unused_result));
+const struct list *get_exec_mounts(const struct params *params)
+    __attribute__((pure, warn_unused_result));
 void free_params(struct params *params);

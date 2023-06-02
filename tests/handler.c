@@ -86,7 +86,8 @@ void test_handler(struct trace *trace) {
   assert(ok(trace));
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
-  handle_timeout(handler, trace);
+  pause = handle_timeout(handler, trace);
+  assert(pause < 0);
   assert(ok(trace));
   assert(access(IN_STORE(CONFIG_BASE) ".lua", F_OK) == 0);
 

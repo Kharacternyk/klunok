@@ -1,9 +1,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct trace *create_trace();
+struct trace *create_trace() __attribute__((warn_unused_result));
 
-bool ok(const struct trace *trace);
+bool ok(const struct trace *trace) __attribute__((pure, warn_unused_result));
 void try(struct trace *trace);
 
 void throw_static(const char *message, struct trace *trace);
