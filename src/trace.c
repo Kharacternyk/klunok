@@ -38,8 +38,6 @@ static void pop_trace_message(struct trace *trace) {
 
 static void throw_common(const char *message, bool is_dynamic, bool is_context,
                          struct trace *trace) {
-  assert(message);
-  assert(trace);
   assert(is_dynamic || !is_context);
   struct frame *frame = malloc(sizeof(struct frame));
   if (!frame) {
@@ -76,7 +74,6 @@ void throw_context(const char *message, struct trace *trace) {
 void throw_errno(struct trace *trace) { throw_dynamic(strerror(errno), trace); }
 
 bool ok(const struct trace *trace) {
-  assert(trace);
   return !trace->head && !trace->dropped_frame_count;
 }
 
@@ -89,8 +86,6 @@ void try(struct trace *trace) {
 }
 
 bool catch_static(const char *message, struct trace *trace) {
-  assert(message);
-  assert(trace);
   if (trace->dropped_frame_count || trace->post_throw_depth) {
     return false;
   }
@@ -116,7 +111,6 @@ static bool decrement_depth(struct trace *trace) {
 }
 
 void finally_catch_all(struct trace *trace) {
-  assert(trace);
   trace->dropped_frame_count = 0;
   while (trace->head) {
     pop_trace_message(trace);
