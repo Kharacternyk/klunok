@@ -1,5 +1,51 @@
 # Configuration
 
+Klunok can be configured with the Lua programming language.
+Settings are global Lua variables assigned in a file.
+Here is an example of the content of the configuration file:
+
+```lua
+debounce_seconds = 5
+editors['emacs-28.2'] = true
+```
+
+The file is passed to Klunok via the `-c` command-line option,
+like this:
+
+```bash
+klunok -c ~/.config/klunok.lua
+```
+
+This page documents the available settings, their types
+and default values.
+
+Configuration parsing code is extracted from this page
+to ensure that the documentation is always up to date.
+This imposes a certain structure on this page.
+Lua code blocks titled `pre-config` are executed before the passed configuration file.
+This blocks assign static default values to some settings.
+You can use this values in your configuration file, like this:
+
+```lua
+debounce_seconds = debounce_seconds * 2
+prefix_var = prefix .. '/volatile'
+```
+
+Lua code blocks titled `post-config` are executed after the passed configuration file.
+This blocks invoke the `declare` function.
+The invocations specify the name of a setting,
+its dynamically computed default value and its type.
+Here is a sample invocation:
+
+```lua
+declare('prefix_var', prefix .. '/var', is_string)
+```
+
+This invocation means that the setting called `prefix_var` must be a string,
+and if it's not set in the configuration file,
+its value is dynamically computed as string `/var` concatenated to
+the value of the `prefix` setting.
+
 ## Setting declaration
 
 ```lua title=post-config
