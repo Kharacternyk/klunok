@@ -8,5 +8,5 @@ const struct list_item *peek(const struct list *list)
 const struct list_item *get_next(const struct list_item *item)
     __attribute__((pure, nonnull, warn_unused_result));
 const char *get_value(const struct list_item *item)
-    __attribute__((pure, nonnull, warn_unused_result));
+    __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 void free_list(struct list *list);
