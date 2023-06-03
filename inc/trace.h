@@ -3,23 +3,30 @@
 
 struct trace *create_trace() __attribute__((warn_unused_result));
 
-bool ok(const struct trace *trace) __attribute__((pure, warn_unused_result));
-void try(struct trace *trace);
+bool ok(const struct trace *trace)
+    __attribute__((pure, nonnull, warn_unused_result));
+void try(struct trace *trace) __attribute__((nonnull));
 
-void throw_static(const char *message, struct trace *trace);
-void throw_dynamic(const char *message, struct trace *trace);
-void throw_context(const char *message, struct trace *trace);
-void throw_errno(struct trace *trace);
+void throw_static(const char *message, struct trace *trace)
+    __attribute__((nonnull));
+void throw_dynamic(const char *message, struct trace *trace)
+    __attribute__((nonnull));
+void throw_context(const char *message, struct trace *trace)
+    __attribute__((nonnull));
+void throw_errno(struct trace *trace) __attribute__((nonnull, cold));
 
-bool catch_static(const char *message, struct trace *trace);
+bool catch_static(const char *message, struct trace *trace)
+    __attribute__((nonnull));
 
-void finally(struct trace *trace);
-void finally_catch_all(struct trace *trace);
-void finally_rethrow_static(const char *message, struct trace *trace);
+void finally(struct trace *trace) __attribute__((nonnull));
+void finally_catch_all(struct trace *trace) __attribute__((nonnull));
+void finally_rethrow_static(const char *message, struct trace *trace)
+    __attribute__((nonnull));
 
-void rethrow_context(const char *message, struct trace *trace);
+void rethrow_context(const char *message, struct trace *trace)
+    __attribute__((nonnull));
 
-void unwind(int fd, const struct trace *trace);
+void unwind(int fd, const struct trace *trace) __attribute__((nonnull, cold));
 
 #define TNEG(call, trace)                                                      \
   ({                                                                           \

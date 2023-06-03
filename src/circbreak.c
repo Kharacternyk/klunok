@@ -26,9 +26,6 @@ struct circuit_breaker *create_circuit_breaker(time_t seconds,
 }
 
 void arm(const struct circuit_breaker *circuit_breaker) {
-  if (!circuit_breaker) {
-    return;
-  }
   struct itimerspec itimerspec = {
       .it_value.tv_sec = circuit_breaker->seconds,
   };
@@ -36,9 +33,6 @@ void arm(const struct circuit_breaker *circuit_breaker) {
 }
 
 void disarm(const struct circuit_breaker *circuit_breaker) {
-  if (!circuit_breaker) {
-    return;
-  }
   struct itimerspec itimerspec = {};
   assert(timer_settime(circuit_breaker->id, 0, &itimerspec, NULL) >= 0);
 }

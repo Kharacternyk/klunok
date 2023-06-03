@@ -67,6 +67,8 @@ void remove_empty_parents(const char *original_path, struct trace *trace) {
 static bool is_separator(char c) { return !c || c == '/'; }
 
 size_t get_common_parent_path_length(const char *first, const char *second) {
+  assert(first);
+  assert(second);
   assert(*first == '/');
   assert(*first == *second);
 
