@@ -133,8 +133,8 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   free_buffer_view(exe_filename_view);
 }
 
-static bool should_push_to_linq(pid_t pid, const char *path,
-                                struct handler *handler, struct trace *trace) {
+static bool push_to_linq(pid_t pid, const char *path, struct handler *handler,
+                         struct trace *trace) {
   if (!ok(trace)) {
     return false;
   }
@@ -160,8 +160,16 @@ static bool should_push_to_linq(pid_t pid, const char *path,
 
   free_sieved_path(sieved_path);
 
-  return history_end || (get_bit(pid, handler->editor_pid_bitmap) &&
-                         included_end >= excluded_end);
+  if (history_end || (get_bit(pid, handler->editor_pid_bitmap) &&
+                      included_end >= excluded_end)) {
+    try(trace);
+    push(path, handler->linq, trace);
+    rethrow_context(path, trace);
+    finally_rethrow_static(messages.handler.linq.cannot_push, trace);
+    return true;
+  }
+
+  return false;
 }
 
 void handle_close_write(pid_t pid, int fd, struct handler *handler,
@@ -176,12 +184,8 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
 
   const char *event = get_event_close_write_not_by_editor(handler->config);
 
-  if (should_push_to_linq(pid, file_path, handler, trace)) {
+  if (push_to_linq(pid, file_path, handler, trace)) {
     event = get_event_close_write_by_editor(handler->config);
-    try(trace);
-    push(file_path, handler->linq, trace);
-    rethrow_context(file_path, trace);
-    finally_rethrow_static(messages.handler.linq.cannot_push, trace);
   }
 
   try(trace);
