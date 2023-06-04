@@ -17,28 +17,30 @@ void test_linq(struct trace *trace) {
   assert(get_pause(head) < 0);
   free_linq_head(head);
 
-  push(F1, linq, trace);
+  push(F1, 0, linq, trace);
   assert(ok(trace));
   head = get_head(linq, trace);
   assert(ok(trace));
   assert(!get_pause(head));
   assert(!strcmp(get_path(head), F1));
+  assert(!get_metadata(head));
   free_linq_head(head);
 
   pop_head(linq, trace);
   assert(ok(trace));
 
-  push(F1, linq, trace);
+  push(F1, 1, linq, trace);
   assert(ok(trace));
-  push(F2, linq, trace);
+  push(F2, 2, linq, trace);
   assert(ok(trace));
-  push(F1, linq, trace);
+  push(F1, 3, linq, trace);
   assert(ok(trace));
 
   head = get_head(linq, trace);
   assert(ok(trace));
   assert(!get_pause(head));
   assert(!strcmp(get_path(head), F2));
+  assert(get_metadata(head) == 2);
   free_linq_head(head);
 
   pop_head(linq, trace);
@@ -48,6 +50,7 @@ void test_linq(struct trace *trace) {
   assert(ok(trace));
   assert(!get_pause(head));
   assert(!strcmp(get_path(head), F1));
+  assert(get_metadata(head) == 3);
   free_linq_head(head);
 
   pop_head(linq, trace);
@@ -60,8 +63,8 @@ void test_linq(struct trace *trace) {
 
   free_linq(linq);
 
-  linq = load_linq("linq/tagged", 3600, 0, 0, trace);
-  push(F1, linq, trace);
+  linq = load_linq("linq/lag", 3600, 0, 0, trace);
+  push(F1, 0, linq, trace);
   assert(ok(trace));
   head = get_head(linq, trace);
   assert(ok(trace));

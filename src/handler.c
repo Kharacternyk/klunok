@@ -133,6 +133,8 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   free_buffer_view(exe_filename_view);
 }
 
+const size_t LINQ_META_HISTORY = 1;
+
 static bool push_to_linq(pid_t pid, const char *path, struct handler *handler,
                          struct trace *trace) {
   if (!ok(trace)) {
@@ -163,7 +165,7 @@ static bool push_to_linq(pid_t pid, const char *path, struct handler *handler,
   if (history_end || (get_bit(pid, handler->editor_pid_bitmap) &&
                       included_end >= excluded_end)) {
     try(trace);
-    push(path, handler->linq, trace);
+    push(path, history_end ? LINQ_META_HISTORY : 0, handler->linq, trace);
     rethrow_context(path, trace);
     finally_rethrow_static(messages.handler.linq.cannot_push, trace);
     return true;
@@ -280,22 +282,10 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     concat_char('/', offset_path, trace);
     concat_string(relative_path, offset_path, trace);
 
-    bool is_history_path = false;
-    size_t offset = 0;
-    struct buffer_view *absolute_path_view =
-        create_buffer_view(get_path(head), trace);
-    struct buffer_view *relative_path_view =
-        create_buffer_view(relative_path, trace);
-
-    if (ok(trace) &&
-        (is_within(absolute_path_view, get_history_paths(handler->config)) ||
-         is_within(relative_path_view, get_history_paths(handler->config)))) {
-      is_history_path = true;
-      offset = read_counter(get_string(get_view(offset_path)), trace);
-    }
-
-    free_buffer_view(absolute_path_view);
-    free_buffer_view(relative_path_view);
+    bool is_history_path = get_metadata(head) & LINQ_META_HISTORY;
+    size_t offset = is_history_path
+                        ? read_counter(get_string(get_view(offset_path)), trace)
+                        : 0;
 
     if (!ok(trace)) {
       free_linq_head(head);
