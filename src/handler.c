@@ -133,41 +133,65 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   free_buffer_view(exe_filename_view);
 }
 
-const size_t LINQ_META_HISTORY = 1;
+const size_t LINQ_META_IS_PROJECT = 1;
+const size_t LINQ_META_IS_HISTORY = 2;
+const size_t LINQ_META_PROJECT_OFFSET = 2;
 
-static bool push_to_linq(pid_t pid, const char *path, struct handler *handler,
+static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
                          struct trace *trace) {
   if (!ok(trace)) {
     return false;
   }
   const struct set *sets[] = {
+      get_project_roots(handler->config),
       get_included_paths(handler->config),
       get_excluded_paths(handler->config),
       get_history_paths(handler->config),
   };
   struct sieved_path *sieved_path =
-      sieve(path, handler->common_parent_path_length, sets, 3, trace);
+      sieve(path, handler->common_parent_path_length, sets, 4, trace);
 
   if (!ok(trace)) {
-    free_sieved_path(sieved_path);
     return false;
   }
 
   const char *const *ends = get_sieved_ends(sieved_path);
-  const char *included_end = ends[0];
-  const char *history_end = ends[2];
-  const char *excluded_end = ends[1] > get_hiding_dot(sieved_path)
-                                 ? ends[1]
+  const char *project_root_end = ends[0];
+  const char *included_end = ends[1];
+  const char *history_end = ends[3];
+  const char *excluded_end = ends[2] > get_hiding_dot(sieved_path)
+                                 ? ends[2]
                                  : get_hiding_dot(sieved_path);
 
   free_sieved_path(sieved_path);
 
   if (history_end || (get_bit(pid, handler->editor_pid_bitmap) &&
                       included_end >= excluded_end)) {
+    size_t metadata = 0;
+    if (history_end) {
+      metadata |= LINQ_META_IS_HISTORY;
+    }
+    if (project_root_end) {
+      metadata |= (project_root_end - path) << LINQ_META_PROJECT_OFFSET;
+    }
+
     try(trace);
-    push(path, history_end ? LINQ_META_HISTORY : 0, handler->linq, trace);
+    push(path, metadata, handler->linq, trace);
     rethrow_context(path, trace);
     finally_rethrow_static(messages.handler.linq.cannot_push, trace);
+
+    if (project_root_end) {
+      char original_end = *project_root_end;
+      path[project_root_end - path] = 0;
+
+      try(trace);
+      push(path, LINQ_META_IS_PROJECT, handler->linq, trace);
+      rethrow_context(path, trace);
+      finally_rethrow_static(messages.handler.linq.cannot_push, trace);
+
+      path[project_root_end - path] = original_end;
+    }
+
     return true;
   }
 
@@ -256,6 +280,13 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       return pause;
     }
 
+    if (get_metadata(head) & LINQ_META_IS_PROJECT) {
+      /*TODO*/
+      free_linq_head(head);
+      pop_head(handler->linq, trace);
+      continue;
+    }
+
     const char *relative_path =
         get_path(head) + handler->common_parent_path_length;
 
@@ -282,7 +313,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     concat_char('/', offset_path, trace);
     concat_string(relative_path, offset_path, trace);
 
-    bool is_history_path = get_metadata(head) & LINQ_META_HISTORY;
+    bool is_history_path = get_metadata(head) & LINQ_META_IS_HISTORY;
     size_t offset = is_history_path
                         ? read_counter(get_string(get_view(offset_path)), trace)
                         : 0;
