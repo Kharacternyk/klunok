@@ -26,6 +26,7 @@ struct linq {
 
 struct linq_head {
   char *target;
+  char *path;
   size_t metadata;
   time_t pause;
 };
@@ -54,7 +55,7 @@ static void free_entries(struct dirent **entries, size_t entry_count) {
 }
 
 static char *strip_metadata(char *target) {
-  while (target[0] == target[1]) {
+  while (target[1] == '/' || (target[1] == '.' && target[2] == '/')) {
     ++target;
   }
   return target;
@@ -150,6 +151,22 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
                              entry_length_guess, true, trace);
 }
 
+static void concat_metadata(struct buffer *buffer, size_t metadata,
+                            struct trace *trace) {
+  size_t bit_length = 0;
+
+  while (metadata >= 1 << bit_length) {
+    ++bit_length;
+  }
+
+  for (size_t i = 1; ok(trace) && i <= bit_length; ++i) {
+    concat_char('/', buffer, trace);
+    if (metadata & (1 << (bit_length - i))) {
+      concat_char('.', buffer, trace);
+    }
+  }
+}
+
 void push(const char *path, size_t metadata, struct linq *linq,
           struct trace *trace) {
   if (!ok(trace)) {
@@ -161,10 +178,7 @@ void push(const char *path, size_t metadata, struct linq *linq,
   concat_size(linq->head_index + linq->size, link_buffer, trace);
 
   struct buffer *target_buffer = create_buffer(trace);
-  /* FIXME This won't scale well for big metadata. */
-  for (size_t i = 0; ok(trace) && i < metadata; ++i) {
-    concat_char('/', target_buffer, trace);
-  }
+  concat_metadata(target_buffer, metadata, trace);
   concat_string(path, target_buffer, trace);
 
   TNEG(symlinkat(get_string(get_view(target_buffer)), linq->dirfd,
@@ -214,9 +228,13 @@ struct linq_head *get_head(struct linq *linq, struct trace *trace) {
 
   char *path = target;
   head->metadata = 0;
-  while (path[0] == path[1]) {
+  while (path[1] == '/' || (path[1] == '.' && path[2] == '/')) {
+    head->metadata *= 2;
     ++path;
-    ++head->metadata;
+    if (*path == '.') {
+      head->metadata += 1;
+      ++path;
+    }
   }
 
   struct buffer_view *path_view = create_buffer_view(path, trace);
@@ -238,6 +256,7 @@ struct linq_head *get_head(struct linq *linq, struct trace *trace) {
 
   head->pause = 0;
   head->target = target;
+  head->path = path;
 
   return head;
 }
@@ -274,9 +293,7 @@ void pop_head(struct linq *linq, struct trace *trace) {
   free_buffer(link);
 }
 
-const char *get_path(const struct linq_head *head) {
-  return head->target + head->metadata;
-}
+const char *get_path(const struct linq_head *head) { return head->path; }
 
 size_t get_metadata(const struct linq_head *head) { return head->metadata; }
 
