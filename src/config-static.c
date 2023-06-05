@@ -6,6 +6,8 @@
 #include <stdlib.h>
 
 static const char *const store_root = "./klunok/store";
+static const char *const project_store_root = "./klunok/projects";
+static const char *const unstable_project_store_root = "./klunok/var/projects";
 static const char *const queue_path = "./klunok/var/queue";
 static const char *const journal_path = "./klunok/var/journal";
 static const char *const offset_store_root = "./klunok/var/offsets";
@@ -49,6 +51,7 @@ static const char *const editors[] = {
     ".pluma-wrapped",
     ".xed-wrapped",
 };
+static const char *const project_roots[] = {};
 static const char *const history_paths[] = {};
 static const char *const excluded_paths[] = {};
 static const char *const included_paths[] = {};
@@ -62,6 +65,7 @@ static const char *const event_queue_head_stored = "";
 
 struct config {
   struct set *editors;
+  struct set *project_roots;
   struct set *history_paths;
   struct set *excluded_paths;
   struct set *included_paths;
@@ -88,6 +92,7 @@ struct config *load_config(const char *path, struct trace *trace) {
   }
 
   config->editors = load_set(editors, sizeof editors, trace);
+  config->project_roots = load_set(project_roots, sizeof project_roots, trace);
   config->history_paths = load_set(history_paths, sizeof history_paths, trace);
   config->excluded_paths =
       load_set(excluded_paths, sizeof excluded_paths, trace);
@@ -105,6 +110,10 @@ const struct set *get_editors(const struct config *config) {
   return config->editors;
 }
 
+const struct set *get_project_roots(const struct config *config) {
+  return config->project_roots;
+}
+
 const struct set *get_history_paths(const struct config *config) {
   return config->editors;
 }
@@ -118,6 +127,14 @@ const struct set *get_included_paths(const struct config *config) {
 }
 
 const char *get_store_root(const struct config *config) { return store_root; }
+
+const char *get_project_store_root(const struct config *config) {
+  return project_store_root;
+}
+
+const char *get_unstable_project_store_root(const struct config *config) {
+  return unstable_project_store_root;
+}
 
 const char *get_queue_path(const struct config *config) { return queue_path; }
 
@@ -186,6 +203,7 @@ const char *get_event_queue_head_stored(const struct config *config) {
 void free_config(struct config *config) {
   if (config) {
     free_set(config->editors);
+    free_set(config->project_roots);
     free_set(config->history_paths);
     free_set(config->excluded_paths);
     free_set(config->included_paths);

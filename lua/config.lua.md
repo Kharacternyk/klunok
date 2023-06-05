@@ -130,6 +130,22 @@ Root of the store.
 declare('store_root', prefix .. '/store', is_string)
 ```
 
+### `project_store_root`
+
+Root of the project store.
+
+```lua title=post-config
+declare('project_store_root', prefix .. '/projects', is_string)
+```
+
+### `unstable_project_store_root`
+
+Root of the unstable project store.
+
+```lua title=post-config
+declare('unstable_project_store_root', prefix_var .. '/projects', is_string)
+```
+
 ### `queue_path`
 
 Path to the queue (used for debouncing).
@@ -227,6 +243,22 @@ editors = {
 
 ```lua title=post-config
 declare('editors', nil, is_set_of_strings)
+```
+
+### `project_roots`
+
+Roots of projects.
+
+```lua title=example
+project_roots['/home/nazar/src/klunok'] = true
+```
+
+```lua title=pre-config
+project_roots = {}
+```
+
+```lua title=post-config
+declare('project_roots', nil, is_set_of_strings)
 ```
 
 ### `history_paths`

@@ -18,7 +18,15 @@ void check_default_config(struct config *config) {
   free_buffer_view(vi);
   free(trace);
 
+  assert(is_empty(get_project_roots(config)));
+  assert(is_empty(get_history_paths(config)));
+  assert(is_empty(get_excluded_paths(config)));
+  assert(is_empty(get_included_paths(config)));
+
   assert(!strcmp(get_store_root(config), "./klunok/store"));
+  assert(!strcmp(get_project_store_root(config), "./klunok/projects"));
+  assert(!strcmp(get_unstable_project_store_root(config),
+                 "./klunok/var/projects"));
   assert(!strcmp(get_queue_path(config), "./klunok/var/queue"));
   assert(!strcmp(get_journal_path(config), "./klunok/var/journal"));
   assert(!strcmp(get_offset_store_root(config), "./klunok/var/offsets"));

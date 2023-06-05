@@ -8,6 +8,8 @@ struct config *load_config(const char *path, struct trace *trace)
 
 const struct set *get_editors(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
+const struct set *get_project_roots(const struct config *config)
+    __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const struct set *get_history_paths(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const struct set *get_excluded_paths(const struct config *config)
@@ -15,6 +17,10 @@ const struct set *get_excluded_paths(const struct config *config)
 const struct set *get_included_paths(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const char *get_store_root(const struct config *config)
+    __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
+const char *get_project_store_root(const struct config *config)
+    __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
+const char *get_unstable_project_store_root(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const char *get_queue_path(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
