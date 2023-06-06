@@ -43,5 +43,10 @@ void test_buffer(struct trace *trace) {
   assert(!strcmp(S1 S2 "0", get_string(view)));
   assert(hash != get_hash(view));
 
+  concat_bytes("ABCDEF", 4, buffer, trace);
+  assert(ok(trace));
+  assert(!strcmp(S1 S2 "0ABCD", get_string(view)));
+  assert(hash != get_hash(view));
+
   free_buffer(buffer);
 }

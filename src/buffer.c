@@ -80,12 +80,20 @@ void concat_string(const char *string, struct buffer *buffer,
     return;
   }
 
-  size_t string_length = strlen(string);
-  size_t new_size = buffer->view.size + string_length;
+  concat_bytes(string, strlen(string), buffer, trace);
+}
+
+void concat_bytes(const char *bytes, size_t byte_count, struct buffer *buffer,
+                  struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
+
+  size_t new_size = buffer->view.size + byte_count;
   ensure_capacity(new_size, buffer, trace);
 
   if (ok(trace)) {
-    strcat(buffer->string, string);
+    strncat(buffer->string, bytes, byte_count);
     buffer->view.size = new_size;
   }
 }
@@ -93,7 +101,7 @@ void concat_string(const char *string, struct buffer *buffer,
 void concat_char(char c, struct buffer *buffer, struct trace *trace) {
   ensure_capacity(buffer->view.size + 1, buffer, trace);
   if (ok(trace)) {
-    buffer->string[buffer->view.size] = '\0';
+    buffer->string[buffer->view.size] = 0;
     buffer->string[buffer->view.size - 1] = c;
     ++buffer->view.size;
   }

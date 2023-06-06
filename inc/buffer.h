@@ -6,6 +6,8 @@ struct buffer *create_buffer(struct trace *trace)
     __attribute__((warn_unused_result));
 void concat_string(const char *string, struct buffer *buffer,
                    struct trace *trace);
+void concat_bytes(const char *bytes, size_t byte_count, struct buffer *buffer,
+                  struct trace *trace);
 void concat_char(char c, struct buffer *buffer, struct trace *trace);
 void concat_size(size_t size, struct buffer *buffer, struct trace *trace);
 void set_length(size_t length, struct buffer *buffer) __attribute__((nonnull));
