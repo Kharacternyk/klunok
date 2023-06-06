@@ -25,7 +25,7 @@ const char *get_unstable_project_store_root(const struct config *config)
 const char *get_queue_path(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const char *get_journal_path(const struct config *config)
-    __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
+    __attribute__((pure, nonnull, warn_unused_result));
 const char *get_offset_store_root(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const char *get_journal_timestamp_pattern(const struct config *config)
