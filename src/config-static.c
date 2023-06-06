@@ -115,7 +115,7 @@ const struct set *get_project_roots(const struct config *config) {
 }
 
 const struct set *get_history_paths(const struct config *config) {
-  return config->editors;
+  return config->history_paths;
 }
 
 const struct set *get_excluded_paths(const struct config *config) {
