@@ -10,6 +10,7 @@
 #include "journal.h"
 #include "linq.h"
 #include "messages.h"
+#include "parents.h"
 #include "set.h"
 #include "sieve.h"
 #include "timestamp.h"
@@ -330,6 +331,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     size_t duplicate_count = 0;
 
     const char *event = get_event_queue_head_stored(handler->config);
+    bool is_stored = false;
 
     for (;;) {
       concat_string(extension, store_path, trace);
@@ -354,6 +356,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
         continue;
       } else {
         write_counter(get_string(get_view(offset_path)), new_offset, trace);
+        is_stored = ok(trace);
       }
       finally(trace);
 
@@ -368,6 +371,36 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
         free_buffer(offset_path);
         return 0;
       }
+    }
+
+    size_t project_root_end_offset =
+        get_metadata(head) >> LINQ_META_PROJECT_OFFSET;
+
+    if (ok(trace) && project_root_end_offset && is_stored) {
+      size_t project_name_length = 0;
+      while (*(get_path(head) + project_root_end_offset - 1 -
+               project_name_length) != '/') {
+        ++project_name_length;
+      }
+
+      struct buffer *project_path = create_buffer(trace);
+      concat_string(get_unstable_project_store_root(handler->config),
+                    project_path, trace);
+      concat_char('/', project_path, trace);
+      concat_bytes(get_path(head) + project_root_end_offset -
+                       project_name_length,
+                   project_name_length, project_path, trace);
+      concat_string(get_path(head) + project_root_end_offset, project_path,
+                    trace);
+
+      if (ok(trace) && unlink(get_string(get_view(project_path))) < 0 &&
+          errno != ENOENT) {
+        throw_errno(trace);
+      }
+      create_parents(get_string(get_view(project_path)), trace);
+      TNEG(link(get_string(get_view(store_path)),
+                get_string(get_view(project_path))),
+           trace);
     }
 
     try(trace);
