@@ -2,9 +2,12 @@
 #include "messages.h"
 #include "parents.h"
 #include "trace.h"
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <fts.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -91,4 +94,52 @@ off_t copy_file(const char *destination, const char *source,
 
   close(in_fd);
   return source_offset;
+}
+
+void copy_shallow_tree(const char *destination, const char *source,
+                       struct trace *trace) {
+  int destination_fd = TNEG(open(destination, O_RDONLY), trace);
+  char *paths[] = {TNULL(strdup(source), trace), NULL};
+  FTS *fts = TNULL(
+      fts_open(paths, FTS_PHYSICAL | FTS_NOSTAT | FTS_NOCHDIR, NULL), trace);
+
+  if (!ok(trace)) {
+    if (destination_fd > 0) {
+      close(destination_fd);
+    }
+    free(*paths);
+    return;
+  }
+
+  assert(!strstr(destination, "//"));
+  size_t source_length = strlen(destination);
+
+  for (FTSENT *entry = fts_read(fts); entry && ok(trace);
+       entry = fts_read(fts)) {
+    const char *relative_path = entry->fts_path + source_length;
+    if (*relative_path == '/') {
+      ++relative_path;
+    }
+    switch (entry->fts_info) {
+    case FTS_D:
+      TNEG(mkdirat(destination_fd, relative_path, 0755), trace);
+      break;
+    case FTS_F:
+      TNEG(linkat(AT_FDCWD, entry->fts_path, destination_fd, relative_path, 0),
+           trace);
+      break;
+    case FTS_DNR:
+    case FTS_ERR:
+      throw_dynamic(strerror(entry->fts_errno), trace);
+      break;
+    }
+  }
+
+  if (ok(trace) && errno) {
+    throw_errno(trace);
+  }
+
+  fts_close(fts);
+  close(destination_fd);
+  free(*paths);
 }

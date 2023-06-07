@@ -282,7 +282,9 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     }
 
     if (get_metadata(head) & LINQ_META_IS_PROJECT) {
+      const char *project_name = strrchr(get_path(head), '/') + 1;
       /*TODO*/
+
       free_linq_head(head);
       pop_head(handler->linq, trace);
       continue;
@@ -360,10 +362,9 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       }
       finally(trace);
 
-      if (ok(trace)) {
-        pop_head(handler->linq, trace);
-        break;
-      } else {
+      pop_head(handler->linq, trace);
+
+      if (!ok(trace)) {
         throw_context(get_path(head), trace);
         throw_static(messages.handler.store.cannot_copy, trace);
         free_linq_head(head);
@@ -371,6 +372,8 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
         free_buffer(offset_path);
         return 0;
       }
+
+      break;
     }
 
     size_t project_root_end_offset =
