@@ -19,7 +19,7 @@ endforeach
 test_executable = executable(
   'klunok',
   test_sources,
-  dependencies: [lua, rt, dl],
+  dependencies: [lua, rt, fts, dl],
   c_args: '-DTEST_ROOT="' + meson.current_source_dir() + '"',
   link_args: '-Wl,--export-dynamic',
   include_directories: inc,

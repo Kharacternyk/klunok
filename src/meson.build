@@ -31,8 +31,7 @@ main_sources = sources + 'main.c'
 executable(
   'klunok',
   main_sources,
-  dependencies:
-  [lua, rt],
+  dependencies: [lua, rt, fts],
   include_directories: inc,
   install: true
 )
