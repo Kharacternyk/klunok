@@ -6,13 +6,13 @@
 #include "counter.h"
 #include "deref.h"
 #include "elfinterp.h"
-#include "extension.h"
 #include "journal.h"
 #include "linq.h"
 #include "messages.h"
 #include "parents.h"
 #include "set.h"
 #include "sieve.h"
+#include "storepath.h"
 #include "timestamp.h"
 #include "trace.h"
 #include <assert.h>
@@ -293,23 +293,19 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     const char *relative_path =
         get_path(head) + handler->common_parent_path_length;
 
-    char *base_version =
+    char *version =
         get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
-    if (strchr(base_version, '/')) {
-      throw_context(base_version, trace);
+    if (strchr(version, '/')) {
+      throw_context(version, trace);
       throw_static(messages.handler.version.has_slashes, trace);
       free_linq_head(head);
-      free(base_version);
+      free(version);
       return 0;
     }
 
-    struct buffer *store_path = create_buffer(trace);
-    concat_string(get_store_root(handler->config), store_path, trace);
-    concat_char('/', store_path, trace);
-    concat_string(relative_path, store_path, trace);
-    concat_char('/', store_path, trace);
-    concat_string(base_version, store_path, trace);
-    free(base_version);
+    struct store_path *store_path = create_store_path(
+        get_store_root(handler->config), relative_path, version, trace);
+    free(version);
 
     struct buffer *offset_path = create_buffer(trace);
     concat_string(get_offset_store_root(handler->config), offset_path, trace);
@@ -323,23 +319,17 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
 
     if (!ok(trace)) {
       free_linq_head(head);
-      free_buffer(store_path);
+      free_store_path(store_path);
       free_buffer(offset_path);
       return 0;
     }
-
-    const char *extension = get_file_extension(relative_path);
-    size_t store_path_base_length = get_length(get_view(store_path));
-    size_t duplicate_count = 0;
 
     const char *event = get_event_queue_head_stored(handler->config);
     bool is_stored = false;
 
     for (;;) {
-      concat_string(extension, store_path, trace);
-
       try(trace);
-      size_t new_offset = copy_file(get_string(get_view(store_path)),
+      size_t new_offset = copy_file(get_current_path(store_path),
                                     get_path(head), offset, trace);
       if (!is_history_path) {
         new_offset = 0;
@@ -350,11 +340,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
         event = get_event_queue_head_forbidden(handler->config);
       } else if (catch_static(messages.copy.destination_already_exists,
                               trace)) {
-        ++duplicate_count;
-        set_length(store_path_base_length, store_path);
-        /*FIXME configure me*/
-        concat_string("-", store_path, trace);
-        concat_size(duplicate_count, store_path, trace);
+        increment(store_path, trace);
         continue;
       } else {
         write_counter(get_string(get_view(offset_path)), new_offset, trace);
@@ -368,7 +354,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
         throw_context(get_path(head), trace);
         throw_static(messages.handler.store.cannot_copy, trace);
         free_linq_head(head);
-        free_buffer(store_path);
+        free_store_path(store_path);
         free_buffer(offset_path);
         return 0;
       }
@@ -401,7 +387,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
         throw_errno(trace);
       }
       create_parents(get_string(get_view(project_path)), trace);
-      TNEG(link(get_string(get_view(store_path)),
+      TNEG(link(get_current_path(store_path),
                 get_string(get_view(project_path))),
            trace);
     }
@@ -412,7 +398,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     finally_rethrow_static(messages.handler.journal.cannot_write_to, trace);
 
     free_linq_head(head);
-    free_buffer(store_path);
+    free_store_path(store_path);
     free_buffer(offset_path);
   }
 

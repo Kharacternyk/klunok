@@ -18,6 +18,7 @@ components = [
   'parents',
   'set',
   'sieve',
+  'storepath',
   'timestamp',
   'trace',
 ] + ('config-' + (lua.found() ? 'lua' : 'static'))
