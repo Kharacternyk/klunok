@@ -281,10 +281,43 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       return pause;
     }
 
+    char *version =
+        get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
+    if (ok(trace) && strchr(version, '/')) {
+      throw_context(version, trace);
+      throw_static(messages.handler.version.has_slashes, trace);
+    }
+    if (!ok(trace)) {
+      free_linq_head(head);
+      free(version);
+      return 0;
+    }
+
     if (get_metadata(head) & LINQ_META_IS_PROJECT) {
       const char *project_name = strrchr(get_path(head), '/') + 1;
-      /*TODO*/
+      struct store_path *store_path =
+          create_store_path(get_project_store_root(handler->config),
+                            project_name, version, trace);
+      struct buffer *unstable_path = create_buffer(trace);
+      concat_string(get_unstable_project_store_root(handler->config),
+                    unstable_path, trace);
+      concat_char('/', unstable_path, trace);
+      concat_string(project_name, unstable_path, trace);
 
+      while (ok(trace)) {
+        copy_shallow_tree(get_current_path(store_path),
+                          get_string(get_view(unstable_path)), trace);
+        if (catch_static(messages.copy.destination_already_exists, trace)) {
+          increment(store_path, trace);
+        } else {
+          catch_static(messages.copy.source_does_not_exist, trace);
+          catch_static(messages.copy.source_permission_denied, trace);
+          break;
+        }
+      }
+
+      free_store_path(store_path);
+      free_buffer(unstable_path);
       free_linq_head(head);
       pop_head(handler->linq, trace);
       continue;
@@ -292,16 +325,6 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
 
     const char *relative_path =
         get_path(head) + handler->common_parent_path_length;
-
-    char *version =
-        get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
-    if (strchr(version, '/')) {
-      throw_context(version, trace);
-      throw_static(messages.handler.version.has_slashes, trace);
-      free_linq_head(head);
-      free(version);
-      return 0;
-    }
 
     struct store_path *store_path = create_store_path(
         get_store_root(handler->config), relative_path, version, trace);

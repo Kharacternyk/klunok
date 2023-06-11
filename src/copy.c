@@ -98,10 +98,18 @@ off_t copy_file(const char *destination, const char *source,
 
 void copy_shallow_tree(const char *destination, const char *source,
                        struct trace *trace) {
+  create_parents(destination, trace);
+
+  if (ok(trace) && mkdir(destination, 0755)) {
+    if (errno == EEXIST) {
+      throw_static(messages.copy.destination_already_exists, trace);
+    } else {
+      throw_errno(trace);
+    }
+  }
+
   int destination_fd = TNEG(open(destination, O_RDONLY), trace);
   char *paths[] = {TNULL(strdup(source), trace), NULL};
-  FTS *fts = TNULL(
-      fts_open(paths, FTS_PHYSICAL | FTS_NOSTAT | FTS_NOCHDIR, NULL), trace);
 
   if (!ok(trace)) {
     if (destination_fd > 0) {
@@ -111,12 +119,27 @@ void copy_shallow_tree(const char *destination, const char *source,
     return;
   }
 
+  FTS *fts = fts_open(paths, FTS_PHYSICAL | FTS_NOSTAT | FTS_NOCHDIR, NULL);
+
+  if (!fts) {
+    if (errno == ENOENT) {
+      throw_static(messages.copy.source_does_not_exist, trace);
+    } else if (errno == EACCES) {
+      throw_static(messages.copy.source_permission_denied, trace);
+    } else {
+      throw_errno(trace);
+    }
+  }
+
   assert(!strstr(destination, "//"));
-  size_t source_length = strlen(destination);
+  size_t source_length = strlen(source);
 
   for (FTSENT *entry = fts_read(fts); entry && ok(trace);
        entry = fts_read(fts)) {
     const char *relative_path = entry->fts_path + source_length;
+    if (!*relative_path) {
+      continue;
+    }
     if (*relative_path == '/') {
       ++relative_path;
     }
@@ -124,7 +147,7 @@ void copy_shallow_tree(const char *destination, const char *source,
     case FTS_D:
       TNEG(mkdirat(destination_fd, relative_path, 0755), trace);
       break;
-    case FTS_F:
+    case FTS_NSOK:
       TNEG(linkat(AT_FDCWD, entry->fts_path, destination_fd, relative_path, 0),
            trace);
       break;
@@ -139,7 +162,9 @@ void copy_shallow_tree(const char *destination, const char *source,
     throw_errno(trace);
   }
 
-  fts_close(fts);
+  if (fts) {
+    fts_close(fts);
+  }
   close(destination_fd);
   free(*paths);
 }
