@@ -85,6 +85,14 @@ struct handler *load_handler(const char *config_path,
   return handler;
 }
 
+static void record_event(const char *event, pid_t pid, const char *path,
+                         const struct handler *handler, struct trace *trace) {
+  try(trace);
+  note(event, pid, path, handler->journal, trace);
+  rethrow_context(get_journal_path(handler->config), trace);
+  finally_rethrow_static(messages.handler.journal.cannot_write_to, trace);
+}
+
 void handle_open_exec(pid_t pid, int fd, struct handler *handler,
                       struct trace *trace) {
   if (!ok(trace)) {
@@ -125,10 +133,7 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
     free_buffer_view(file_path_view);
   }
 
-  try(trace);
-  note(event, pid, file_path, handler->journal, trace);
-  rethrow_context(get_journal_path(handler->config), trace);
-  finally_rethrow_static(messages.handler.journal.cannot_write_to, trace);
+  record_event(event, pid, file_path, handler, trace);
 
   free(file_path);
   free_buffer_view(exe_filename_view);
@@ -215,10 +220,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
     event = get_event_close_write_by_editor(handler->config);
   }
 
-  try(trace);
-  note(event, pid, file_path, handler->journal, trace);
-  rethrow_context(get_journal_path(handler->config), trace);
-  finally_rethrow_static(messages.handler.journal.cannot_write_to, trace);
+  record_event(event, pid, file_path, handler, trace);
 
   if (ok(trace) && handler->config_path &&
       !strcmp(file_path, handler->config_path)) {
@@ -415,10 +417,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
            trace);
     }
 
-    try(trace);
-    note(event, 0, relative_path, handler->journal, trace);
-    rethrow_context(get_journal_path(handler->config), trace);
-    finally_rethrow_static(messages.handler.journal.cannot_write_to, trace);
+    record_event(event, 0, relative_path, handler, trace);
 
     free_linq_head(head);
     free_store_path(store_path);
