@@ -388,14 +388,3 @@ declare('event_queue_head_deleted', nil, is_nil_or_string)
 declare('event_queue_head_forbidden', nil, is_nil_or_string)
 declare('event_queue_head_stored', nil, is_nil_or_string)
 ```
-
-## Compile-time settings
-
-### `circuit_breaker_seconds`
-
-Timespan that is given for the Lua configuration file to complete execution.
-If it exceeds this limit, there is likely an infinite loop, and the Klunok process is killed.
-
-```lua title=pre-config
-circuit_breaker_seconds = 5
-```

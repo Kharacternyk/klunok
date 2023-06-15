@@ -1,5 +1,6 @@
 #include "circbreak.h"
 #include "config.h"
+#include "constants.h"
 #include "set.h"
 #include "trace.h"
 #include <errno.h>
@@ -102,8 +103,8 @@ struct config *load_config(const char *path, struct trace *trace) {
     }
   }
 
-  struct circuit_breaker *circuit_breaker = create_circuit_breaker(
-      read_lua_size(lua, "circuit_breaker_seconds"), trace);
+  struct circuit_breaker *circuit_breaker =
+      create_circuit_breaker(CIRCUIT_BREAKER_SECONDS, trace);
 
   if (ok(trace)) {
     if (path) {
