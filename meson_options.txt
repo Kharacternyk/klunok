@@ -1,1 +1,2 @@
 option('lua', type: 'string', value: 'lua')
+option('watch_nix_store', type: 'boolean', value: false)

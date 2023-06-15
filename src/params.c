@@ -1,4 +1,5 @@
 #include "params.h"
+#include "constants.h"
 #include "list.h"
 #include "messages.h"
 #include "trace.h"
@@ -62,6 +63,9 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
 
   if (ok(trace) && !peek(exec_mounts)) {
     join("/", exec_mounts, trace);
+#ifdef WATCH_NIX_STORE
+    join("/nix/store", exec_mounts, trace);
+#endif
   }
   if (ok(trace) && !peek(write_mounts)) {
     join(".", write_mounts, trace);

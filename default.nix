@@ -15,6 +15,10 @@
 
   inherit doCheck;
 
+  mesonFlags = lib.optionals (!stdenv.targetPlatform.isStatic) [
+    "-Dwatch_nix_store=true"
+  ];
+
   nativeBuildInputs = [
     meson
     ninja

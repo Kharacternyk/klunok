@@ -1,4 +1,5 @@
 #include "elfinterp.h"
+#include "test-constants.h"
 #include "trace.h"
 #include <assert.h>
 #include <fcntl.h>

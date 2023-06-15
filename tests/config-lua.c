@@ -1,6 +1,7 @@
 #include "buffer.h"
 #include "config.h"
 #include "set.h"
+#include "test-constants.h"
 #include "trace.h"
 #include <assert.h>
 #include <stdlib.h>

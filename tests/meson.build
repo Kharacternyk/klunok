@@ -11,6 +11,10 @@ if valgrind.found()
   )
 endif
 
+test_constants = configuration_data()
+test_constants.set_quoted('TEST_ROOT', meson.current_source_dir())
+configure_file(output: 'test-constants.h', configuration: test_constants)
+
 test_sources = main_sources
 foreach component: components + 'config'
   test_sources += files(component + '.c')
@@ -20,7 +24,6 @@ test_executable = executable(
   'klunok',
   test_sources,
   dependencies: [lua, rt, fts, dl],
-  c_args: '-DTEST_ROOT="' + meson.current_source_dir() + '"',
   link_args: '-Wl,--export-dynamic',
   include_directories: inc,
 )
