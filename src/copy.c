@@ -70,7 +70,7 @@ off_t copy_file(const char *destination, const char *source,
   }
 
   while (in_fd_stat.st_size) {
-    size_t written_size =
+    ssize_t written_size =
         sendfile(out_fd, in_fd, &source_offset, in_fd_stat.st_size);
     if (written_size > 0) {
       in_fd_stat.st_size -= written_size;
