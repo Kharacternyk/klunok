@@ -62,7 +62,7 @@ int main(int argc, const char **argv) {
     if (TNEG(fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_MOUNT,
                            FAN_CLOSE_WRITE, 0, mount),
              trace) < 0) {
-      throw_context(mount, trace);
+      throw_context(get_value(write_mount), trace);
       throw_static(messages.main.mount.cannot_watch, trace);
       return fail(trace);
     }
@@ -90,7 +90,7 @@ int main(int argc, const char **argv) {
     if (TNEG(fanotify_mark(fanotify_fd, FAN_MARK_ADD | FAN_MARK_MOUNT,
                            FAN_OPEN_EXEC, 0, mount),
              trace) < 0) {
-      throw_context(mount, trace);
+      throw_context(get_value(exec_mount), trace);
       throw_static(messages.main.mount.cannot_watch, trace);
       return fail(trace);
     }
