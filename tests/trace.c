@@ -59,13 +59,17 @@ void test_trace(struct trace *trace) {
 
   try(trace);
   try(trace);
+  try(trace);
   throw_static(a, trace);
   finally_rethrow_static(b, trace);
   finally_rethrow_static(c, trace);
   assert(!catch_static(a, trace));
   assert(!catch_static(b, trace));
   assert(catch_static(c, trace));
+  finally(trace);
+  assert(ok(trace));
 
+  try(trace);
   try(trace);
   throw_static(a, trace);
   try(trace);
@@ -74,7 +78,10 @@ void test_trace(struct trace *trace) {
   assert(!catch_static(a, trace));
   assert(!catch_static(b, trace));
   assert(catch_static(c, trace));
+  finally(trace);
+  assert(ok(trace));
 
+  try(trace);
   throw_static(a, trace);
   try(trace);
   try(trace);
@@ -83,4 +90,6 @@ void test_trace(struct trace *trace) {
   assert(!catch_static(b, trace));
   assert(!catch_static(c, trace));
   assert(catch_static(a, trace));
+  finally(trace);
+  assert(ok(trace));
 }

@@ -86,6 +86,7 @@ void try(struct trace *trace) {
 }
 
 bool catch_static(const char *message, struct trace *trace) {
+  assert(trace->pre_throw_depth || trace->post_throw_depth);
   if (trace->dropped_frame_count || trace->post_throw_depth) {
     return false;
   }
@@ -111,6 +112,7 @@ static bool decrement_depth(struct trace *trace) {
 }
 
 void finally_catch_all(struct trace *trace) {
+  assert(trace->pre_throw_depth || trace->post_throw_depth);
   trace->dropped_frame_count = 0;
   while (trace->head) {
     pop_trace_message(trace);
