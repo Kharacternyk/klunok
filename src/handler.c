@@ -295,6 +295,10 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       return 0;
     }
 
+    const char *event = get_event_queue_head_stored(handler->config);
+    const char *relative_path =
+        get_path(head) + handler->common_parent_path_length;
+
     if (get_metadata(head) & LINQ_META_IS_PROJECT) {
       const char *project_name = strrchr(get_path(head), '/') + 1;
       struct store_path *store_path =
@@ -307,26 +311,31 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       concat_string(project_name, unstable_path, trace);
 
       while (ok(trace)) {
+        try(trace);
         copy_shallow_tree(get_current_path(store_path),
                           get_string(get_view(unstable_path)), trace);
         if (catch_static(messages.copy.destination_already_exists, trace)) {
+          finally(trace);
           increment(store_path, trace);
         } else {
-          catch_static(messages.copy.source_does_not_exist, trace);
-          catch_static(messages.copy.source_permission_denied, trace);
+          if (catch_static(messages.copy.source_does_not_exist, trace)) {
+            event = get_event_queue_head_deleted(handler->config);
+          } else if (catch_static(messages.copy.source_permission_denied,
+                                  trace)) {
+            event = get_event_queue_head_forbidden(handler->config);
+          };
+          finally(trace);
           break;
         }
       }
 
+      record_event(event, 0, relative_path, handler, trace);
+      pop_head(handler->linq, trace);
       free_store_path(store_path);
       free_buffer(unstable_path);
       free_linq_head(head);
-      pop_head(handler->linq, trace);
       continue;
     }
-
-    const char *relative_path =
-        get_path(head) + handler->common_parent_path_length;
 
     struct store_path *store_path = create_store_path(
         get_store_root(handler->config), relative_path, version, trace);
@@ -349,7 +358,6 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       return 0;
     }
 
-    const char *event = get_event_queue_head_stored(handler->config);
     bool is_stored = false;
 
     for (;;) {
@@ -359,7 +367,8 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       if (!is_history_path) {
         new_offset = 0;
       }
-      if (catch_static(messages.copy.source_does_not_exist, trace)) {
+      if (catch_static(messages.copy.source_does_not_exist, trace) ||
+          catch_static(messages.copy.source_is_not_regular_file, trace)) {
         event = get_event_queue_head_deleted(handler->config);
       } else if (catch_static(messages.copy.source_permission_denied, trace)) {
         event = get_event_queue_head_forbidden(handler->config);

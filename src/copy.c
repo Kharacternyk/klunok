@@ -69,6 +69,14 @@ off_t copy_file(const char *destination, const char *source,
     return 0;
   }
 
+  if (!S_ISREG(in_fd_stat.st_mode)) {
+    throw_static(messages.copy.source_is_not_regular_file, trace);
+    close(out_fd);
+    close(in_fd);
+    cleanup(destination);
+    return 0;
+  }
+
   while (in_fd_stat.st_size) {
     ssize_t written_size =
         sendfile(out_fd, in_fd, &source_offset, in_fd_stat.st_size);

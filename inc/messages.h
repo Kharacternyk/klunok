@@ -12,6 +12,7 @@ struct translation {
     const char *cannot_remove_ancestor;
   } parents;
   struct {
+    const char *source_is_not_regular_file;
     const char *source_does_not_exist;
     const char *source_permission_denied;
     const char *destination_already_exists;
