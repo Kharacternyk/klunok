@@ -10,6 +10,9 @@ void test_config_static(struct trace *trace) {
   struct config *config = load_config(NULL, trace);
   assert(ok(trace));
   check_default_config(config);
+
+  try(trace);
   config = load_config("", trace);
   assert(catch_static(messages.config.is_static, trace));
+  finally(trace);
 }
