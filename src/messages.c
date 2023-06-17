@@ -1,4 +1,5 @@
 #include "messages.h"
+#include "constants.h"
 
 /* clang-format off */
 const struct translation messages = {
@@ -28,7 +29,7 @@ const struct translation messages = {
   },
   .params = {
     .unknown_option = "An unknown option has been passed",
-    .stray_option = "A stray option has been passed",
+    .stray_option = "An option without a required value has been passed",
     .redefined_option =
       "An option has been passed more than once, but it cannot have multiple values",
   },
@@ -73,6 +74,15 @@ const struct translation messages = {
     .mount = {
       .cannot_list = "Cannot list mount points",
       .cannot_watch = "Cannot watch a mount point",
+    },
+    .info = {
+      .version = "Klunok " VERSION ", Lua " LUA_VERSION
+#ifdef WATCH_NIX_STORE
+        ", compiled with Nix support",
+#else
+        ,
+#endif
+      .help = "TODO" /*FIXME*/,
     },
   },
 };

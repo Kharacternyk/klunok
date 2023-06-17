@@ -7,6 +7,8 @@
 #include <unistd.h>
 
 struct params {
+  bool is_version_requested;
+  bool is_help_requested;
   const char *config_path;
   const char *privilege_dropping_path;
   struct list *write_mounts;
@@ -19,7 +21,7 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
   struct list *exec_mounts = create_list(trace);
   char opt = 0;
 
-  for (int i = 1; i < argc && ok(trace); ++i) {
+  for (int i = 1; i < argc && ok(trace) && opt != 'h' && opt != 'v'; ++i) {
     switch (opt) {
     case 0:
       if (argv[i][0] != '-' || !argv[i][1] || argv[i][2]) {
@@ -62,8 +64,17 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
   }
 
   if (opt && ok(trace)) {
-    throw_context(argv[argc - 1], trace);
-    throw_static(messages.params.stray_option, trace);
+    switch (opt) {
+    case 'h':
+      params->is_help_requested = true;
+      break;
+    case 'v':
+      params->is_version_requested = true;
+      break;
+    default:
+      throw_context(argv[argc - 1], trace);
+      throw_static(messages.params.stray_option, trace);
+    }
   }
 
   if (ok(trace) && !peek(exec_mounts)) {
@@ -89,6 +100,14 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
   params->exec_mounts = exec_mounts;
   params->write_mounts = write_mounts;
   return params;
+}
+
+bool is_help_requested(const struct params *params) {
+  return params->is_help_requested;
+}
+
+bool is_version_requested(const struct params *params) {
+  return params->is_version_requested;
 }
 
 const char *get_config_path(const struct params *params) {

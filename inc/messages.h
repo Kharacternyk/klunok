@@ -70,6 +70,10 @@ struct translation {
       const char *cannot_list;
       const char *cannot_watch;
     } mount;
+    struct {
+      const char *version;
+      const char *help;
+    } info;
   } main;
 };
 
