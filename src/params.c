@@ -41,7 +41,7 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
       }
       break;
     case 'd':
-      if (params->config_path) {
+      if (params->privilege_dropping_path) {
         throw_context(argv[i - 1], trace);
         throw_static(messages.params.redefined_option, trace);
       } else {
