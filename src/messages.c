@@ -29,6 +29,8 @@ const struct translation messages = {
   .params = {
     .unknown_option = "An unknown option has been passed",
     .stray_option = "A stray option has been passed",
+    .redefined_option =
+      "An option has been passed more than once, but it cannot have multiple values",
   },
   .handler = {
     .version = {

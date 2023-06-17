@@ -30,12 +30,22 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
       }
       break;
     case 'c':
-      params->config_path = argv[i];
-      opt = 0;
+      if (params->config_path) {
+        throw_context(argv[i - 1], trace);
+        throw_static(messages.params.redefined_option, trace);
+      } else {
+        params->config_path = argv[i];
+        opt = 0;
+      }
       break;
     case 'd':
-      params->privilege_dropping_path = argv[i];
-      opt = 0;
+      if (params->config_path) {
+        throw_context(argv[i - 1], trace);
+        throw_static(messages.params.redefined_option, trace);
+      } else {
+        params->privilege_dropping_path = argv[i];
+        opt = 0;
+      }
       break;
     case 'w':
       join(argv[i], write_mounts, trace);

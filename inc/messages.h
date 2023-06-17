@@ -26,6 +26,7 @@ struct translation {
   struct {
     const char *unknown_option;
     const char *stray_option;
+    const char *redefined_option;
   } params;
   struct {
     struct {
