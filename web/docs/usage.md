@@ -26,7 +26,7 @@ Cannot initialize fanotify
 Klunok will drop privileges to the owner of the current working directory
 after initializing the fanotify API.
 The complete picture of security measures and implications is described in
-[the security section](security).
+[the security section](./advanced/security.md).
 
 Once Klunok successfully starts,
 it watches for file edits in the current working directory and its descendants.

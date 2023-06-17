@@ -1,3 +1,7 @@
+---
+sidebar_position: 5
+---
+
 # Configuration
 
 Klunok can be configured with the Lua programming language.
