@@ -45,11 +45,6 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
       join(argv[i], exec_mounts, trace);
       opt = 0;
       break;
-    case 'b':
-      join(argv[i], write_mounts, trace);
-      join(argv[i], exec_mounts, trace);
-      opt = 0;
-      break;
     default:
       throw_context(argv[i - 1], trace);
       throw_static(messages.params.unknown_option, trace);

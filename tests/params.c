@@ -12,8 +12,9 @@ void test_params(struct trace *trace) {
   const char *write_mount = "/home/nazar/src";
   const char *exec_mount = "/nix/store";
   const char *both_mount = "/home/nazar/.local/bin";
-  const char *argv[] = {"klunok",    "-c", config_path, "-d", drop_path, "-w",
-                        write_mount, "-e", exec_mount,  "-b", both_mount};
+  const char *argv[] = {"klunok",    "-c", config_path, "-d", drop_path,  "-w",
+                        write_mount, "-e", exec_mount,  "-e", both_mount, "-w",
+                        both_mount};
   int argc = sizeof argv / sizeof *argv;
 
   struct params *params = parse_params(argc, argv, trace);
