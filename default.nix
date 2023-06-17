@@ -23,11 +23,11 @@
     meson
     ninja
     pkg-config
-  ] ++ lib.optionals (stdenv.targetPlatform.libc == "musl") [
-    musl-fts
   ];
   buildInputs = [
     lua
+  ] ++ lib.optionals stdenv.targetPlatform.isMusl [
+    musl-fts
   ];
   checkInputs = [
     valgrind-light
