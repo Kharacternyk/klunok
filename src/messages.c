@@ -1,6 +1,15 @@
 #include "messages.h"
 #include "constants.h"
 
+#define BARE_VERSION_MESSAGE "Klunok " VERSION ", Lua " LUA_VERSION
+#define USAGE "klunok [-h | -v | -c PATH | -d PATH | -w PATH | -e PATH]..."
+
+#ifdef WATCH_NIX_STORE
+#define VERSION_MESSAGE BARE_VERSION_MESSAGE ", compiled with Nix support"
+#else
+#define VERSION_MESSAGE BARE_VERSION_MESSAGE
+#endif
+
 /* clang-format off */
 const struct translation messages = {
   .trace = {
@@ -58,6 +67,7 @@ const struct translation messages = {
   .main = {
     .cannot_bootstrap = "Cannot bootstrap",
     .out_of_memory = "There is not enough memory",
+    .cli_usage_violated = "Some of the command line arguments do not fit the usage",
     .cannot_parse_cli = "Cannot parse the command line arguments",
     .cannot_drop_privileges = "Cannot drop privileges",
     .cannot_load_handler = "Cannot load the event handler",
@@ -76,13 +86,9 @@ const struct translation messages = {
       .cannot_watch = "Cannot watch a mount point",
     },
     .info = {
-      .version = "Klunok " VERSION ", Lua " LUA_VERSION
-#ifdef WATCH_NIX_STORE
-        ", compiled with Nix support",
-#else
-        ,
-#endif
-      .help = "TODO" /*FIXME*/,
+      .version = VERSION_MESSAGE,
+      .usage = USAGE,
+      .help = VERSION_MESSAGE "\nUsage: " USAGE,
     },
   },
 };

@@ -71,9 +71,16 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
     case 'v':
       params->is_version_requested = true;
       break;
-    default:
+    case 'c':
+    case 'd':
+    case 'w':
+    case 'e':
       throw_context(argv[argc - 1], trace);
       throw_static(messages.params.stray_option, trace);
+      break;
+    default:
+      throw_context(argv[argc - 1], trace);
+      throw_static(messages.params.unknown_option, trace);
     }
   }
 

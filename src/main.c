@@ -33,6 +33,8 @@ int main(int argc, const char **argv) {
 
   struct params *params = parse_params(argc, argv, trace);
   if (!ok(trace)) {
+    throw_context(messages.main.info.usage, trace);
+    throw_static(messages.main.cli_usage_violated, trace);
     throw_static(messages.main.cannot_parse_cli, trace);
     return fail(trace);
   }

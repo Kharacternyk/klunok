@@ -53,6 +53,7 @@ struct translation {
   struct {
     const char *cannot_bootstrap;
     const char *out_of_memory;
+    const char *cli_usage_violated;
     const char *cannot_parse_cli;
     const char *cannot_drop_privileges;
     const char *cannot_load_handler;
@@ -72,6 +73,7 @@ struct translation {
     } mount;
     struct {
       const char *version;
+      const char *usage;
       const char *help;
     } info;
   } main;
