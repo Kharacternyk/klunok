@@ -2,8 +2,7 @@ const codeTheme = require("prism-react-renderer/themes/okaidia");
 
 const config = {
   title: "Klunok",
-  // TODO production url
-  url: "https://your-docusaurus-test-site.com",
+  url: "https://klunok.org",
   baseUrl: "/",
   presets: [
     [
