@@ -1,4 +1,4 @@
 .PHONY: web
 
 web:
-	cd web; yarn build
+	cd web; npm run build
