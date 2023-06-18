@@ -5,7 +5,7 @@ sidebar_label: Introduction
 
 import Logo from '../static/logo.svg';
 
-# <Logo alt="" height="auto" width="2em" style={{display: "inline", verticalAlign: "middle"}} /> Klunok
+# <Logo alt="" height="100%" width="2em" style={{display: "inline", verticalAlign: "middle"}} /> Klunok
 
 …is a smart versioning and automatic backup daemon for Linux.
 It keeps a versioned history of files that you edit,
