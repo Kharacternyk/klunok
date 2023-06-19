@@ -1,0 +1,5 @@
+/*.js
+    cache-control: max-age=31536000, immutable
+
+/*.css
+    cache-control: max-age=31536000, immutable
