@@ -2,8 +2,9 @@ const codeTheme = require("prism-react-renderer/themes/okaidia");
 
 const config = {
   title: "Klunok",
-  url: "https://klunok.org",
+  url: "https://klunok.org/",
   baseUrl: "/",
+  trailingSlash: false,
   presets: [
     [
       "classic",
