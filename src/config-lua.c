@@ -1,4 +1,3 @@
-#include "circbreak.h"
 #include "config.h"
 #include "constants.h"
 #include "set.h"
@@ -103,12 +102,8 @@ struct config *load_config(const char *path, struct trace *trace) {
     }
   }
 
-  struct circuit_breaker *circuit_breaker =
-      create_circuit_breaker(CIRCUIT_BREAKER_SECONDS, trace);
-
   if (ok(trace)) {
     if (path) {
-      arm(circuit_breaker);
       if (luaL_loadfile(lua, path) || lua_pcall(lua, 0, 0, 0) ||
           luaL_loadbuffer(lua, &_binary_lua_post_config_lua_start,
                           &_binary_lua_post_config_lua_end -
@@ -117,7 +112,6 @@ struct config *load_config(const char *path, struct trace *trace) {
           lua_pcall(lua, 0, 0, 0)) {
         throw_dynamic(lua_tostring(lua, -1), trace);
       }
-      disarm(circuit_breaker);
     } else if (luaL_loadbuffer(lua, &_binary_lua_post_config_lua_start,
                                &_binary_lua_post_config_lua_end -
                                    &_binary_lua_post_config_lua_start,
@@ -126,8 +120,6 @@ struct config *load_config(const char *path, struct trace *trace) {
       throw_dynamic(lua_tostring(lua, -1), trace);
     }
   }
-
-  free_circuit_breaker(circuit_breaker);
 
   config->editors = read_lua_set(lua, "editors", trace);
   config->project_roots = read_lua_set(lua, "project_roots", trace);

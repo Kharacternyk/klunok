@@ -33,6 +33,6 @@ foreach component: components
     component,
     test_executable,
     args: 'test_' + component.underscorify(),
-    should_fail: component == 'circbreak' or component == 'handler' and not lua.found(),
+    should_fail: component == 'handler' and not lua.found(),
   )
 endforeach

@@ -1,7 +1,6 @@
 components = [
   'bitmap',
   'buffer',
-  'circbreak',
   'copy',
   'counter',
   'deref',

@@ -1,3 +1,2 @@
 option('lua', type: 'string', value: 'lua')
 option('watch_nix_store', type: 'boolean', value: false)
-option('circuit_breaker_seconds', type: 'integer', min: 1, value: 5)
