@@ -36,4 +36,23 @@ it copies the file to the `klunok/store` directory.
 
 Here is a simple demo:
 
-<Asciinema src="/demo.cast" />
+<Asciinema src="/demo.cast">
+  <pre>
+$ ls
+$ sudo -b klunok
+$ ls
+klunok/
+$ ls klunok
+var/
+$ nano hello.txt
+$ ls
+hello.txt  klunok/
+$ ls klunok
+var/
+$ sleep 60
+$ ls klunok
+store/  var/
+$ cat klunok/store/hello.txt/v2023-06-17-15-07.txt
+Hello, World!
+  </pre>
+</Asciinema>
