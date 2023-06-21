@@ -89,8 +89,8 @@ The whole process may look like this:
 
 ```bash
 git clone https://github.com/Kharacternyk/klunok
-git checkout v1
 cd klunok
+git checkout v1
 meson setup build -Dbuildtype=release
 cd build
 sudo meson install
