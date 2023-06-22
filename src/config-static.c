@@ -5,12 +5,12 @@
 #include <messages.h>
 #include <stdlib.h>
 
-static const char *const store_root = "./klunok/store";
-static const char *const project_store_root = "./klunok/projects";
-static const char *const unstable_project_store_root = "./klunok/var/projects";
-static const char *const queue_path = "./klunok/var/queue";
-static const char *const journal_path = "./klunok/var/journal";
-static const char *const offset_store_root = "./klunok/var/offsets";
+static const char *const store_root = "klunok/store";
+static const char *const project_store_root = "klunok/projects";
+static const char *const unstable_project_store_root = "klunok/var/projects";
+static const char *const queue_path = "klunok/var/queue";
+static const char *const journal_path = "klunok/var/journal";
+static const char *const offset_store_root = "klunok/var/offsets";
 static const char *const journal_timestamp_pattern = "%Y-%m-%d-%H-%M";
 static const char *const version_pattern = "v%Y-%m-%d-%H-%M";
 static const size_t debounce_seconds = 60;
