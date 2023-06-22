@@ -11,6 +11,7 @@ const config = {
       {
         docs: {
           routeBasePath: "/",
+          breadcrumbs: false,
         },
         theme: {
           customCss: [require.resolve("./css/custom.css")],
