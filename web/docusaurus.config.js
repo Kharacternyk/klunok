@@ -12,7 +12,6 @@ const config = {
         docs: {
           routeBasePath: "/",
           breadcrumbs: false,
-          showLastUpdateTime: true,
         },
         theme: {
           customCss: [require.resolve("./css/custom.css")],
