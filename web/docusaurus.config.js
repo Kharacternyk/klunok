@@ -20,7 +20,6 @@ const config = {
     ],
   ],
   plugins: [
-    require.resolve("@cmfcmf/docusaurus-search-local"),
     () => ({
       configureWebpack: () => ({
         resolve: {
