@@ -36,6 +36,9 @@ const config = {
         src: "logo.svg",
       },
     },
+    colorMode: {
+      respectPrefersColorScheme: true,
+    },
     prism: {
       theme: codeTheme,
       additionalLanguages: ["lua"],
