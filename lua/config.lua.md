@@ -231,6 +231,37 @@ declare('version_pattern', 'v' .. journal_timestamp_pattern, is_string)
 
 ## Controlling which files are copied to the store up and how
 
+By default, every path is treated as being within `cluded_paths`,
+which means that it's copied to the store only if it's written to by
+an editor program and it's not hidden.
+
+Relative paths are interpreted relative to the common parent of directories
+monitored via
+[the `-w` command line option](./cli.md#-w-path-to-a-directory-that-should-be-monitored-for-edited-files).
+For example, if Klunok is invoked as
+`klunok -w /home/nazar/src /home/nazar/.config /home/backup`,
+relatives paths are interpreted relative to `/home/`.
+
+`history_paths`, `excluded_paths`, `included_paths` and `cluded_paths`
+can be paths not only to files, but also to directories.
+If a path is a directory,
+the setting applies to each file in the directory and its descendants.
+More specific paths override less specific ones.
+For example, let's consider this configuration:
+
+```lua title=example
+excluded_paths['/home/nazar'] = true
+included_paths['/home/nazar/src'] = true
+excluded_paths['/home/nazar/src/secret.txt'] = true
+```
+
+With this configuration:
+
+- `/home/nazar/file.txt` is excluded;
+- `/home/nazar/src/file.txt` is included;
+- `/home/nazar/src/project/file.txt` is included;
+- `/home/nazar/src/secret.txt` is excluded.
+
 ### `editors`
 
 Filenames of executables that are considered editors.
@@ -305,7 +336,7 @@ declare('history_paths', nil, is_set_of_strings)
 
 ### `excluded_paths`
 
-Paths excluded from copying to the store.
+Paths that are never copied to the store.
 
 ```lua title=example
 excluded_paths["/path/to/plain-text-passwords.txt"] = true -- not a good idea anyway
@@ -321,7 +352,8 @@ declare('excluded_paths', nil, is_set_of_strings)
 
 ### `included_paths`
 
-Paths included in copying to the store.
+Paths that are copied to the store regardless of the program that writes to them,
+and hence regardless of [the `editors` setting](#editors).
 
 ```lua title=example
 included_paths["/home/nazar/.config/nvim/init.vim"] = true
@@ -333,6 +365,30 @@ included_paths = {}
 
 ```lua title=post-config
 declare('included_paths', nil, is_set_of_strings)
+```
+
+### `cluded_paths`
+
+Paths that are copied to the store only if they are written to by an editor program and
+they are not hidden.
+Editor programs are defined in [the `editors` setting](#editors).
+Hidden files and directories have a name that begins with a dot, for example `.config`.
+
+This is the default, so this setting is mainly useful to:
+
+- override `history_paths`, `excluded_paths` and `included_paths`;
+- include files in hidden directories if the files themselves are not hidden, for example
+  specifying `cluded_paths['/home/nazar/.config'] = true` will allow
+  `/home/nazar/.config/klunok.lua` to be copied when written to by an editor program,
+  but `/home/nazar/.config/.klunok.lua` and `/home/nazar/.config/.klunok/config.lua`
+  will not be copied.
+
+```lua title=pre-config
+cluded_paths = {}
+```
+
+```lua title=post-config
+declare('cluded_paths', nil, is_set_of_strings)
 ```
 
 ## Projects
