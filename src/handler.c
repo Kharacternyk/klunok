@@ -139,9 +139,9 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   free_buffer_view(exe_filename_view);
 }
 
-const size_t LINQ_META_IS_PROJECT = 1;
-const size_t LINQ_META_IS_HISTORY = 2;
-const size_t LINQ_META_PROJECT_OFFSET = 2;
+static const size_t linq_meta_is_project = 1;
+static const size_t linq_meta_is_history = 2;
+static const size_t linq_meta_project_offset = 2;
 
 static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
                          struct trace *trace) {
@@ -204,10 +204,10 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
 
   size_t metadata = 0;
   if (is_history) {
-    metadata |= LINQ_META_IS_HISTORY;
+    metadata |= linq_meta_is_history;
   }
   if (project_root_end) {
-    metadata |= (project_root_end - path) << LINQ_META_PROJECT_OFFSET;
+    metadata |= (project_root_end - path) << linq_meta_project_offset;
   }
 
   try(trace);
@@ -220,7 +220,7 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
     path[project_root_end - path] = 0;
 
     try(trace);
-    push(path, LINQ_META_IS_PROJECT, handler->linq, trace);
+    push(path, linq_meta_is_project, handler->linq, trace);
     rethrow_context(path, trace);
     finally_rethrow_static(messages.handler.linq.cannot_push, trace);
 
@@ -325,7 +325,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     const char *relative_path =
         get_path(head) + handler->common_parent_path_length;
 
-    if (get_metadata(head) & LINQ_META_IS_PROJECT) {
+    if (get_metadata(head) & linq_meta_is_project) {
       const char *project_name = strrchr(get_path(head), '/') + 1;
       struct store_path *store_path =
           create_store_path(get_project_store_root(handler->config),
@@ -372,7 +372,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     concat_char('/', offset_path, trace);
     concat_string(relative_path, offset_path, trace);
 
-    bool is_history_path = get_metadata(head) & LINQ_META_IS_HISTORY;
+    bool is_history_path = get_metadata(head) & linq_meta_is_history;
     size_t offset = is_history_path
                         ? read_counter(get_string(get_view(offset_path)), trace)
                         : 0;
@@ -423,7 +423,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     }
 
     size_t project_root_end_offset =
-        get_metadata(head) >> LINQ_META_PROJECT_OFFSET;
+        get_metadata(head) >> linq_meta_project_offset;
 
     if (ok(trace) && project_root_end_offset && is_stored) {
       size_t project_name_length = 0;
