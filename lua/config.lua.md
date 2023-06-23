@@ -77,7 +77,7 @@ end
 
 `is_nil_or_string` accepts `nil` and strings.
 `nil` in Lua is a representation of absence of value.
-`nil` is not the same as an empty string `""`.
+`nil` is not the same as an empty string `''`.
 The description of a setting of this type will specify what exactly `nil` represents in the
 context of the setting.
 
@@ -352,7 +352,7 @@ Paths that are copied to the store regardless of the program that writes to them
 and hence regardless of [the `editors` setting](#editors).
 
 ```lua title=example
-included_paths["/home/nazar/.config/qutebrowser/bookmarks/urls"] = true
+included_paths['/home/nazar/.config/qutebrowser/bookmarks/urls'] = true
 ```
 
 ```lua title=pre-config
@@ -480,7 +480,7 @@ If prefix is not an empty string, it is separated from the
 rest of the logged line by a tab.
 
 ```lua title=pre-config
-event_queue_head_stored = ""
+event_queue_head_stored = ''
 ```
 
 ```lua title=post-config
