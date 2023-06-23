@@ -229,7 +229,7 @@ Pattern of file versions in the store.
 declare('version_pattern', 'v' .. journal_timestamp_pattern, is_string)
 ```
 
-## Controlling which files are copied to the store up and how
+## Controlling which files are copied to the store and how
 
 By default, every path is treated as being within `cluded_paths`,
 which means that it's copied to the store only if it's written to by
@@ -239,7 +239,7 @@ Relative paths are interpreted relative to the common parent of directories
 monitored via
 [the `-w` command line option](./cli.md#-w-path-to-a-directory-that-should-be-monitored-for-edited-files).
 For example, if Klunok is invoked as
-`klunok -w /home/nazar/src /home/nazar/.config /home/backup`,
+`klunok -w /home/nazar/src /home/nazar/.config /home/illia`,
 relatives paths are interpreted relative to `/home/`.
 
 `history_paths`, `excluded_paths`, `included_paths` and `cluded_paths`
@@ -249,7 +249,7 @@ the setting applies to each file in the directory and its descendants.
 More specific paths override less specific ones.
 For example, let's consider this configuration:
 
-```lua title=example
+```lua
 excluded_paths['/home/nazar'] = true
 included_paths['/home/nazar/src'] = true
 excluded_paths['/home/nazar/src/secret.txt'] = true
@@ -319,7 +319,7 @@ declare('editors', nil, is_set_of_strings)
 
 Paths that are assumed to be always appended to.
 Only changes will be stored as new versions.
-These files are copied to the store regardless of the program that writes to them,
+These paths are copied to the store regardless of the program that writes to them,
 and hence regardless of [the `editors` setting](#editors).
 
 ```lua title=example
@@ -338,10 +338,6 @@ declare('history_paths', nil, is_set_of_strings)
 
 Paths that are never copied to the store.
 
-```lua title=example
-excluded_paths["/path/to/plain-text-passwords.txt"] = true -- not a good idea anyway
-```
-
 ```lua title=pre-config
 excluded_paths = {}
 ```
@@ -356,7 +352,7 @@ Paths that are copied to the store regardless of the program that writes to them
 and hence regardless of [the `editors` setting](#editors).
 
 ```lua title=example
-included_paths["/home/nazar/.config/nvim/init.vim"] = true
+included_paths["/home/nazar/.config/qutebrowser/bookmarks/urls"] = true
 ```
 
 ```lua title=pre-config
