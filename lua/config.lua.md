@@ -231,9 +231,10 @@ declare('version_pattern', 'v' .. journal_timestamp_pattern, is_string)
 
 ## Controlling which files are copied to the store and how
 
-By default, every path is treated as being within `cluded_paths`,
-which means that it's copied to the store only if it's written to by
+By default, a file is copied to the store only if it's written to by
 an editor program and it's not hidden.
+A file is hidden if its name or name of one of its ancestor directories begins with a dot,
+for example `.config`.
 
 Relative paths are interpreted relative to the common parent of directories
 monitored via
@@ -253,6 +254,7 @@ For example, let's consider this configuration:
 excluded_paths['/home/nazar'] = true
 included_paths['/home/nazar/src'] = true
 excluded_paths['/home/nazar/src/secret.txt'] = true
+included_paths['/home/nazar/.config/klunok'] = true
 ```
 
 With this configuration:
@@ -260,7 +262,10 @@ With this configuration:
 - `/home/nazar/file.txt` is excluded;
 - `/home/nazar/src/file.txt` is included;
 - `/home/nazar/src/project/file.txt` is included;
-- `/home/nazar/src/secret.txt` is excluded.
+- `/home/nazar/src/secret.txt` is excluded;
+- `/home/nazar/.config/file.txt` is excluded because the `.config` directory is hidden.
+- `/home/nazar/.config/klunok/file.txt` is included.
+- `/home/nazar/.config/klunok/.file.txt` is excluded.
 
 ### `editors`
 
@@ -365,10 +370,8 @@ declare('included_paths', nil, is_set_of_strings)
 
 ### `cluded_paths`
 
-Paths that are copied to the store only if they are written to by an editor program and
-they are not hidden.
+Paths that are copied to the store only if they are written to by an editor program.
 Editor programs are defined in [the `editors` setting](#editors).
-Hidden files and directories have a name that begins with a dot, for example `.config`.
 
 This is the default, so this setting is mainly useful to:
 

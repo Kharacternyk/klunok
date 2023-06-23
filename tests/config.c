@@ -22,6 +22,7 @@ void check_default_config(struct config *config) {
   assert(is_empty(get_history_paths(config)));
   assert(is_empty(get_excluded_paths(config)));
   assert(is_empty(get_included_paths(config)));
+  assert(is_empty(get_cluded_paths(config)));
 
   assert(!strcmp(get_store_root(config), "klunok/store"));
   assert(!strcmp(get_project_store_root(config), "klunok/projects"));

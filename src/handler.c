@@ -149,59 +149,85 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
     return false;
   }
   const struct set *sets[] = {
+      get_cluded_paths(handler->config),   get_included_paths(handler->config),
+      get_excluded_paths(handler->config), get_history_paths(handler->config),
       get_project_roots(handler->config),
-      get_included_paths(handler->config),
-      get_excluded_paths(handler->config),
-      get_history_paths(handler->config),
   };
   struct sieved_path *sieved_path =
-      sieve(path, handler->common_parent_path_length, sets, 4, trace);
+      sieve(path, handler->common_parent_path_length, sets,
+            sizeof sets / sizeof sets[0], trace);
 
   if (!ok(trace)) {
     return false;
   }
 
   const char *const *ends = get_sieved_ends(sieved_path);
-  const char *project_root_end = ends[0];
-  const char *included_end = ends[1];
-  const char *history_end = ends[3];
-  const char *excluded_end = ends[2] > get_hiding_dot(sieved_path)
-                                 ? ends[2]
-                                 : get_hiding_dot(sieved_path);
+
+  static const size_t cluded __attribute__((unused)) = 0;
+  static const size_t included __attribute__((unused)) = 1;
+  static const size_t excluded __attribute__((unused)) = 2;
+  static const size_t history = 3;
+  static const size_t project = 4;
+
+  const char *farthest_end = get_hiding_dot(sieved_path);
+  bool is_written_by_editor = get_bit(pid, handler->editor_pid_bitmap);
+  bool is_pushed = !get_hiding_dot(sieved_path) && is_written_by_editor;
+  bool is_history = false;
+
+  for (size_t i = 0; i < sizeof sets / sizeof sets[0]; ++i) {
+    if (ends[i] > farthest_end) {
+      farthest_end = ends[i];
+      is_history = i == history;
+      switch (i) {
+      case cluded:
+      case project:
+        is_pushed = is_written_by_editor;
+        break;
+      case included:
+      case history:
+        is_pushed = true;
+        break;
+      case excluded:
+        is_pushed = false;
+        break;
+      }
+    }
+  }
+
+  const char *project_root_end = ends[project];
 
   free_sieved_path(sieved_path);
 
-  if (history_end || (get_bit(pid, handler->editor_pid_bitmap) &&
-                      included_end >= excluded_end)) {
-    size_t metadata = 0;
-    if (history_end) {
-      metadata |= LINQ_META_IS_HISTORY;
-    }
-    if (project_root_end) {
-      metadata |= (project_root_end - path) << LINQ_META_PROJECT_OFFSET;
-    }
+  if (!is_pushed) {
+    return false;
+  }
+
+  size_t metadata = 0;
+  if (is_history) {
+    metadata |= LINQ_META_IS_HISTORY;
+  }
+  if (project_root_end) {
+    metadata |= (project_root_end - path) << LINQ_META_PROJECT_OFFSET;
+  }
+
+  try(trace);
+  push(path, metadata, handler->linq, trace);
+  rethrow_context(path, trace);
+  finally_rethrow_static(messages.handler.linq.cannot_push, trace);
+
+  if (project_root_end) {
+    char original_end = *project_root_end;
+    path[project_root_end - path] = 0;
 
     try(trace);
-    push(path, metadata, handler->linq, trace);
+    push(path, LINQ_META_IS_PROJECT, handler->linq, trace);
     rethrow_context(path, trace);
     finally_rethrow_static(messages.handler.linq.cannot_push, trace);
 
-    if (project_root_end) {
-      char original_end = *project_root_end;
-      path[project_root_end - path] = 0;
-
-      try(trace);
-      push(path, LINQ_META_IS_PROJECT, handler->linq, trace);
-      rethrow_context(path, trace);
-      finally_rethrow_static(messages.handler.linq.cannot_push, trace);
-
-      path[project_root_end - path] = original_end;
-    }
-
-    return true;
+    path[project_root_end - path] = original_end;
   }
 
-  return false;
+  return true;
 }
 
 void handle_close_write(pid_t pid, int fd, struct handler *handler,

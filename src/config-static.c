@@ -55,6 +55,7 @@ static const char *const project_roots[] = {};
 static const char *const history_paths[] = {};
 static const char *const excluded_paths[] = {};
 static const char *const included_paths[] = {};
+static const char *const cluded_paths[] = {};
 static const char *const event_open_exec_not_editor;
 static const char *const event_open_exec_editor;
 static const char *const event_close_write_not_by_editor;
@@ -69,6 +70,7 @@ struct config {
   struct set *history_paths;
   struct set *excluded_paths;
   struct set *included_paths;
+  struct set *cluded_paths;
 };
 
 static struct set *load_set(const char *const *array, size_t size,
@@ -98,6 +100,7 @@ struct config *load_config(const char *path, struct trace *trace) {
       load_set(excluded_paths, sizeof excluded_paths, trace);
   config->included_paths =
       load_set(included_paths, sizeof included_paths, trace);
+  config->cluded_paths = load_set(cluded_paths, sizeof cluded_paths, trace);
 
   if (!ok(trace)) {
     free_config(config);
@@ -124,6 +127,10 @@ const struct set *get_excluded_paths(const struct config *config) {
 
 const struct set *get_included_paths(const struct config *config) {
   return config->included_paths;
+}
+
+const struct set *get_cluded_paths(const struct config *config) {
+  return config->cluded_paths;
 }
 
 const char *get_store_root(const struct config *config) { return store_root; }
@@ -207,6 +214,7 @@ void free_config(struct config *config) {
     free_set(config->history_paths);
     free_set(config->excluded_paths);
     free_set(config->included_paths);
+    free_set(config->cluded_paths);
     free(config);
   }
 }
