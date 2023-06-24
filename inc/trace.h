@@ -13,7 +13,7 @@ void throw_dynamic(const char *message, struct trace *trace)
     __attribute__((nonnull));
 void throw_context(const char *message, struct trace *trace)
     __attribute__((nonnull));
-void throw_errno(struct trace *trace) __attribute__((nonnull, cold));
+void throw_errno(struct trace *trace) __attribute__((nonnull));
 
 bool catch_static(const char *message, struct trace *trace)
     __attribute__((nonnull));
@@ -26,7 +26,7 @@ void finally_rethrow_static(const char *message, struct trace *trace)
 void rethrow_context(const char *message, struct trace *trace)
     __attribute__((nonnull));
 
-void unwind(int fd, const struct trace *trace) __attribute__((nonnull, cold));
+void unwind(int fd, const struct trace *trace) __attribute__((nonnull));
 
 #define TNEG(call, trace)                                                      \
   ({                                                                           \
