@@ -356,10 +356,6 @@ declare('excluded_paths', nil, is_set_of_strings)
 Paths that are copied to the store regardless of the program that writes to them,
 and hence regardless of [the `editors` setting](#editors).
 
-```lua title=example
-included_paths['/home/nazar/.config/qutebrowser/bookmarks/urls'] = true
-```
-
 ```lua title=pre-config
 included_paths = {}
 ```
