@@ -124,6 +124,7 @@ void copy_shallow_tree(const char *destination, const char *source,
       close(destination_fd);
     }
     free(*paths);
+    cleanup(destination);
     return;
   }
 
@@ -173,6 +174,11 @@ void copy_shallow_tree(const char *destination, const char *source,
   if (fts) {
     fts_close(fts);
   }
+
   close(destination_fd);
   free(*paths);
+
+  if (!ok(trace)) {
+    cleanup(destination);
+  }
 }
