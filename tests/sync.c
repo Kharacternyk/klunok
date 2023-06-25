@@ -9,6 +9,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+static void create_file(const char *path) {
+  int fd = creat(path, 0644);
+  assert(fd >= 0 && !close(fd));
+}
+
 void test_sync(struct trace *trace) {
   const char *destination = "path/to/dest";
   const char *source = TEST_ROOT "/meson.build";
@@ -44,4 +49,26 @@ void test_sync(struct trace *trace) {
   assert(stat(log_destination, &log_destination_stat) >= 0);
 
   assert(new_offset == log_destination_stat.st_size + offset);
+
+  assert(!mkdir("a", 0755));
+  assert(!mkdir("a/b", 0755));
+  create_file("a/b/c");
+  create_file("a/b/d");
+  create_file("a/b/e");
+
+  assert(!mkdir("f", 0755));
+  assert(!mkdir("f/b", 0755));
+  create_file("f/b/c");
+  create_file("f/b/e");
+
+  assert(access("g", F_OK));
+
+  sync_shallow_tree("g", "a", "f", trace);
+  assert(ok(trace));
+  assert(!access("g/b/c", F_OK));
+  assert(access("g/b/d", F_OK));
+  assert(!access("g/b/e", F_OK));
+  assert(!access("a/b/c", F_OK));
+  assert(access("a/b/d", F_OK));
+  assert(!access("a/b/e", F_OK));
 }
