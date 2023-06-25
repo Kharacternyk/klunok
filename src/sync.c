@@ -1,4 +1,4 @@
-#include "copy.h"
+#include "sync.h"
 #include "buffer.h"
 #include "messages.h"
 #include "parents.h"
@@ -24,7 +24,7 @@ static void clean_up(const char *destination) {
   }
 }
 
-off_t copy_file(const char *destination, const char *source,
+off_t sync_file(const char *destination, const char *source,
                 off_t source_offset, struct trace *trace) {
   if (!ok(trace)) {
     return 0;
@@ -39,9 +39,9 @@ off_t copy_file(const char *destination, const char *source,
   int in_fd = open(source, O_RDONLY);
   if (in_fd < 0) {
     if (errno == ENOENT) {
-      throw_static(messages.copy.source_does_not_exist, trace);
+      throw_static(messages.sync.source_does_not_exist, trace);
     } else if (errno == EACCES) {
-      throw_static(messages.copy.source_permission_denied, trace);
+      throw_static(messages.sync.source_permission_denied, trace);
     } else {
       throw_errno(trace);
     }
@@ -52,7 +52,7 @@ off_t copy_file(const char *destination, const char *source,
   int out_fd = open(destination, O_CREAT | O_WRONLY | O_EXCL, 0444);
   if (out_fd < 0) {
     if (errno == EEXIST) {
-      throw_static(messages.copy.destination_already_exists, trace);
+      throw_static(messages.sync.destination_already_exists, trace);
     } else {
       throw_errno(trace);
     }
@@ -71,7 +71,7 @@ off_t copy_file(const char *destination, const char *source,
   }
 
   if (!S_ISREG(in_fd_stat.st_mode)) {
-    throw_static(messages.copy.source_is_not_regular_file, trace);
+    throw_static(messages.sync.source_is_not_regular_file, trace);
     close(out_fd);
     close(in_fd);
     clean_up(destination);
@@ -105,13 +105,13 @@ off_t copy_file(const char *destination, const char *source,
   return source_offset;
 }
 
-void copy_shallow_tree(const char *destination, const char *source,
+void sync_shallow_tree(const char *destination, const char *source,
                        const char *existence_filter_root, struct trace *trace) {
   create_parents(destination, trace);
 
   if (ok(trace) && mkdir(destination, 0755)) {
     if (errno == EEXIST) {
-      throw_static(messages.copy.destination_already_exists, trace);
+      throw_static(messages.sync.destination_already_exists, trace);
     } else {
       throw_errno(trace);
     }
@@ -133,9 +133,9 @@ void copy_shallow_tree(const char *destination, const char *source,
 
   if (!fts) {
     if (errno == ENOENT) {
-      throw_static(messages.copy.source_does_not_exist, trace);
+      throw_static(messages.sync.source_does_not_exist, trace);
     } else if (errno == EACCES) {
-      throw_static(messages.copy.source_permission_denied, trace);
+      throw_static(messages.sync.source_permission_denied, trace);
     } else {
       throw_errno(trace);
     }

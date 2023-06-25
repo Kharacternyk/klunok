@@ -16,7 +16,7 @@ struct translation {
     const char *source_does_not_exist;
     const char *source_permission_denied;
     const char *destination_already_exists;
-  } copy;
+  } sync;
   struct {
     const char *is_static;
   } config;

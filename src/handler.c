@@ -2,7 +2,6 @@
 #include "bitmap.h"
 #include "buffer.h"
 #include "config.h"
-#include "copy.h"
 #include "counter.h"
 #include "deref.h"
 #include "elfinterp.h"
@@ -13,6 +12,7 @@
 #include "set.h"
 #include "sieve.h"
 #include "storepath.h"
+#include "sync.h"
 #include "timestamp.h"
 #include "trace.h"
 #include <assert.h>
@@ -338,16 +338,16 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
 
       while (ok(trace)) {
         try(trace);
-        copy_shallow_tree(get_current_path(store_path),
+        sync_shallow_tree(get_current_path(store_path),
                           get_string(get_view(unstable_path)), get_path(head),
                           trace);
-        if (catch_static(messages.copy.destination_already_exists, trace)) {
+        if (catch_static(messages.sync.destination_already_exists, trace)) {
           finally(trace);
           increment(store_path, trace);
         } else {
-          if (catch_static(messages.copy.source_does_not_exist, trace)) {
+          if (catch_static(messages.sync.source_does_not_exist, trace)) {
             event = get_event_queue_head_deleted(handler->config);
-          } else if (catch_static(messages.copy.source_permission_denied,
+          } else if (catch_static(messages.sync.source_permission_denied,
                                   trace)) {
             event = get_event_queue_head_forbidden(handler->config);
           };
@@ -389,17 +389,17 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
 
     for (;;) {
       try(trace);
-      size_t new_offset = copy_file(get_current_path(store_path),
+      size_t new_offset = sync_file(get_current_path(store_path),
                                     get_path(head), offset, trace);
       if (!is_history_path) {
         new_offset = 0;
       }
-      if (catch_static(messages.copy.source_does_not_exist, trace) ||
-          catch_static(messages.copy.source_is_not_regular_file, trace)) {
+      if (catch_static(messages.sync.source_does_not_exist, trace) ||
+          catch_static(messages.sync.source_is_not_regular_file, trace)) {
         event = get_event_queue_head_deleted(handler->config);
-      } else if (catch_static(messages.copy.source_permission_denied, trace)) {
+      } else if (catch_static(messages.sync.source_permission_denied, trace)) {
         event = get_event_queue_head_forbidden(handler->config);
-      } else if (catch_static(messages.copy.destination_already_exists,
+      } else if (catch_static(messages.sync.destination_already_exists,
                               trace)) {
         increment(store_path, trace);
         continue;

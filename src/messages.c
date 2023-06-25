@@ -24,7 +24,7 @@ const struct translation messages = {
     .cannot_remove_ancestor = "Cannot remove an ancestor directory",
     .cannot_create_ancestor = "Cannot create an ancestor directory",
   },
-  .copy = {
+  .sync = {
     .source_is_not_regular_file = "Cannot copy a file that is not a regular file",
     .source_does_not_exist = "The file does not exist",
     .source_permission_denied = "Permission denied",
