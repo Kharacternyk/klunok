@@ -1,4 +1,5 @@
 #include "copy.h"
+#include "buffer.h"
 #include "messages.h"
 #include "parents.h"
 #include "trace.h"
@@ -105,7 +106,7 @@ off_t copy_file(const char *destination, const char *source,
 }
 
 void copy_shallow_tree(const char *destination, const char *source,
-                       struct trace *trace) {
+                       const char *existence_filter_root, struct trace *trace) {
   create_parents(destination, trace);
 
   if (ok(trace) && mkdir(destination, 0755)) {
@@ -143,15 +144,29 @@ void copy_shallow_tree(const char *destination, const char *source,
   assert(!strstr(destination, "//"));
   size_t source_length = strlen(source);
 
+  struct buffer *filter_path = create_buffer(trace);
+  concat_string(existence_filter_root, filter_path, trace);
+  concat_char('/', filter_path, trace);
+  size_t filter_root_length = get_length(get_view(filter_path));
+
   for (FTSENT *entry = fts_read(fts); entry && ok(trace);
        entry = fts_read(fts)) {
     const char *relative_path = entry->fts_path + source_length;
+
     if (!*relative_path) {
       continue;
     }
     if (*relative_path == '/') {
       ++relative_path;
     }
+
+    set_length(filter_root_length, filter_path);
+    concat_string(relative_path, filter_path, trace);
+    if (!ok(trace) || access(get_string(get_view(filter_path)), F_OK)) {
+      TNEG(unlink(entry->fts_path), trace);
+      continue;
+    }
+
     switch (entry->fts_info) {
     case FTS_D:
       TNEG(mkdirat(destination_fd, relative_path, 0755), trace);
@@ -177,6 +192,7 @@ void copy_shallow_tree(const char *destination, const char *source,
 
   close(destination_fd);
   free(*paths);
+  free_buffer(filter_path);
 
   if (!ok(trace)) {
     clean_up(destination);

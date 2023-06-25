@@ -339,7 +339,8 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       while (ok(trace)) {
         try(trace);
         copy_shallow_tree(get_current_path(store_path),
-                          get_string(get_view(unstable_path)), trace);
+                          get_string(get_view(unstable_path)), get_path(head),
+                          trace);
         if (catch_static(messages.copy.destination_already_exists, trace)) {
           finally(trace);
           increment(store_path, trace);
