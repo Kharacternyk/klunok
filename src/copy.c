@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static void cleanup(const char *destination) {
+static void clean_up(const char *destination) {
   /*FIXME cleanup error reporting*/
   struct trace *cleanup_trace = create_trace();
   if (cleanup_trace) {
@@ -31,7 +31,7 @@ off_t copy_file(const char *destination, const char *source,
 
   create_parents(destination, trace);
   if (!ok(trace)) {
-    cleanup(destination);
+    clean_up(destination);
     return 0;
   }
 
@@ -44,7 +44,7 @@ off_t copy_file(const char *destination, const char *source,
     } else {
       throw_errno(trace);
     }
-    cleanup(destination);
+    clean_up(destination);
     return 0;
   }
 
@@ -56,7 +56,7 @@ off_t copy_file(const char *destination, const char *source,
       throw_errno(trace);
     }
     close(in_fd);
-    cleanup(destination);
+    clean_up(destination);
     return 0;
   }
 
@@ -65,7 +65,7 @@ off_t copy_file(const char *destination, const char *source,
     throw_errno(trace);
     close(out_fd);
     close(in_fd);
-    cleanup(destination);
+    clean_up(destination);
     return 0;
   }
 
@@ -73,7 +73,7 @@ off_t copy_file(const char *destination, const char *source,
     throw_static(messages.copy.source_is_not_regular_file, trace);
     close(out_fd);
     close(in_fd);
-    cleanup(destination);
+    clean_up(destination);
     return 0;
   }
 
@@ -88,7 +88,7 @@ off_t copy_file(const char *destination, const char *source,
       throw_errno(trace);
       close(out_fd);
       close(in_fd);
-      cleanup(destination);
+      clean_up(destination);
       return 0;
     }
   }
@@ -96,7 +96,7 @@ off_t copy_file(const char *destination, const char *source,
   if (close(out_fd) < 0) {
     throw_errno(trace);
     close(in_fd);
-    cleanup(destination);
+    clean_up(destination);
     return 0;
   }
 
@@ -124,7 +124,7 @@ void copy_shallow_tree(const char *destination, const char *source,
       close(destination_fd);
     }
     free(*paths);
-    cleanup(destination);
+    clean_up(destination);
     return;
   }
 
@@ -179,6 +179,6 @@ void copy_shallow_tree(const char *destination, const char *source,
   free(*paths);
 
   if (!ok(trace)) {
-    cleanup(destination);
+    clean_up(destination);
   }
 }
