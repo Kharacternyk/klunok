@@ -7,7 +7,7 @@
 , valgrind-light
 , musl-fts
 , doCheckThoroughly ? (
-    lib.availableOn stdenv.hostPlatform valgrind-light && !valgrind-light.meta.broken
+    lib.meta.availableOn stdenv.hostPlatform valgrind-light && !valgrind-light.meta.broken
   )
 }: stdenv.mkDerivation {
   pname = "klunok";
