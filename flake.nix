@@ -16,32 +16,33 @@
         pkgs = import nixpkgs { inherit system; };
 
         packages =
-          let mkPackage = pkgs': pkgs'.callPackage ./. { lua = pkgs'.lua5_4; }; in
+          let mkPackage = pkgs': pkgs'.callPackage ./. {
+            doCheckThoroughly = false;
+            lua = pkgs'.lua5_4;
+          }; in
           {
             default = mkPackage pkgs;
             static = mkPackage pkgs.pkgsStatic;
           };
 
         checks =
-          let mkCheck = { callPackage, lua, valgrind-light }: callPackage ./. {
-            inherit lua valgrind-light;
-            doCheck = true;
+          let mkCheck = { callPackage, lua }: callPackage ./. {
+            inherit lua;
           }; in
           {
             glibc = mapAttrs
               (_: lua: mkCheck {
-                inherit (pkgs) callPackage valgrind-light;
+                inherit (pkgs) callPackage;
                 inherit lua;
               })
               {
                 inherit (pkgs) lua5_4 lua5_3 lua5_2;
                 withoutLua = null;
               };
-            musl = if !pkgs.stdenv.buildPlatform.is64bit then { } else {
+            musl = pkgs.lib.optionalAttrs pkgs.stdenv.targetPlatform.is64bit {
               muslWithoutLua = mkCheck {
                 inherit (pkgs.pkgsMusl) callPackage;
                 lua = null;
-                valgrind-light = null;
               };
             };
           };
@@ -57,6 +58,9 @@
                   inputsFrom = [
                     package
                   ];
+                  packages = [
+                    pkgs.gdb
+                  ];
                 };
               in
               {
@@ -64,7 +68,7 @@
                 musl = mapAttrs (_: mkShell pkgs.pkgsMusl) checks.musl;
                 default = {
                   default = mkShell pkgs (packages.default.override {
-                    doCheck = true;
+                    doCheckThoroughly = true;
                   });
                   static = mkShell pkgs.pkgsStatic packages.static;
                 };
