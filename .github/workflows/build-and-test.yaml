@@ -18,5 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v19
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
       - run: nix flake check
       - run: nix build .#static
