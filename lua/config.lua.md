@@ -263,8 +263,8 @@ With this configuration:
 - `/home/nazar/src/file.txt` is included;
 - `/home/nazar/src/project/file.txt` is included;
 - `/home/nazar/src/secret.txt` is excluded;
-- `/home/nazar/.config/file.txt` is excluded because the `.config` directory is hidden.
-- `/home/nazar/.config/klunok/file.txt` is included.
+- `/home/nazar/.config/file.txt` is excluded because the `.config` directory is hidden;
+- `/home/nazar/.config/klunok/file.txt` is included;
 - `/home/nazar/.config/klunok/.file.txt` is excluded.
 
 ### `editors`
