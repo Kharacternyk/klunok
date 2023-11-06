@@ -32,3 +32,7 @@ graph TD;
   s -.-> |"…and Klunok will take care of the rest."| q;
   q -.-> |"A minute passes with no further edits."| b;
 ```
+
+Klunok is already used on a daily basis.
+Some planned features are still unimplemented, though,
+and even more features are implemented but not properly documented on this website.
