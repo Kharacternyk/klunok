@@ -15,5 +15,5 @@ and we will setup an alternative communication channel, e.g., Signal.
 
 ## Recognition
 
-You will be credited for the vulnerability at klunok.org if you give permission.
+You will be credited for the vulnerability at https://klunok.org if you give permission.
 Also, a modest (two-figure) bounty may be offered.
