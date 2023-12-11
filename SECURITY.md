@@ -10,7 +10,7 @@ older minor versions may also be patched.
 
 Please report vulnerabilities to nazar@vinnich.uk.
 If you want to use a channel that is more secure than email,
-express this intetion through email without disclosing the vulnerability,
+express this intention through email without disclosing the vulnerability,
 and we will setup an alternative communication channel, e.g., Signal.
 
 ## Recognition
