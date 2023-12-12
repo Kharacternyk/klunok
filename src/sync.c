@@ -162,18 +162,29 @@ void sync_shallow_tree(const char *destination, const char *source,
 
     set_length(filter_root_length, filter_path);
     concat_string(relative_path, filter_path, trace);
-    if (!ok(trace) || access(get_string(get_view(filter_path)), F_OK)) {
-      TNEG(unlink(entry->fts_path), trace);
-      continue;
+    if (!ok(trace)) {
+      break;
     }
 
     switch (entry->fts_info) {
     case FTS_D:
-      TNEG(mkdirat(destination_fd, relative_path, 0755), trace);
+      if (!access(get_string(get_view(filter_path)), F_OK)) {
+        TNEG(mkdirat(destination_fd, relative_path, 0755), trace);
+      }
+      break;
+    case FTS_DP:
+      if (access(get_string(get_view(filter_path)), F_OK)) {
+        TNEG(rmdir(entry->fts_path), trace);
+      }
       break;
     case FTS_NSOK:
-      TNEG(linkat(AT_FDCWD, entry->fts_path, destination_fd, relative_path, 0),
-           trace);
+      if (!access(get_string(get_view(filter_path)), F_OK)) {
+        TNEG(
+            linkat(AT_FDCWD, entry->fts_path, destination_fd, relative_path, 0),
+            trace);
+      } else {
+        TNEG(unlink(entry->fts_path), trace);
+      }
       break;
     case FTS_DNR:
     case FTS_ERR:
