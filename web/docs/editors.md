@@ -3,7 +3,7 @@
 If you want to let Klunok back up files edited with an application that is not recognized
 as an editor by default,
 add the name of the executable that is normally used to start the application
-to [the `editors` setting](../configuration.md#editors).
+to [the `editors` setting](./configuration.md#editors).
 For example, if you type `awesomeeditor file.txt` in the terminal
 when you want to edit `file.txt` with `awesomeeditor`, add `editors.awesomeeditor = true`
 to the configuration file.
