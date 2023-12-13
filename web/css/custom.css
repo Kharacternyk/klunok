@@ -17,3 +17,7 @@
   --ifm-color-primary-lighter: #ffed9d;
   --ifm-color-primary-lightest: #fff7d2;
 }
+
+.tabs__item {
+  margin-top: 0;
+}
