@@ -24,13 +24,13 @@ Defaults to the current working directory.
 Example:
 
 ```bash
-klunok -w /home/nazar/ -w /home/illia
+klunok -w /home/nazar -w /home/illia
 ```
 
 ## `-e`: path to a directory that contains executable files
 
-Klunok can recognize a text editor, office suite, vector graphics editor and so on
-only if the executable file of a text editor (office suite, …)
+Klunok can recognize a text editor, office suite, vector graphics editor, and so on
+only if the executable file of the text editor (office suite, …)
 is within one of these directories (including subdirectories, subsubdirectories, …).
 
 Can be specified more than once.
@@ -41,7 +41,7 @@ a detailed explanation of the mechanism is in
 Defaults to `/` and, if you have
 [installed Klunok with the Nix package manager](./installation.md?method=nix), `/nix/store`.
 
-Usually, Linux distributions place all the executable files in one or several well-known
+Usually, Linux distributions place all the executable files in several well-known
 directories, such as `/bin` or `/usr/bin`.
 If you know for sure which directories contain executable files of text editors
 (office suites, …), it's a good security practice to list them explicitly, as in the example:

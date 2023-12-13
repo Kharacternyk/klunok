@@ -18,7 +18,7 @@ You can download a self-contained binary from
 You can also browse past releases at
 <https://github.com/Kharacternyk/klunok/releases>.
 
-Once downloaded, mark the file as executable:
+Once the file is downloaded, mark it as executable:
 
 ```bash
 chmod +x ~/Downloads/klunok
@@ -58,7 +58,7 @@ Instead use `github:Kharacternyk/klunok/v1` for the latest stable version.
   </TabItem>
   <TabItem value="source" label="From source">
 
-To install from source you need a C compiler and the Meson build system.
+Installing from source requires a C compiler and the Meson build system.
 Meson also depends on the Ninja build system.
 You can install them, for example, with `apt`:
 
@@ -66,7 +66,7 @@ You can install them, for example, with `apt`:
 sudo apt install gcc meson ninja-build
 ```
 
-The version of Meson installed with `apt` may be not new enough to build Klunok.
+The version of Meson installed with `apt` may not be new enough to build Klunok.
 In this case, you can install Meson with `pip`:
 
 ```bash
@@ -74,8 +74,8 @@ sudo apt install pip
 sudo pip install meson
 ```
 
-An optional, but recommended dependency is Lua.
-Lua allows configuring Klunok without recompiling it.
+Lua is an optional but recommended dependency.
+It allows configuring Klunok without recompiling it.
 Klunok should work with Lua version 5.2 or newer.
 Installing Lua with `apt` looks like this:
 

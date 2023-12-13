@@ -20,7 +20,7 @@ like this:
 klunok -c ~/.config/klunok.lua
 ```
 
-This page documents the available settings, their types
+This page documents the available settings, their types,
 and default values.
 
 Configuration parsing code is extracted from this page
@@ -45,7 +45,7 @@ Here is a sample invocation:
 declare('prefix_var', prefix .. '/var', is_string)
 ```
 
-This invocation means that the setting called `prefix_var` must be a string,
+This invocation means that a setting called `prefix_var` must be a string,
 and if it's not set in the configuration file,
 its value is dynamically computed as string `/var` concatenated to
 the value of the `prefix` setting.
@@ -164,9 +164,9 @@ declare('queue_path', prefix_var .. '/queue', is_string)
 ### `journal_path`
 
 Path to the journal.
-The journal is a file where Klunok can record various events,
+The journal is a file where Klunok records various events,
 for example a file being backed up.
-[See other events here.](#events)
+[See the other events here.](#events)
 If `nil`, Klunok does not write journal events anywhere.
 Specifying `nil` is more efficient than `'/dev/null'`.
 
@@ -189,12 +189,12 @@ declare('offset_store_root', prefix_var .. '/offsets', is_string)
 
 ## Debouncing
 
-Debouncing means delaying copying of a file until some time passes
+Debouncing means delaying copying until some time passes
 without any further modifications.
 
 ### `debounce_seconds`
 
-Timespan a file must not be edited for its version to be copied to the store.
+The delay in seconds of copying a file to the store after the last modification.
 
 ```lua title=pre-config
 debounce_seconds = 60
@@ -232,7 +232,7 @@ declare('version_pattern', 'v' .. journal_timestamp_pattern, is_string)
 ## Controlling which files are copied to the store and how
 
 By default, a file is copied to the store only if it's written to by
-an editor program and it's not hidden.
+an editor application and it's not hidden.
 A file is hidden if its name or name of one of its ancestor directories begins with a dot,
 for example `.config`.
 
@@ -270,8 +270,8 @@ With this configuration:
 ### `editors`
 
 Filenames of executables that are considered editors.
-By default, only files edited by this programs are copied to the store.
-If you have problems registering a program as an editor,
+By default, only files edited by this applications are copied to the store.
+If you have problems registering an application as an editor,
 please read [the editors section](./advanced/editors.md).
 
 ```lua title=example
@@ -324,7 +324,7 @@ declare('editors', nil, is_set_of_strings)
 
 Paths that are assumed to be always appended to.
 Only changes will be stored as new versions.
-These paths are copied to the store regardless of the program that writes to them,
+These paths are copied to the store regardless of the application that writes to them
 and hence regardless of [the `editors` setting](#editors).
 
 ```lua title=example
@@ -353,7 +353,7 @@ declare('excluded_paths', nil, is_set_of_strings)
 
 ### `included_paths`
 
-Paths that are copied to the store regardless of the program that writes to them,
+Paths that are copied to the store regardless of the application that writes to them,
 and hence regardless of [the `editors` setting](#editors).
 
 ```lua title=pre-config
@@ -366,15 +366,15 @@ declare('included_paths', nil, is_set_of_strings)
 
 ### `cluded_paths`
 
-Paths that are copied to the store only if they are written to by an editor program.
-Editor programs are defined in [the `editors` setting](#editors).
+Paths that are copied to the store only if they are written to by an editor application.
+Editor applications are defined in [the `editors` setting](#editors).
 
 This is the default, so this setting is mainly useful to:
 
 - override `history_paths`, `excluded_paths` and `included_paths`;
 - include files in hidden directories if the files themselves are not hidden, for example
   specifying `cluded_paths['/home/nazar/.config'] = true` will allow
-  `/home/nazar/.config/klunok.lua` to be copied when written to by an editor program,
+  `/home/nazar/.config/klunok.lua` to be copied when written to by an editor application,
   but `/home/nazar/.config/.klunok.lua` and `/home/nazar/.config/.klunok/config.lua`
   will not be copied.
 

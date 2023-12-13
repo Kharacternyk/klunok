@@ -7,7 +7,7 @@ import Asciinema from '../src/asciinema.jsx';
 # Usage
 
 Klunok uses the Linux kernel fanotify API, which as of now requires root privileges.
-For this reason, Klunok should be invoked, for example, with `sudo`:
+Therefore, Klunok should be invoked, for example, with `sudo`:
 
 ```bash
 sudo -b klunok

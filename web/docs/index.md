@@ -12,7 +12,7 @@ import Logo from '../static/logo.svg';
   <title>Klunok</title>
 </head>
 
-…is a smart versioning and automatic backup daemon for Linux.
+is a smart versioning and automatic backup daemon for Linux.
 It keeps a versioned history of files that you edit,
 doing so in the background without any effort required from you.
 
@@ -32,7 +32,3 @@ graph TD;
   s -.-> |"…and Klunok will take care of the rest."| q;
   q -.-> |"A minute passes with no further edits."| b;
 ```
-
-Klunok is already used on a daily basis.
-Some planned features are still unimplemented, though,
-and even more features are implemented but not properly documented on this website.
