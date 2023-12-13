@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# Command line options
+# CLI
 
 ## `-c`: path to the configuration file
 
@@ -19,7 +19,7 @@ klunok -c ~/.config/klunok/config.lua
 Can be specified more than once.
 The directory will be bind-mounted to itself if it's not already a mount point,
 a detailed explanation of the mechanism is in
-[the (advanced) mounts section](./advanced/mounts.md).
+[the mounts section](./mounts.md).
 Defaults to the current working directory.
 Example:
 
@@ -36,7 +36,7 @@ is within one of these directories (including subdirectories, subsubdirectories,
 Can be specified more than once.
 The directory will be bind-mounted to itself if it's not already a mount point,
 a detailed explanation of the mechanism is in
-[the (advanced) mounts section](./advanced/mounts.md).
+[the mounts section](./mounts.md).
 
 Defaults to `/` and, if you have
 [installed Klunok with the Nix package manager](./installation.md?method=nix), `/nix/store`.

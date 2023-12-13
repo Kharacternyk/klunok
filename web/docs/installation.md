@@ -38,7 +38,7 @@ They will not work on architectures other than x86-64,
 for example ARM on Raspberry Pi or 32-bit x86.
 Please use alternative installation methods for other architectures.
 
-[The binaries are reproducible.](./advanced/security.md#static-binary-reproducibility)
+[The binaries are reproducible.](./security.md#static-binary-reproducibility)
 
   </TabItem>
 

@@ -273,7 +273,7 @@ With this configuration:
 Filenames of executables that are considered editors.
 By default, only files edited by this applications are copied to the store.
 If you have problems registering an application as an editor,
-please read [the editors section](./advanced/editors.md).
+please read [the editors section](./editors.md).
 
 ```lua title=example
 editors.ed = true
