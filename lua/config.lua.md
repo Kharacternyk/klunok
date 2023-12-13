@@ -6,6 +6,7 @@ sidebar_position: 5
 
 Klunok can be configured with the Lua programming language.
 Settings are global Lua variables assigned in a file.
+Klunok automatically reloads configuration when the file is changed.
 Here is an example of the content of the configuration file:
 
 ```lua
