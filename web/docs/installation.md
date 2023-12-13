@@ -14,9 +14,8 @@ Please navigate to the one you prefer via the tabs below.
   <TabItem value="binary" label="Static binary">
 
 You can download a self-contained binary from
-<https://github.com/Kharacternyk/klunok/releases/latest/download/klunok>.
-You can also browse past releases at
-<https://github.com/Kharacternyk/klunok/releases>.
+https://github.com/Kharacternyk/klunok/releases/latest/download/klunok.
+You can also browse past releases at https://github.com/Kharacternyk/klunok/releases.
 
 Once the file is downloaded, mark it as executable:
 

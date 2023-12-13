@@ -1,4 +1,4 @@
-const codeTheme = require("prism-react-renderer/themes/okaidia");
+const prism = require("prism-react-renderer");
 
 const config = {
   title: "Klunok",
@@ -39,7 +39,7 @@ const config = {
       respectPrefersColorScheme: true,
     },
     prism: {
-      theme: codeTheme,
+      theme: prism.themes.okaidia,
       additionalLanguages: ["lua"],
     },
   },
