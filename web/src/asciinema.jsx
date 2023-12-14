@@ -6,7 +6,9 @@ export default ({ src, children }) => {
   const ref = useRef();
   const [player, setPlayer] = useState();
 
-  useEffect(() => import("asciinema-player").then(setPlayer), []);
+  useEffect(() => {
+    import("asciinema-player").then(setPlayer);
+  }, []);
   useEffect(() => {
     if (player) {
       const instance = player.create(src, ref.current, {
