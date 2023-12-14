@@ -389,6 +389,8 @@ declare('cluded_paths', nil, is_set_of_strings)
 
 ## Projects
 
+See [the projects section](./projects.md).
+
 ### `project_roots`
 
 Roots of projects.

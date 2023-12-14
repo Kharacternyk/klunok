@@ -1,3 +1,7 @@
+---
+sidebar_position: 7
+---
+
 # Mounts
 
 Klunok uses the Linux fanotify API to monitor entire subtrees of the file system.
