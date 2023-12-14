@@ -31,6 +31,14 @@ struct handler {
   struct set *elf_interpreters;
 };
 
+enum status {
+  cluded,
+  included,
+  excluded,
+  history,
+  project,
+};
+
 struct handler *load_handler(const char *config_path,
                              size_t common_parent_path_length,
                              struct trace *trace) {
@@ -162,12 +170,6 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
   }
 
   const char *const *ends = get_sieved_ends(sieved_path);
-
-  static const size_t cluded __attribute__((unused)) = 0;
-  static const size_t included __attribute__((unused)) = 1;
-  static const size_t excluded __attribute__((unused)) = 2;
-  static const size_t history = 3;
-  static const size_t project = 4;
 
   const char *farthest_end = get_hiding_dot(sieved_path);
   bool is_written_by_editor = get_bit(pid, handler->editor_pid_bitmap);
