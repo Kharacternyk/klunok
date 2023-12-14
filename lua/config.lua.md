@@ -305,6 +305,7 @@ editors = {
   ['gnome-text-editor'] = true,
   ['notepadqq-bin'] = true,
   ['soffice.bin'] = true,
+  ['vim.basic'] = true,
   ['.gedit-wrapped'] = true,
   ['.gnome-text-editor-wrapped'] = true,
   ['.howl-wrapped'] = true,
