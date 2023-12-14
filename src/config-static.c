@@ -41,6 +41,7 @@ static const char *const editors[] = {
     "vi",
     "vim",
     "vim.basic",
+    "vim.tiny",
     "xed",
     ".gedit-wrapped",
     ".gnome-text-editor-wrapped",
