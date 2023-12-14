@@ -63,7 +63,9 @@ char *get_elf_interpreter(int exe_fd, struct trace *trace) {
         total_read += iter_read;
       }
 
-      return result;
+      char *resolved = TNULL(realpath(result, NULL), trace);
+      free(result);
+      return resolved;
     }
   }
 
