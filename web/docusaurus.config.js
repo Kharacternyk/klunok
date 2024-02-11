@@ -1,5 +1,6 @@
 const prism = require("prism-react-renderer");
 
+/** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "Klunok",
   url: "https://klunok.org/",
