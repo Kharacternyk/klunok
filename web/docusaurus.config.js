@@ -15,7 +15,7 @@ const config = {
           breadcrumbs: false,
         },
         theme: {
-          customCss: [require.resolve("./css/custom.css")],
+          customCss: "custom.css",
         },
       },
     ],
