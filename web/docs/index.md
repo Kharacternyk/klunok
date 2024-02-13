@@ -6,7 +6,7 @@ sidebar_label: Introduction
 
 import Logo from '../static/logo.svg';
 
-# <Logo alt="" height="100%" width="2em" style={{display: "inline", verticalAlign: "middle"}} /> Klunok
+# <Logo alt="" height="100%" width="2em" style={{verticalAlign: "middle"}} /> Klunok
 
 <head>
   <title>Klunok</title>
