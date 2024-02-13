@@ -15,7 +15,7 @@ const config = {
           breadcrumbs: false,
         },
         theme: {
-          customCss: "custom.css",
+          customCss: "./custom.css",
         },
       },
     ],
