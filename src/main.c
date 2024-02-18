@@ -107,6 +107,8 @@ int main(int argc, const char **argv) {
     free(mount);
   }
 
+  free_mountinfo(mountinfo);
+
   struct stat drop_stat;
   if (stat(get_privilege_dropping_path(params), &drop_stat) >= 0 &&
       drop_stat.st_gid && drop_stat.st_uid) {
