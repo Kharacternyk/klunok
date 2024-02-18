@@ -123,6 +123,10 @@ const struct set *get_project_roots(const struct config *config) {
   return config->project_roots;
 }
 
+const struct set *get_project_parents(const struct config *config) {
+  return config->project_parents;
+}
+
 const struct set *get_history_paths(const struct config *config) {
   return config->history_paths;
 }
