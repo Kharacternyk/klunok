@@ -31,14 +31,6 @@ struct handler {
   struct set *elf_interpreters;
 };
 
-enum status {
-  cluded,
-  included,
-  excluded,
-  history,
-  project,
-};
-
 struct handler *load_handler(const char *config_path,
                              size_t common_parent_path_length,
                              struct trace *trace) {
@@ -151,6 +143,15 @@ static const size_t linq_meta_is_project = 1;
 static const size_t linq_meta_is_history = 2;
 static const size_t linq_meta_project_offset = 2;
 
+enum status {
+  cluded,
+  included,
+  excluded,
+  history,
+  project,
+  project_parent,
+};
+
 static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
                          struct trace *trace) {
   if (!ok(trace)) {
@@ -159,7 +160,7 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
   const struct set *sets[] = {
       get_cluded_paths(handler->config),   get_included_paths(handler->config),
       get_excluded_paths(handler->config), get_history_paths(handler->config),
-      get_project_roots(handler->config),
+      get_project_roots(handler->config),  get_project_parents(handler->config),
   };
   struct sieved_path *sieved_path =
       sieve(path, handler->common_parent_path_length, sets,
@@ -182,7 +183,6 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
       is_history = i == history;
       switch (i) {
       case cluded:
-      case project:
         is_pushed = is_written_by_editor;
         break;
       case included:
@@ -196,7 +196,13 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
     }
   }
 
-  const char *project_root_end = ends[project];
+  const char *project_root_end = NULL;
+
+  if (ends[project_parent] > ends[project] && *ends[project_parent]) {
+    project_root_end = strchr(ends[project_parent] + 1, '/');
+  } else if (ends[project] && *ends[project]) {
+    project_root_end = ends[project];
+  }
 
   free_sieved_path(sieved_path);
 
@@ -305,7 +311,6 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     }
 
     time_t pause = get_pause(head);
-
     if (pause) {
       free_linq_head(head);
       return pause;

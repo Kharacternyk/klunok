@@ -10,6 +10,8 @@ const struct set *get_editors(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const struct set *get_project_roots(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
+const struct set *get_project_parents(const struct config *config)
+    __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const struct set *get_history_paths(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const struct set *get_excluded_paths(const struct config *config)

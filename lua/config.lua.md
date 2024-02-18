@@ -409,6 +409,22 @@ project_roots = {}
 declare('project_roots', nil, is_set_of_strings)
 ```
 
+### `project_parents`
+
+Directories which contain roots of projects.
+
+```lua title=example
+project_parents['/home/nazar/src/'] = true
+```
+
+```lua title=pre-config
+project_parents = {}
+```
+
+```lua title=post-config
+declare('project_parents', nil, is_set_of_strings)
+```
+
 ### `project_store_root`
 
 Root of the project store.

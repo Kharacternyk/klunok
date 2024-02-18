@@ -19,6 +19,7 @@ void check_default_config(struct config *config) {
   free(trace);
 
   assert(is_empty(get_project_roots(config)));
+  assert(is_empty(get_project_parents(config)));
   assert(is_empty(get_history_paths(config)));
   assert(is_empty(get_excluded_paths(config)));
   assert(is_empty(get_included_paths(config)));

@@ -16,6 +16,7 @@ extern const char _binary_lua_post_config_lua_end;
 struct config {
   struct set *editors;
   struct set *project_roots;
+  struct set *project_parents;
   struct set *history_paths;
   struct set *excluded_paths;
   struct set *included_paths;
@@ -124,6 +125,7 @@ struct config *load_config(const char *path, struct trace *trace) {
 
   config->editors = read_lua_set(lua, "editors", trace);
   config->project_roots = read_lua_set(lua, "project_roots", trace);
+  config->project_parents = read_lua_set(lua, "project_parents", trace);
   config->history_paths = read_lua_set(lua, "history_paths", trace);
   config->excluded_paths = read_lua_set(lua, "excluded_paths", trace);
   config->included_paths = read_lua_set(lua, "included_paths", trace);
@@ -179,6 +181,10 @@ const struct set *get_editors(const struct config *config) {
 
 const struct set *get_project_roots(const struct config *config) {
   return config->project_roots;
+}
+
+const struct set *get_project_parents(const struct config *config) {
+  return config->project_parents;
 }
 
 const struct set *get_history_paths(const struct config *config) {
@@ -281,6 +287,7 @@ void free_config(struct config *config) {
   if (config) {
     free_set(config->editors);
     free_set(config->project_roots);
+    free_set(config->project_parents);
     free_set(config->history_paths);
     free_set(config->excluded_paths);
     free_set(config->included_paths);

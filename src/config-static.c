@@ -54,6 +54,7 @@ static const char *const editors[] = {
     ".xed-wrapped",
 };
 static const char *const project_roots[] = {};
+static const char *const project_parents[] = {};
 static const char *const history_paths[] = {};
 static const char *const excluded_paths[] = {};
 static const char *const included_paths[] = {};
@@ -69,6 +70,7 @@ static const char *const event_queue_head_stored = "";
 struct config {
   struct set *editors;
   struct set *project_roots;
+  struct set *project_parents;
   struct set *history_paths;
   struct set *excluded_paths;
   struct set *included_paths;
@@ -97,6 +99,8 @@ struct config *load_config(const char *path, struct trace *trace) {
 
   config->editors = load_set(editors, sizeof editors, trace);
   config->project_roots = load_set(project_roots, sizeof project_roots, trace);
+  config->project_parents =
+      load_set(project_parents, sizeof project_parents, trace);
   config->history_paths = load_set(history_paths, sizeof history_paths, trace);
   config->excluded_paths =
       load_set(excluded_paths, sizeof excluded_paths, trace);
@@ -213,6 +217,7 @@ void free_config(struct config *config) {
   if (config) {
     free_set(config->editors);
     free_set(config->project_roots);
+    free_set(config->project_parents);
     free_set(config->history_paths);
     free_set(config->excluded_paths);
     free_set(config->included_paths);
