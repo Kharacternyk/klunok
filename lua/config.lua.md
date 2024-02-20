@@ -411,7 +411,7 @@ declare('project_roots', nil, is_set_of_strings)
 
 ### `project_parents`
 
-Directories which contain roots of projects.
+Directories that contain roots of projects.
 
 ```lua title=example
 project_parents['/home/nazar/src/'] = true
