@@ -45,7 +45,7 @@ const config = {
     },
     algolia: {
       appId: "S86UJLB8SZ",
-      apiKey: "a6d4cb656853f4f97203aa85571cd8cd",
+      apiKey: "fbaa1ec90ff857f010dc66e07adfef1f",
       indexName: "klunok",
     },
   },
