@@ -43,6 +43,11 @@ const config = {
       theme: prism.themes.okaidia,
       additionalLanguages: ["lua"],
     },
+    algolia: {
+      appId: "S86UJLB8SZ",
+      apiKey: "a6d4cb656853f4f97203aa85571cd8cd",
+      indexName: "klunok",
+    },
   },
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {
