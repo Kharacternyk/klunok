@@ -242,8 +242,8 @@ Relative paths are interpreted relative to the common parent of directories
 monitored via
 [the `-w` command line option](./cli.md#-w-path-to-a-directory-that-should-be-monitored-for-edited-files).
 For example, if Klunok is invoked as
-`klunok -w /home/nazar/src /home/nazar/.config /home/illia`,
-relatives paths are interpreted relative to `/home/`.
+`klunok -w /home/nazar/src /home/nazar/.config/nvim /home/nazar/.config/klunok`,
+relatives paths are interpreted relative to `/home/nazar`.
 
 `history_paths`, `excluded_paths`, `included_paths` and `cluded_paths`
 can be paths not only to files, but also to directories.

@@ -25,7 +25,7 @@ Defaults to the current working directory.
 Example:
 
 ```bash
-klunok -w /home/nazar -w /home/illia
+klunok -w /home/nazar -w /etc/nixos
 ```
 
 ## `-e`: path to a directory that contains executable files
