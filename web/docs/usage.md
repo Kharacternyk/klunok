@@ -35,6 +35,10 @@ When it thinks that the current version of a file is more or less stable
 (the file hasn't been edited for one minute),
 it copies the file to the `klunok/store` directory.
 
+Klunok considers only files that are edited by applications that humans use to edit files,
+for example, Vim and LibreOffice.
+Please note that Klunok must be launched before these applications are to recognize them.
+
 Here is a simple demo:
 
 <Asciinema src="/demo.cast">
