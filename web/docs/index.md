@@ -1,5 +1,5 @@
 ---
-description: Klunok is a smart versioning and automatic backup daemon for Linux.
+title: Klunok: smart versioning and automatic backup daemon for Linux
 sidebar_position: 1
 sidebar_label: Introduction
 ---
@@ -7,10 +7,6 @@ sidebar_label: Introduction
 import Logo from '../static/logo.svg';
 
 # <Logo alt="" height="100%" width="2em" style={{verticalAlign: "middle"}} /> Klunok
-
-<head>
-  <title>Klunok</title>
-</head>
 
 Klunok is a smart versioning and automatic backup daemon for Linux.
 It keeps a versioned history of files that you edit,
