@@ -4,6 +4,7 @@ const prism = require("prism-react-renderer");
 const config = {
   title: "Klunok",
   url: "https://klunok.org/",
+  favicon: "/favicon.ico",
   baseUrl: "/",
   trailingSlash: false,
   presets: [
