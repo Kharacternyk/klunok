@@ -1,5 +1,5 @@
 ---
-title: "Klunok: smart versioning and automatic backup daemon for Linux"
+title: "Klunok: smart versioning and automatic backup for Linux"
 sidebar_position: 1
 sidebar_label: Introduction
 ---
