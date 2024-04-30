@@ -16,19 +16,23 @@
         pkgs = import nixpkgs { inherit system; };
 
         packages =
-          let mkPackage = pkgs': pkgs'.callPackage ./. {
-            doCheckThoroughly = false;
-            lua = pkgs'.lua5_4;
-          }; in
+          let
+            mkPackage = pkgs': pkgs'.callPackage ./. {
+              doCheckThoroughly = false;
+              lua = pkgs'.lua5_4;
+            };
+          in
           {
             default = mkPackage pkgs;
             static = mkPackage pkgs.pkgsStatic;
           };
 
         checks =
-          let mkCheck = { callPackage, lua }: callPackage ./. {
-            inherit lua;
-          }; in
+          let
+            mkCheck = { callPackage, lua }: callPackage ./. {
+              inherit lua;
+            };
+          in
           {
             glibc = mapAttrs
               (_: lua: mkCheck {
