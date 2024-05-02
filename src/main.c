@@ -82,17 +82,15 @@ int main(int argc, const char **argv) {
       if (length < common_parent_path_length) {
         common_parent_path_length = length;
       }
-      free(previous_mount);
     } else {
-      previous_mount = mount;
       common_parent_path_length = strlen(mount) + 1;
     }
 
-    if (!get_next(write_mount)) {
-      free(mount);
-      previous_mount = NULL;
-    }
+    free(previous_mount);
+    previous_mount = mount;
   }
+
+  free(previous_mount);
 
   for (const struct list_item *exec_mount = peek(get_exec_mounts(params));
        exec_mount; exec_mount = get_next(exec_mount)) {
