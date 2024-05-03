@@ -53,7 +53,7 @@ its value is dynamically computed as string `/var` concatenated to
 the value of the `prefix` setting.
 The `declare` function is defined below:
 
-```lua title=post-config
+```lua title="post-config"
 function declare(name, default, assertion)
   if _G[name] == nil and default ~= nil then
     _G[name] = default
@@ -71,7 +71,7 @@ They are used as the third argument to the `declare` function.
 `is_string` accepts only strings.
 Strings in Lua are enclosed in double or single quotes, like `"this"` or `'this'`.
 
-```lua title=post-config
+```lua title="post-config"
 function is_string(name)
   assert(type(_G[name]) == 'string', name .. ' must be a string')
 end
@@ -83,7 +83,7 @@ end
 The description of a setting of this type will specify what exactly `nil` represents in the
 context of the setting.
 
-```lua title=post-config
+```lua title="post-config"
 function is_nil_or_string(name)
   assert(_G[name] == nil or type(_G[name]) == 'string', name .. ' must be nil or a string')
 end
@@ -91,7 +91,7 @@ end
 
 `is_positive` accepts integers greater than or equal to zero.
 
-```lua title=post-config
+```lua title="post-config"
 function is_positive(name)
   local value = _G[name]
   assert(
@@ -108,7 +108,7 @@ To remove `'abc'` from `xyz`, you can write `xyz.abc = nil`.
 If the key contains characters that are not letters, for example string `'/@'`,
 you can add the key as `xyz['/@'] = true` and remove it as `xyz['/@'] = nil`.
 
-```lua title=post-config
+```lua title="post-config"
 function is_set_of_strings(name)
   local value = _G[name]
   assert(type(value) == 'table', name .. ' must be a table')
@@ -124,15 +124,15 @@ end
 
 Prefix used by default for all of the paths that Klunok writes to.
 
-```lua title=example
+```lua title="example"
 prefix = '/var/klunok'
 ```
 
-```lua title=pre-config
+```lua title="pre-config"
 prefix = 'klunok'
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('prefix', nil, is_string)
 ```
 
@@ -140,7 +140,7 @@ declare('prefix', nil, is_string)
 
 Prefix used by default for non-store paths that Klunok writes to.
 
-```lua title=post-config
+```lua title="post-config"
 declare('prefix_var', prefix .. '/var', is_string)
 ```
 
@@ -149,7 +149,7 @@ declare('prefix_var', prefix .. '/var', is_string)
 Root of the store.
 This is where the backed up versions of files that you edit are placed.
 
-```lua title=post-config
+```lua title="post-config"
 declare('store_root', prefix .. '/store', is_string)
 ```
 
@@ -159,7 +159,7 @@ Path to the queue.
 The queue is a directory that contains symbolic links to files that you edit.
 Klunok uses the queue for [debouncing](#debouncing).
 
-```lua title=post-config
+```lua title="post-config"
 declare('queue_path', prefix_var .. '/queue', is_string)
 ```
 
@@ -172,11 +172,11 @@ for example a file being backed up.
 If `nil`, Klunok does not write journal events anywhere.
 Specifying `nil` is more efficient than `'/dev/null'`.
 
-```lua title=example
+```lua title="example"
 journal_path = '/dev/stderr' -- write the events to the terminal
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('journal_path', prefix_var .. '/journal', is_nil_or_string)
 ```
 
@@ -185,7 +185,7 @@ declare('journal_path', prefix_var .. '/journal', is_nil_or_string)
 Root of an auxiliary store used for keeping track of offsets of
 [`history_paths`](#history_paths).
 
-```lua title=post-config
+```lua title="post-config"
 declare('offset_store_root', prefix_var .. '/offsets', is_string)
 ```
 
@@ -198,11 +198,11 @@ without any further modifications.
 
 The delay in seconds of copying a file to the store after the last modification.
 
-```lua title=pre-config
+```lua title="pre-config"
 debounce_seconds = 60
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('debounce_seconds', nil, is_positive)
 ```
 
@@ -215,11 +215,11 @@ These settings use
 
 Pattern of timestamps in the journal.
 
-```lua title=pre-config
+```lua title="pre-config"
 journal_timestamp_pattern = '%Y-%m-%d-%H-%M'
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('journal_timestamp_pattern', nil, is_string)
 ```
 
@@ -227,7 +227,7 @@ declare('journal_timestamp_pattern', nil, is_string)
 
 Pattern of file versions in the store.
 
-```lua title=post-config
+```lua title="post-config"
 declare('version_pattern', 'v' .. journal_timestamp_pattern, is_string)
 ```
 
@@ -276,13 +276,13 @@ By default, only files edited by this applications are copied to the store.
 If you have problems registering an application as an editor,
 please read [the editors section](./editors.md).
 
-```lua title=example
+```lua title="example"
 editors.ed = true
 editors['emacs-28.3'] = true
 editors.code = nil -- do not treat "code" as an editor
 ```
 
-```lua title=pre-config
+```lua title="pre-config"
 editors = {
   atom = true,
   code = true,
@@ -320,7 +320,7 @@ editors = {
 }
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('editors', nil, is_set_of_strings)
 ```
 
@@ -331,15 +331,15 @@ Only changes will be stored as new versions.
 These paths are copied to the store regardless of the application that writes to them
 and hence regardless of [the `editors` setting](#editors).
 
-```lua title=example
+```lua title="example"
 history_paths['/home/nazar/.bash_history'] = true
 ```
 
-```lua title=pre-config
+```lua title="pre-config"
 history_paths = {}
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('history_paths', nil, is_set_of_strings)
 ```
 
@@ -347,11 +347,11 @@ declare('history_paths', nil, is_set_of_strings)
 
 Paths that are never copied to the store.
 
-```lua title=pre-config
+```lua title="pre-config"
 excluded_paths = {}
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('excluded_paths', nil, is_set_of_strings)
 ```
 
@@ -360,11 +360,11 @@ declare('excluded_paths', nil, is_set_of_strings)
 Paths that are copied to the store regardless of the application that writes to them,
 and hence regardless of [the `editors` setting](#editors).
 
-```lua title=pre-config
+```lua title="pre-config"
 included_paths = {}
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('included_paths', nil, is_set_of_strings)
 ```
 
@@ -382,11 +382,11 @@ This is the default, so this setting is mainly useful to:
   but `/home/nazar/.config/.klunok.lua` and `/home/nazar/.config/.klunok/config.lua`
   will not be copied.
 
-```lua title=pre-config
+```lua title="pre-config"
 cluded_paths = {}
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('cluded_paths', nil, is_set_of_strings)
 ```
 
@@ -398,15 +398,15 @@ See [the projects section](./projects.md).
 
 Roots of projects.
 
-```lua title=example
+```lua title="example"
 project_roots['/home/nazar/src/klunok'] = true
 ```
 
-```lua title=pre-config
+```lua title="pre-config"
 project_roots = {}
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('project_roots', nil, is_set_of_strings)
 ```
 
@@ -414,15 +414,15 @@ declare('project_roots', nil, is_set_of_strings)
 
 Directories that contain roots of projects.
 
-```lua title=example
+```lua title="example"
 project_parents['/home/nazar/src/'] = true
 ```
 
-```lua title=pre-config
+```lua title="pre-config"
 project_parents = {}
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('project_parents', nil, is_set_of_strings)
 ```
 
@@ -430,7 +430,7 @@ declare('project_parents', nil, is_set_of_strings)
 
 Root of the project store.
 
-```lua title=post-config
+```lua title="post-config"
 declare('project_store_root', prefix .. '/projects', is_string)
 ```
 
@@ -438,7 +438,7 @@ declare('project_store_root', prefix .. '/projects', is_string)
 
 Root of the unstable project store.
 
-```lua title=post-config
+```lua title="post-config"
 declare('unstable_project_store_root', prefix_var .. '/projects', is_string)
 ```
 
@@ -451,7 +451,7 @@ Tinkering with these setting cannot impact Klunok in any other way.
 
 Guess of the maximum queue size.
 
-```lua title=post-config
+```lua title="post-config"
 declare('queue_size_guess', debounce_seconds * 2, is_positive)
 ```
 
@@ -459,11 +459,11 @@ declare('queue_size_guess', debounce_seconds * 2, is_positive)
 
 Guess of the maximum length of the majority of the paths in the system.
 
-```lua title=pre-config
+```lua title="pre-config"
 path_length_guess = 1024
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('path_length_guess', nil, is_positive)
 ```
 
@@ -471,11 +471,11 @@ declare('path_length_guess', nil, is_positive)
 
 Guess of the maximum PID (process ID) in the system while Klunok is running.
 
-```lua title=pre-config
+```lua title="pre-config"
 max_pid_guess = 2^15
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('max_pid_guess', nil, is_positive)
 ```
 
@@ -483,11 +483,11 @@ declare('max_pid_guess', nil, is_positive)
 
 Guess of how many ELF iterpreters are there in the system.
 
-```lua title=pre-config
+```lua title="pre-config"
 elf_interpreter_count_guess = 1
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('elf_interpreter_count_guess', nil, is_positive)
 ```
 
@@ -500,11 +500,11 @@ the provided prefix.
 If prefix is not an empty string, it is separated from the
 rest of the logged line by a tab.
 
-```lua title=pre-config
+```lua title="pre-config"
 event_queue_head_stored = ''
 ```
 
-```lua title=post-config
+```lua title="post-config"
 declare('event_open_exec_not_editor', nil, is_nil_or_string)
 declare('event_open_exec_editor', nil, is_nil_or_string)
 declare('event_close_write_not_by_editor', nil, is_nil_or_string)

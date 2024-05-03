@@ -9,9 +9,9 @@
         print > post
     }
 }
-/^```lua title=pre-config/ {
+/^```lua title="pre-config"/ {
     is_pre = 1
 }
-/^```lua title=post-config/ {
+/^```lua title="post-config"/ {
     is_post = 1
 }
