@@ -9,6 +9,8 @@
 struct entry {
   struct buffer *value;
   size_t count;
+  /* TODO use unsigned instead of size_t in a lot of places */
+  unsigned metadata;
   struct entry *next;
 };
 
@@ -39,6 +41,8 @@ bool is_empty(const struct set *set) {
 
 static struct entry **get_head(const struct buffer_view *value,
                                const struct set *set) {
+  /* TODO if the size is always a power of two, we can replace modulo with
+   * bitwise stuff */
   return set->heads + get_hash(value) % set->size;
 }
 
@@ -62,22 +66,39 @@ static struct entry **find_entry(const struct buffer_view *value,
   return entry;
 }
 
-size_t get_count(const struct buffer_view *value, const struct set *set) {
+enum attribute {
+  metadata,
+  count,
+};
+
+static size_t get_attribute(enum attribute attribute,
+                            const struct buffer_view *value,
+                            const struct set *set) {
   if (is_empty(set)) {
     return 0;
   }
   struct entry **entry = find_entry(value, get_head(value, set));
   if (*entry) {
-    return (*entry)->count;
+    return attribute == count ? (*entry)->count : (*entry)->metadata;
   }
   return 0;
+}
+
+size_t get_count(const struct buffer_view *value, const struct set *set) {
+  return get_attribute(count, value, set);
+}
+
+unsigned get_last_metadata(const struct buffer_view *value,
+                           const struct set *set) {
+  return get_attribute(metadata, value, set);
 }
 
 bool is_within(const struct buffer_view *value, const struct set *set) {
   return get_count(value, set);
 }
 
-void add(const char *value, struct set *set, struct trace *trace) {
+void add_with_metadata(const char *value, unsigned metadata, struct set *set,
+                       struct trace *trace) {
   struct buffer *buffer = create_buffer(trace);
   concat_string(value, buffer, trace);
   if (!ok(trace)) {
@@ -89,6 +110,7 @@ void add(const char *value, struct set *set, struct trace *trace) {
   struct entry **entry = find_entry(get_view(buffer), head);
   if (*entry) {
     ++(*entry)->count;
+    (*entry)->metadata = metadata;
     free_buffer(buffer);
     return;
   }
@@ -106,9 +128,14 @@ void add(const char *value, struct set *set, struct trace *trace) {
 
   new_entry->next = *head;
   new_entry->value = buffer;
+  new_entry->metadata = metadata;
   new_entry->count = 1;
 
   *head = new_entry;
+}
+
+void add(const char *value, struct set *set, struct trace *trace) {
+  add_with_metadata(value, 0, set, trace);
 }
 
 void pop(const struct buffer_view *value, struct set *set) {
