@@ -69,7 +69,8 @@ const struct translation messages = {
     .out_of_memory = "There is not enough memory",
     .cli_usage_violated = "Some of the command line arguments do not fit the usage",
     .cannot_parse_cli = "Cannot parse the command line arguments",
-    .cannot_drop_privileges = "Cannot drop privileges",
+    .cannot_drop_privileges = "Cannot drop privileges by assuming identity of "
+                              "the owner of a path",
     .cannot_load_handler = "Cannot load the event handler",
     .cannot_handle_exec = "Cannot handle a file execution event",
     .cannot_handle_write = "Cannot handle a file write event",
