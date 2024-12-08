@@ -3,8 +3,6 @@
 #include "messages.h"
 #include "trace.h"
 #include <assert.h>
-#include <stdlib.h>
-#include <string.h>
 
 void test_set(struct trace *trace) {
   struct set *set = create_set(0, trace);
