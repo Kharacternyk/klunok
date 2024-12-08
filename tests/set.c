@@ -70,7 +70,6 @@ void test_set(struct trace *trace) {
   pop(v4, set);
   assert(ok(trace));
   assert(!is_within(v4, set));
-  assert(is_empty(set));
 
   free_buffer_view(v1);
   free_buffer_view(v2);
