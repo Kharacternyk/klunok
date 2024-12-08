@@ -7,6 +7,7 @@
 void test_set(struct trace *trace) {
   struct set *set = create_set(0, trace);
   assert(ok(trace));
+  assert(is_empty(set));
 
   const char *s1 = "/home/nazar";
   struct buffer_view *v1 = create_buffer_view(s1, trace);
@@ -17,6 +18,7 @@ void test_set(struct trace *trace) {
   add(s1, set, trace);
   assert(ok(trace));
   assert(is_within(v1, set));
+  assert(!is_empty(set));
 
   const char *s2 = "my-data.txt";
   struct buffer_view *v2 = create_buffer_view(s2, trace);
@@ -65,6 +67,7 @@ void test_set(struct trace *trace) {
   pop(v4, set);
   assert(ok(trace));
   assert(!is_within(v4, set));
+  assert(is_empty(set));
 
   free_buffer_view(v1);
   free_buffer_view(v2);
