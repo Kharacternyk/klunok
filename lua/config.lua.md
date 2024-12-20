@@ -242,7 +242,7 @@ Relative paths are interpreted relative to the common parent of directories
 monitored via
 [the `-w` command line option](./cli.md#-w-path-to-a-directory-that-should-be-monitored-for-edited-files).
 For example, if Klunok is invoked as
-`klunok -w /home/nazar/src /home/nazar/.config/nvim /home/nazar/.config/klunok`,
+`klunok -w /home/nazar/src -w /home/nazar/.config/nvim -w /home/nazar/.config/klunok`,
 relatives paths are interpreted relative to `/home/nazar`.
 
 `history_paths`, `excluded_paths`, `included_paths` and `cluded_paths`
@@ -445,7 +445,7 @@ declare('unstable_project_store_root', prefix_var .. '/projects', is_string)
 ## Performance tuning
 
 These settings control the trade-off between RAM usage and performance.
-Tinkering with these setting cannot impact Klunok in any other way.
+Tinkering with these settings cannot impact Klunok in any other way.
 
 ### `queue_size_guess`
 
