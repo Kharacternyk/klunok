@@ -430,6 +430,8 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       break;
     }
 
+    /* TODO: just recompute metadata on pop.
+     * history_paths can be appended to included_path in Lua.*/
     size_t project_root_end_offset =
         get_metadata(head) >> linq_meta_project_offset;
 
