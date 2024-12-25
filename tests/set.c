@@ -55,18 +55,15 @@ void test_set(struct trace *trace) {
   assert(!is_within(v1, set));
 
   assert(get_count(v4, set) == 1);
-  add_with_metadata(s4, 11, set, trace);
-  add_with_metadata(s4, 22, set, trace);
+  add(s4, set, trace);
   assert(ok(trace));
-  assert(get_count(v4, set) == 3);
-  assert(get_last_metadata(v4, set) == 22);
+  assert(get_count(v4, set) == 2);
   assert(is_within(v4, set));
 
   pop(v4, set);
   assert(ok(trace));
   assert(is_within(v4, set));
 
-  pop(v4, set);
   pop(v4, set);
   assert(ok(trace));
   assert(!is_within(v4, set));
