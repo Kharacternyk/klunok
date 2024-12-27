@@ -435,6 +435,13 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
     size_t project_root_end_offset =
         get_metadata(head) >> linq_meta_project_offset;
 
+    if (ok(trace) && project_root_end_offset && is_stored &&
+        (project_root_end_offset > strlen(get_path(head)) ||
+         get_path(head)[project_root_end_offset] != '/')) {
+      throw_context(get_path(head), trace);
+      throw_static(messages.linq.invalid_entry, trace);
+    }
+
     if (ok(trace) && project_root_end_offset && is_stored) {
       size_t project_name_length = 0;
       while (*(get_path(head) + project_root_end_offset - 1 -
