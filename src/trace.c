@@ -23,9 +23,7 @@ struct trace {
   size_t post_throw_depth;
 };
 
-struct trace *create_trace() {
-  return calloc(1, sizeof(struct trace));
-}
+struct trace *create_trace() { return calloc(1, sizeof(struct trace)); }
 
 static void pop_trace_message(struct trace *trace) {
   struct frame *new_head = trace->head->next;
@@ -139,16 +137,9 @@ void unwind(int fd, const struct trace *trace) {
   size_t depth = 0;
 
   for (struct frame *frame = trace->head; frame; frame = frame->next) {
-    const char *prefix = NULL;
-
-    if (depth) {
-      if (frame->is_context) {
-        prefix = messages.trace.which_is;
-      } else {
-        prefix = messages.trace.because_of;
-      }
-    }
-
+    const char *prefix = !depth              ? NULL
+                         : frame->is_context ? messages.trace.which_is
+                                             : messages.trace.because_of;
     logstep(fd, prefix, frame->static_message, depth);
     ++depth;
   }
