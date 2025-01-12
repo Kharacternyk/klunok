@@ -1,21 +1,21 @@
 :root {
-  --ifm-color-primary: #001c98;
-  --ifm-color-primary-dark: #001989;
-  --ifm-color-primary-darker: #001881;
-  --ifm-color-primary-darkest: #00146a;
-  --ifm-color-primary-light: #001fa7;
-  --ifm-color-primary-lighter: #0020af;
-  --ifm-color-primary-lightest: #0024c6;
+  --ifm-color-primary: #4176bd;
+  --ifm-color-primary-dark: #3b6aaa;
+  --ifm-color-primary-darker: #3764a1;
+  --ifm-color-primary-darkest: #2d5384;
+  --ifm-color-primary-light: #5384c4;
+  --ifm-color-primary-lighter: #5d8ac7;
+  --ifm-color-primary-lightest: #799fd1;
 }
 
 [data-theme="dark"] {
-  --ifm-color-primary: #ffe367;
-  --ifm-color-primary-dark: #ffdc43;
-  --ifm-color-primary-darker: #ffd931;
-  --ifm-color-primary-darkest: #fbcc00;
-  --ifm-color-primary-light: #ffea8b;
-  --ifm-color-primary-lighter: #ffed9d;
-  --ifm-color-primary-lightest: #fff7d2;
+  --ifm-color-primary: #fbf0aa;
+  --ifm-color-primary-dark: #f9e982;
+  --ifm-color-primary-darker: #f8e56e;
+  --ifm-color-primary-darkest: #f5db31;
+  --ifm-color-primary-light: #fdf7d2;
+  --ifm-color-primary-lighter: #fefbe6;
+  --ifm-color-primary-lightest: #ffffff;
 }
 
 .tabs__item {
