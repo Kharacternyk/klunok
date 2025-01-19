@@ -1,4 +1,5 @@
 {
+  description = "A smart versioning and automatic backup daemon";
   outputs = { self, nixpkgs, flake-utils }:
     let
       utils = flake-utils.lib;
