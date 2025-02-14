@@ -1,19 +1,18 @@
-{
-  lib,
-  stdenv,
-  meson,
-  ninja,
-  pkg-config,
-  lua,
-  valgrind-light,
-  musl-fts,
-  doCheckThoroughly ? (
+{ lib
+, stdenv
+, meson
+, ninja
+, pkg-config
+, lua
+, valgrind-light
+, musl-fts
+, doCheckThoroughly ? (
     lib.meta.availableOn stdenv.hostPlatform valgrind-light && !valgrind-light.meta.broken
-  ),
-}:
-stdenv.mkDerivation {
+  )
+}: stdenv.mkDerivation {
   pname = "klunok";
-  version = builtins.readFile ./version + (if lua == null then "no-lua" else "lua-${lua.version}");
+  version = builtins.readFile ./version
+    + (if lua == null then "no-lua" else "lua-${lua.version}");
   src = ./.;
 
   doCheck = !stdenv.targetPlatform.isStatic;
@@ -26,13 +25,11 @@ stdenv.mkDerivation {
     ninja
     pkg-config
   ];
-  buildInputs =
-    [
-      lua
-    ]
-    ++ lib.optionals stdenv.targetPlatform.isMusl [
-      musl-fts
-    ];
+  buildInputs = [
+    lua
+  ] ++ lib.optionals stdenv.targetPlatform.isMusl [
+    musl-fts
+  ];
   checkInputs = lib.optionals doCheckThoroughly [
     valgrind-light
   ];
