@@ -243,7 +243,7 @@ monitored via
 [the `-w` command line option](./cli.md#-w-path-to-a-directory-that-should-be-monitored-for-edited-files).
 For example, if Klunok is invoked as
 `klunok -w /home/nazar/src -w /home/nazar/.config/nvim -w /home/nazar/.config/klunok`,
-relatives paths are interpreted relative to `/home/nazar`.
+relative paths are interpreted relative to `/home/nazar`.
 
 `history_paths`, `excluded_paths`, `included_paths` and `cluded_paths`
 can be paths not only to files, but also to directories.
