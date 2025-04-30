@@ -6,6 +6,8 @@ sidebar_position: 5
 
 Klunok can be configured with the Lua programming language.
 Settings are global Lua variables assigned in a file.
+(If you want to use a custom variable with a name that is guaranteed not to clash
+with any future settings, begin the name with `custom`).
 If the file is within directories that are monitored by Klunok,
 the settings are automatically reloaded when the file is written to.
 Here is an example of the content of the configuration file:
