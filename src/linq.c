@@ -27,7 +27,7 @@ struct linq {
 struct linq_head {
   char *target;
   char *path;
-  size_t metadata;
+  unsigned metadata;
   time_t pause;
 };
 
@@ -52,13 +52,6 @@ static void free_entries(struct dirent **entries, size_t entry_count) {
     free(entries[i]);
   }
   free(entries);
-}
-
-static char *strip_metadata(char *target) {
-  while (target[1] == '/' || (target[1] == '.' && target[2] == '/')) {
-    ++target;
-  }
-  return target;
 }
 
 static char *read_entry(const char *entry, const struct linq *linq,
@@ -128,7 +121,7 @@ load_or_create_linq(const char *path, time_t debounce_seconds,
   for (size_t i = 0; i < entry_count && ok(trace); ++i) {
     char *entry_target = read_entry(entries[i]->d_name, linq, trace);
     if (ok(trace)) {
-      add(strip_metadata(entry_target), set, trace);
+      add_with_metadata(entry_target, set, trace);
       free(entry_target);
     }
   }
@@ -151,23 +144,7 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
                              entry_length_guess, true, trace);
 }
 
-static void concat_metadata(struct buffer *buffer, size_t metadata,
-                            struct trace *trace) {
-  size_t bit_length = 0;
-
-  while (metadata >= 1 << bit_length) {
-    ++bit_length;
-  }
-
-  for (size_t i = 1; ok(trace) && i <= bit_length; ++i) {
-    concat_char('/', buffer, trace);
-    if (metadata & (1 << (bit_length - i))) {
-      concat_char('.', buffer, trace);
-    }
-  }
-}
-
-void push(const char *path, size_t metadata, struct linq *linq,
+void push(const char *path, unsigned metadata, struct linq *linq,
           struct trace *trace) {
   if (!ok(trace)) {
     return;
@@ -178,13 +155,12 @@ void push(const char *path, size_t metadata, struct linq *linq,
   concat_size(linq->head_index + linq->size, link_buffer, trace);
 
   struct buffer *target_buffer = create_buffer(trace);
-  concat_metadata(target_buffer, metadata, trace);
   concat_string(path, target_buffer, trace);
 
   TNEG(symlinkat(get_string(get_view(target_buffer)), linq->dirfd,
                  get_string(get_view(link_buffer))),
        trace);
-  add(path, linq->set, trace);
+  add_with_metadata(path, metadata, linq->set, trace);
   if (ok(trace)) {
     ++linq->size;
   }
@@ -223,40 +199,32 @@ struct linq_head *get_head(struct linq *linq, struct trace *trace) {
     return head;
   }
 
-  char *target = read_entry(get_string(get_view(link)), linq, trace);
+  char *path = read_entry(get_string(get_view(link)), linq, trace);
   free_buffer(link);
-
-  char *path = target;
-  head->metadata = 0;
-  while (path[1] == '/' || (path[1] == '.' && path[2] == '/')) {
-    head->metadata *= 2;
-    ++path;
-    if (*path == '.') {
-      head->metadata += 1;
-      ++path;
-    }
-  }
 
   struct buffer_view *path_view = create_buffer_view(path, trace);
 
   if (ok(trace) && get_count(path_view, linq->set) > 1) {
-    free(target);
+    free(path);
     free(head);
     free_buffer_view(path_view);
     pop_head(linq, trace);
     return get_head(linq, trace);
   }
 
-  free_buffer_view(path_view);
-
   if (!ok(trace)) {
+    free(path);
     free(head);
+    free_buffer_view(path_view);
     return NULL;
   }
 
   head->pause = 0;
-  head->target = target;
+  head->target = path;
   head->path = path;
+  head->metadata = get_last_metadata(path_view, linq->set);
+
+  free_buffer_view(path_view);
 
   return head;
 }
@@ -273,8 +241,7 @@ void pop_head(struct linq *linq, struct trace *trace) {
   TNEG(unlinkat(linq->dirfd, get_string(get_view(link)), 0), trace);
 
   if (ok(trace)) {
-    struct buffer_view *path_view =
-        create_buffer_view(strip_metadata(target), trace);
+    struct buffer_view *path_view = create_buffer_view(target, trace);
 
     if (ok(trace)) {
       pop(path_view, linq->set);
@@ -295,7 +262,7 @@ void pop_head(struct linq *linq, struct trace *trace) {
 
 const char *get_path(const struct linq_head *head) { return head->path; }
 
-size_t get_metadata(const struct linq_head *head) { return head->metadata; }
+unsigned get_metadata(const struct linq_head *head) { return head->metadata; }
 
 time_t get_pause(const struct linq_head *head) { return head->pause; }
 

@@ -139,9 +139,30 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   free_buffer_view(exe_filename_view);
 }
 
-static const size_t linq_meta_is_project = 1;
-static const size_t linq_meta_is_history = 2;
-static const size_t linq_meta_project_offset = 2;
+static const unsigned linq_meta_is_project = 1;
+static const unsigned linq_meta_is_history = 2;
+static const unsigned linq_meta_project_offset = 2;
+
+static unsigned restore_metadata(const char *path, struct handler *handler,
+                                 struct trace *trace) {
+  if (!ok(trace)) {
+    return 0;
+  }
+  const struct set *sets[] = {
+      get_history_paths(handler->config),
+      get_project_roots(handler->config),
+      get_project_parents(handler->config),
+  };
+  struct sieved_path *sieved_path =
+      sieve(path, handler->common_parent_path_length, sets,
+            sizeof sets / sizeof sets[0], trace);
+  if (!ok(trace)) {
+    return 0;
+  }
+  const char *const *ends = get_sieved_ends(sieved_path);
+
+  bool is_history = ends[0] >
+}
 
 enum status {
   cluded,
