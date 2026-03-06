@@ -28,7 +28,7 @@ This avoids receiving read-only file descriptors of, for example, `/etc/shadow`.
 
 ## Security policy
 
-Please see https://github.com/Kharacternyk/klunok/blob/master/SECURITY.md.
+Please see https://github.com/Kharacternyk/klunok/blob/main/SECURITY.md.
 
 ## Static binary reproducibility
 
