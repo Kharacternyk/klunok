@@ -248,10 +248,10 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
     return;
   }
 
-  const char *event = get_event_close_write_not_by_editor(handler->config);
+  const char *event = get_event_close_write_ignored(handler->config);
 
   if (push_to_linq(pid, file_path, handler, trace)) {
-    event = get_event_close_write_by_editor(handler->config);
+    event = get_event_close_write_not_ignored(handler->config);
   }
 
   record_event(event, pid, file_path, handler, trace);

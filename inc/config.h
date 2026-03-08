@@ -50,9 +50,9 @@ const char *get_event_open_exec_not_editor(const struct config *config)
     __attribute__((pure, nonnull, warn_unused_result));
 const char *get_event_open_exec_editor(const struct config *config)
     __attribute__((pure, nonnull, warn_unused_result));
-const char *get_event_close_write_not_by_editor(const struct config *config)
+const char *get_event_close_write_ignored(const struct config *config)
     __attribute__((pure, nonnull, warn_unused_result));
-const char *get_event_close_write_by_editor(const struct config *config)
+const char *get_event_close_write_not_ignored(const struct config *config)
     __attribute__((pure, nonnull, warn_unused_result));
 const char *get_event_queue_head_deleted(const struct config *config)
     __attribute__((pure, nonnull, warn_unused_result));

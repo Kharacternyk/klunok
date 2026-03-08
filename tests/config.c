@@ -43,8 +43,8 @@ void check_default_config(struct config *config) {
 
   assert(!get_event_open_exec_not_editor(config));
   assert(!get_event_open_exec_editor(config));
-  assert(!get_event_close_write_not_by_editor(config));
-  assert(!get_event_close_write_by_editor(config));
+  assert(!get_event_close_write_ignored(config));
+  assert(!get_event_close_write_not_ignored(config));
   assert(!get_event_queue_head_deleted(config));
   assert(!get_event_queue_head_forbidden(config));
   assert(!strcmp(get_event_queue_head_stored(config), ""));

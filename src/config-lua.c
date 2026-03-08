@@ -1,8 +1,6 @@
 #include "config.h"
-#include "constants.h"
 #include "set.h"
 #include "trace.h"
-#include <errno.h>
 #include <lauxlib.h>
 #include <lualib.h>
 #include <stdlib.h>
@@ -36,8 +34,8 @@ struct config {
   pid_t max_pid_guess;
   char *event_open_exec_not_editor;
   char *event_open_exec_editor;
-  char *event_close_write_not_by_editor;
-  char *event_close_write_by_editor;
+  char *event_close_write_ignored;
+  char *event_close_write_not_ignored;
   char *event_queue_head_deleted;
   char *event_queue_head_forbidden;
   char *event_queue_head_stored;
@@ -145,10 +143,10 @@ struct config *load_config(const char *path, struct trace *trace) {
       read_lua_string(lua, "event_open_exec_not_editor", trace);
   config->event_open_exec_editor =
       read_lua_string(lua, "event_open_exec_editor", trace);
-  config->event_close_write_not_by_editor =
-      read_lua_string(lua, "event_close_write_not_by_editor", trace);
-  config->event_close_write_by_editor =
-      read_lua_string(lua, "event_close_write_by_editor", trace);
+  config->event_close_write_ignored =
+      read_lua_string(lua, "event_close_write_ignored", trace);
+  config->event_close_write_not_ignored =
+      read_lua_string(lua, "event_close_write_not_ignored", trace);
   config->event_queue_head_deleted =
       read_lua_string(lua, "event_queue_head_deleted", trace);
   config->event_queue_head_forbidden =
@@ -263,12 +261,12 @@ const char *get_event_open_exec_editor(const struct config *config) {
   return config->event_open_exec_editor;
 }
 
-const char *get_event_close_write_not_by_editor(const struct config *config) {
-  return config->event_close_write_not_by_editor;
+const char *get_event_close_write_ignored(const struct config *config) {
+  return config->event_close_write_ignored;
 }
 
-const char *get_event_close_write_by_editor(const struct config *config) {
-  return config->event_close_write_by_editor;
+const char *get_event_close_write_not_ignored(const struct config *config) {
+  return config->event_close_write_not_ignored;
 }
 
 const char *get_event_queue_head_deleted(const struct config *config) {
@@ -302,8 +300,8 @@ void free_config(struct config *config) {
     free(config->offset_store_root);
     free(config->event_open_exec_not_editor);
     free(config->event_open_exec_editor);
-    free(config->event_close_write_not_by_editor);
-    free(config->event_close_write_by_editor);
+    free(config->event_close_write_ignored);
+    free(config->event_close_write_not_ignored);
     free(config->event_queue_head_deleted);
     free(config->event_queue_head_forbidden);
     free(config->event_queue_head_stored);

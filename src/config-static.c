@@ -61,8 +61,8 @@ static const char *const included_paths[] = {};
 static const char *const cluded_paths[] = {};
 static const char *const event_open_exec_not_editor;
 static const char *const event_open_exec_editor;
-static const char *const event_close_write_not_by_editor;
-static const char *const event_close_write_by_editor;
+static const char *const event_close_write_ignored;
+static const char *const event_close_write_not_ignored;
 static const char *const event_queue_head_deleted;
 static const char *const event_queue_head_forbidden;
 static const char *const event_queue_head_stored = "";
@@ -197,12 +197,12 @@ const char *get_event_open_exec_editor(const struct config *config) {
   return event_open_exec_editor;
 }
 
-const char *get_event_close_write_not_by_editor(const struct config *config) {
-  return event_close_write_not_by_editor;
+const char *get_event_close_write_ignored(const struct config *config) {
+  return event_close_write_ignored;
 }
 
-const char *get_event_close_write_by_editor(const struct config *config) {
-  return event_close_write_by_editor;
+const char *get_event_close_write_not_ignored(const struct config *config) {
+  return event_close_write_not_ignored;
 }
 
 const char *get_event_queue_head_deleted(const struct config *config) {

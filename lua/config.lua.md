@@ -509,8 +509,8 @@ event_queue_head_stored = ''
 ```lua title="post-config"
 declare('event_open_exec_not_editor', nil, is_nil_or_string)
 declare('event_open_exec_editor', nil, is_nil_or_string)
-declare('event_close_write_not_by_editor', nil, is_nil_or_string)
-declare('event_close_write_by_editor', nil, is_nil_or_string)
+declare('event_close_write_ignored', event_close_write_not_by_editor, is_nil_or_string)
+declare('event_close_write_not_ignored', event_close_write_by_editor, is_nil_or_string)
 declare('event_queue_head_deleted', nil, is_nil_or_string)
 declare('event_queue_head_forbidden', nil, is_nil_or_string)
 declare('event_queue_head_stored', nil, is_nil_or_string)
