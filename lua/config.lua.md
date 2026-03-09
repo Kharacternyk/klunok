@@ -499,7 +499,7 @@ If a setting from this section is `nil`, the corresponding event is not logged t
 the journal.
 Otherwise, the corresponding event is logged to the journal with
 the provided prefix.
-If prefix is not an empty string, it is separated from the
+If the prefix is not an empty string, it is separated from the
 rest of the logged line by a tab.
 
 ```lua title="pre-config"
