@@ -139,6 +139,11 @@ void sync_shallow_tree(const char *destination, const char *source,
     } else {
       throw_errno(trace);
     }
+
+    close(destination_fd);
+    free(*paths);
+    clean_up(destination);
+    return;
   }
 
   assert(!strstr(destination, "//"));
@@ -149,8 +154,10 @@ void sync_shallow_tree(const char *destination, const char *source,
   concat_char('/', filter_path, trace);
   size_t filter_root_length = get_length(get_view(filter_path));
 
+  errno = 0;
+
   for (FTSENT *entry = fts_read(fts); entry && ok(trace);
-       entry = fts_read(fts)) {
+       errno = 0, entry = fts_read(fts)) {
     const char *relative_path = entry->fts_path + source_length;
 
     if (!*relative_path) {

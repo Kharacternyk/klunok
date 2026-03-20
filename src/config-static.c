@@ -81,7 +81,7 @@ static struct set *load_set(const char *const *array, size_t size,
                             struct trace *trace) {
   struct set *set = create_set(size / sizeof(char *), trace);
   for (size_t i = 0; ok(trace) && i < size / sizeof(char *); ++i) {
-    add(editors[i], set, trace);
+    add(array[i], set, trace);
   }
   return set;
 }

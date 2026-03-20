@@ -66,9 +66,10 @@ void note(const char *event, pid_t pid, const char *path,
 
   size_t size_written = 0;
   while (ok(trace) && get_length(get_view(buffer)) > size_written) {
-    size_written += TNEG(write(journal->fd, get_string(get_view(buffer)),
-                               get_length(get_view(buffer))),
-                         trace);
+    size_written +=
+        TNEG(write(journal->fd, get_string(get_view(buffer)) + size_written,
+                   get_length(get_view(buffer)) - size_written),
+             trace);
   }
 
   free(timestamp);
