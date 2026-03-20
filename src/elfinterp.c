@@ -16,10 +16,9 @@ char *get_elf_interpreter(int exe_fd, struct trace *trace) {
   size_t total_read = 0;
 
   while (total_read < sizeof elf_header) {
-    ssize_t iter_read = TNEG(
-        read(exe_fd, (char *)&elf_header + total_read,
-             sizeof elf_header - total_read),
-        trace);
+    ssize_t iter_read = TNEG(read(exe_fd, (char *)&elf_header + total_read,
+                                  sizeof elf_header - total_read),
+                             trace);
     if (!ok(trace) || !iter_read) {
       return NULL;
     }
@@ -41,7 +40,7 @@ char *get_elf_interpreter(int exe_fd, struct trace *trace) {
       ssize_t iter_read =
           TNEG(read(exe_fd, (char *)&program_header + total_read,
                     sizeof program_header - total_read),
-                               trace);
+               trace);
       if (!ok(trace) || !iter_read) {
         return NULL;
       }
@@ -63,6 +62,7 @@ char *get_elf_interpreter(int exe_fd, struct trace *trace) {
                                       program_header.p_filesz - total_read),
                                  trace);
         if (!ok(trace) || !iter_read) {
+          free(result);
           return NULL;
         }
         total_read += iter_read;

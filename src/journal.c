@@ -26,7 +26,7 @@ struct journal *open_journal(const char *path, const char *timestamp_pattern,
   journal->fd = TNEG(open(path, O_CREAT | O_WRONLY | O_APPEND, 0644), trace);
   journal->timestamp_pattern = TNULL(strdup(timestamp_pattern), trace);
   if (!ok(trace)) {
-    if (journal->fd > 0) {
+    if (journal->fd >= 0) {
       close(journal->fd);
     }
     free(journal->timestamp_pattern);

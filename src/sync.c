@@ -121,7 +121,7 @@ void sync_shallow_tree(const char *destination, const char *source,
   char *paths[] = {TNULL(strdup(source), trace), NULL};
 
   if (!ok(trace)) {
-    if (destination_fd > 0) {
+    if (destination_fd >= 0) {
       close(destination_fd);
     }
     free(*paths);

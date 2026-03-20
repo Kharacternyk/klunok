@@ -133,6 +133,7 @@ load_or_create_linq(const char *path, time_t debounce_seconds,
     }
   }
   if (!ok(trace)) {
+    close(dirfd);
     free(linq);
     free_entries(entries, entry_count);
     free_set(set);
@@ -250,6 +251,7 @@ struct linq_head *get_head(struct linq *linq, struct trace *trace) {
   free_buffer_view(path_view);
 
   if (!ok(trace)) {
+    free(target);
     free(head);
     return NULL;
   }

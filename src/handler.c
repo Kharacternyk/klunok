@@ -295,6 +295,10 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
         handler->linq = new_linq;
       }
       redebounce(get_debounce_seconds(new_config), handler->linq);
+    } else {
+      free_config(new_config);
+      free_linq(new_linq);
+      free_journal(new_journal);
     }
   }
 
@@ -342,6 +346,8 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
                     unstable_path, trace);
       concat_char('/', unstable_path, trace);
       concat_string(project_name, unstable_path, trace);
+
+      free(version);
 
       while (ok(trace)) {
         try(trace);
