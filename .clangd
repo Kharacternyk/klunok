@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+  - "-xc-header"
+  - "-I../inc"
