@@ -191,6 +191,16 @@ Root of an auxiliary store used for keeping track of offsets of
 declare('offset_store_root', prefix_var .. '/offsets', is_string)
 ```
 
+### `working_copy_link_name`
+
+If not empty, a symbolic link with this name plus the original file extension
+will be kept in the store alongside the backed-up versions and will point to the
+original file.
+
+```lua title="post-config"
+declare('working_copy_link_name', '', is_string)
+```
+
 ## Debouncing
 
 Debouncing means delaying copying until some time passes
@@ -231,16 +241,6 @@ Pattern of file versions in the store.
 
 ```lua title="post-config"
 declare('version_pattern', 'v' .. journal_timestamp_pattern, is_string)
-```
-
-### `working_copy_link_name`
-
-If not empty, a symbolic link with this name plus the original file extension
-will be kept in the store alongside the backed-up versions and will point to the
-original file.
-
-```lua title="post-config"
-declare('working_copy_link_name', '', is_string)
 ```
 
 ## Controlling which files are copied to the store and how
