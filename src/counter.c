@@ -38,7 +38,7 @@ size_t read_counter(const char *path, struct trace *trace) {
 }
 
 void write_counter(const char *path, size_t counter, struct trace *trace) {
-  if (counter == 0) {
+  if (ok(trace) && counter == 0) {
     if (!unlink(path)) {
       remove_empty_parents(path, trace);
     } else if (errno != ENOENT) {
