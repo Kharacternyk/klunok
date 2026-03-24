@@ -26,6 +26,7 @@ struct config {
   char *journal_path;
   char *journal_timestamp_pattern;
   char *version_pattern;
+  char *working_copy_link_name;
   char *offset_store_root;
   size_t debounce_seconds;
   size_t path_length_guess;
@@ -138,6 +139,8 @@ struct config *load_config(const char *path, struct trace *trace) {
   config->journal_timestamp_pattern =
       read_lua_string(lua, "journal_timestamp_pattern", trace);
   config->version_pattern = read_lua_string(lua, "version_pattern", trace);
+  config->working_copy_link_name =
+      read_lua_string(lua, "working_copy_link_name", trace);
   config->offset_store_root = read_lua_string(lua, "offset_store_root", trace);
   config->event_open_exec_not_editor =
       read_lua_string(lua, "event_open_exec_not_editor", trace);
@@ -229,6 +232,10 @@ const char *get_version_pattern(const struct config *config) {
   return config->version_pattern;
 }
 
+const char *get_working_copy_link_name(const struct config *config) {
+  return config->working_copy_link_name;
+}
+
 const char *get_offset_store_root(const struct config *config) {
   return config->offset_store_root;
 }
@@ -297,6 +304,7 @@ void free_config(struct config *config) {
     free(config->journal_path);
     free(config->journal_timestamp_pattern);
     free(config->version_pattern);
+    free(config->working_copy_link_name);
     free(config->offset_store_root);
     free(config->event_open_exec_not_editor);
     free(config->event_open_exec_editor);

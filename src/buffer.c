@@ -99,7 +99,12 @@ void concat_bytes(const char *bytes, size_t byte_count, struct buffer *buffer,
 }
 
 void concat_char(char c, struct buffer *buffer, struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
+
   ensure_capacity(buffer->view.size + 1, buffer, trace);
+
   if (ok(trace)) {
     buffer->string[buffer->view.size] = 0;
     buffer->string[buffer->view.size - 1] = c;

@@ -233,6 +233,16 @@ Pattern of file versions in the store.
 declare('version_pattern', 'v' .. journal_timestamp_pattern, is_string)
 ```
 
+### `working_copy_link_name`
+
+If not empty, a symbolic link with this name plus the original file extension
+will be kept in the store besides the backed up versions and will point to the
+original file.
+
+```lua title="post-config"
+declare('working_copy_link_name', '', is_string)
+```
+
 ## Controlling which files are copied to the store and how
 
 By default, a file is copied to the store only if it's written to by

@@ -36,6 +36,8 @@ const char *get_journal_timestamp_pattern(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const char *get_version_pattern(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
+const char *get_working_copy_link_name(const struct config *config)
+    __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 size_t get_debounce_seconds(const struct config *config)
     __attribute__((pure, nonnull, warn_unused_result));
 size_t get_path_length_guess(const struct config *config)

@@ -13,6 +13,7 @@ static const char *const journal_path = "klunok/var/journal";
 static const char *const offset_store_root = "klunok/var/offsets";
 static const char *const journal_timestamp_pattern = "%Y-%m-%d-%H-%M";
 static const char *const version_pattern = "v%Y-%m-%d-%H-%M";
+static const char *const working_copy_link_name = "";
 static const size_t debounce_seconds = 60;
 static const size_t path_length_guess = 1024;
 static const pid_t max_pid_guess = 1 << 15;
@@ -165,6 +166,10 @@ const char *get_journal_timestamp_pattern(const struct config *config) {
 
 const char *get_version_pattern(const struct config *config) {
   return version_pattern;
+}
+
+const char *get_working_copy_link_name(const struct config *config) {
+  return working_copy_link_name;
 }
 
 const char *get_offset_store_root(const struct config *config) {

@@ -5,6 +5,7 @@
 #include "counter.h"
 #include "deref.h"
 #include "elfinterp.h"
+#include "extension.h"
 #include "journal.h"
 #include "linq.h"
 #include "messages.h"
@@ -20,6 +21,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 struct handler {
   char *config_path;
@@ -446,6 +448,37 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       }
 
       break;
+    }
+
+    if (ok(trace) && is_stored &&
+        get_working_copy_link_name(handler->config)[0]) {
+      struct stat working_copy_stat;
+      struct buffer *working_copy_path = create_buffer(trace);
+      concat_string(get_store_root(handler->config), working_copy_path, trace);
+      concat_char('/', working_copy_path, trace);
+      concat_string(relative_path, working_copy_path, trace);
+      concat_char('/', working_copy_path, trace);
+      concat_string(get_working_copy_link_name(handler->config),
+                    working_copy_path, trace);
+      concat_string(get_file_extension(relative_path), working_copy_path,
+                    trace);
+
+      if (ok(trace) && lstat(get_string(get_view(working_copy_path)),
+                             &working_copy_stat) < 0) {
+        if (errno != ENOENT) {
+          throw_errno(trace);
+        }
+      } else if (ok(trace)) {
+        free_buffer(working_copy_path);
+        working_copy_path = NULL;
+      }
+
+      if (ok(trace) && working_copy_path) {
+        TNEG(symlink(get_path(head), get_string(get_view(working_copy_path))),
+             trace);
+      }
+
+      free_buffer(working_copy_path);
     }
 
     if (ok(trace) && project_root_end_offset && is_stored) {

@@ -34,6 +34,7 @@ void check_default_config(struct config *config) {
   assert(!strcmp(get_offset_store_root(config), "klunok/var/offsets"));
   assert(!strcmp(get_journal_timestamp_pattern(config), "%Y-%m-%d-%H-%M"));
   assert(!strcmp(get_version_pattern(config), "v%Y-%m-%d-%H-%M"));
+  assert(!strcmp(get_working_copy_link_name(config), ""));
 
   assert(get_debounce_seconds(config) == 60);
   assert(get_path_length_guess(config) == 1024);
