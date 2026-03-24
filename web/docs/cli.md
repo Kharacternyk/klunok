@@ -51,11 +51,11 @@ If you know for sure which directories contain executable files of text editors
 klunok -e /usr/bin -e /nix/store
 ```
 
-## `-d`: path to a file or directory, which owner's identity will be used for running Klunok
+## `-d`: path to a file or directory whose owner's identity will be used when running Klunok
 
 Even though Klunok must be started as root to properly initialize,
 Klunok will not continue running as root after initializing.
-Instead, it will assume identity of the owner of the provided file or directory.
+Instead, it will assume the identity of the owner of the provided file or directory.
 This way, most of the code of Klunok doesn't run as root, which is a good security practice.
 
 Defaults to the current working directory.

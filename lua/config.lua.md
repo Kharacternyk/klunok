@@ -31,8 +31,8 @@ Configuration parsing code is extracted from this page
 to ensure that the documentation is always up to date.
 This imposes a certain structure on this page.
 Lua code blocks titled `pre-config` are executed before the passed configuration file.
-This blocks assign static default values to some settings.
-You can use this values in your configuration file, like this:
+These blocks assign static default values to some settings.
+You can use these values in your configuration file, like this:
 
 ```lua
 debounce_seconds = debounce_seconds * 2
@@ -40,7 +40,7 @@ prefix_var = prefix .. '/volatile'
 ```
 
 Lua code blocks titled `post-config` are executed after the passed configuration file.
-This blocks invoke the `declare` function.
+These blocks invoke the `declare` function.
 The invocations specify the name of a setting,
 its dynamically computed default value and its type.
 Here is a sample invocation:
@@ -51,7 +51,7 @@ declare('prefix_var', prefix .. '/var', is_string)
 
 This invocation means that a setting called `prefix_var` must be a string,
 and if it's not set in the configuration file,
-its value is dynamically computed as string `/var` concatenated to
+its value is dynamically computed as the string `/var` concatenated to
 the value of the `prefix` setting.
 The `declare` function is defined below:
 
@@ -80,7 +80,7 @@ end
 ```
 
 `is_nil_or_string` accepts `nil` and strings.
-`nil` in Lua is a representation of absence of value.
+`nil` in Lua is a representation of the absence of a value.
 `nil` is not the same as an empty string `''`.
 The description of a setting of this type will specify what exactly `nil` represents in the
 context of the setting.
@@ -105,7 +105,7 @@ end
 
 `is_set_of_strings` accepts Lua tables with string keys.
 Working with settings of this type usually means setting individual keys to `true` or `nil`.
-For example, to add string `'abc'` to set `xyz`, you can write `xyz.abc = true`.
+For example, to add the string `'abc'` to the set `xyz`, you can write `xyz.abc = true`.
 To remove `'abc'` from `xyz`, you can write `xyz.abc = nil`.
 If the key contains characters that are not letters, for example string `'/@'`,
 you can add the key as `xyz['/@'] = true` and remove it as `xyz['/@'] = nil`.
@@ -198,7 +198,7 @@ without any further modifications.
 
 ### `debounce_seconds`
 
-The delay in seconds of copying a file to the store after the last modification.
+The delay, in seconds, before a file is copied to the store after the last modification.
 
 ```lua title="pre-config"
 debounce_seconds = 60
@@ -236,7 +236,7 @@ declare('version_pattern', 'v' .. journal_timestamp_pattern, is_string)
 ### `working_copy_link_name`
 
 If not empty, a symbolic link with this name plus the original file extension
-will be kept in the store besides the backed up versions and will point to the
+will be kept in the store alongside the backed-up versions and will point to the
 original file.
 
 ```lua title="post-config"
@@ -247,7 +247,7 @@ declare('working_copy_link_name', '', is_string)
 
 By default, a file is copied to the store only if it's written to by
 an editor application and it's not hidden.
-A file is hidden if its name or name of one of its ancestor directories begins with a dot,
+A file is hidden if its name or the name of one of its ancestor directories begins with a dot,
 for example `.config`.
 
 Relative paths are interpreted relative to the common parent of directories
@@ -284,7 +284,7 @@ With this configuration:
 ### `editors`
 
 Filenames of executables that are considered editors.
-By default, only files edited by this applications are copied to the store.
+By default, only files edited by these applications are copied to the store.
 If you have problems registering an application as an editor,
 please read [the editors section](./editors.md).
 
@@ -427,7 +427,7 @@ declare('project_roots', nil, is_set_of_strings)
 Directories that contain roots of projects.
 
 ```lua title="example"
-project_parents['/home/nazar/src/'] = true
+project_parents['/home/nazar/src'] = true
 ```
 
 ```lua title="pre-config"
@@ -493,7 +493,7 @@ declare('max_pid_guess', nil, is_positive)
 
 ### `elf_interpreter_count_guess`
 
-Guess of how many ELF iterpreters are there in the system.
+Guess of how many ELF interpreters there are in the system.
 
 ```lua title="pre-config"
 elf_interpreter_count_guess = 1

@@ -16,7 +16,7 @@ automatically.
 
 Klunok works well with most text and graphics editors, IDEs, and office suites,
 including Vim, Visual Studio Code, LibreOffice, and Inkscape.
-Also, Klunok is free and open source: https://github.com/Kharacternyk/klunok.
+Klunok is also free and open source: https://github.com/Kharacternyk/klunok.
 
 ```mermaid
 graph TD;

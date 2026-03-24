@@ -14,7 +14,7 @@ to the configuration file.
 
 This works for many applications on most Linux distributions.
 If it doesn't work,
-some investigation is needed to find out what executable
+some investigation is needed to find out which executable
 writes to the file on behalf of the application.
 Please [open a GitHub issue](https://github.com/Kharacternyk/klunok/issues/new/choose)
 or ping nazar@vinnich.uk and we'll look into it.

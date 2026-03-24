@@ -26,7 +26,7 @@ Cannot initialize fanotify
 Klunok will drop privileges to the owner of the current working directory
 after initializing the fanotify API.
 You can use
-[the `-d` command line option](./cli.md#-d-path-to-a-file-or-directory-which-owners-identity-will-be-used-for-running-klunok)
+[the `-d` command line option](./cli.md#-d-path-to-a-file-or-directory-whose-owners-identity-will-be-used-when-running-klunok)
 to customize this.
 
 Once Klunok successfully starts,
@@ -37,7 +37,8 @@ it copies the file to the `klunok/store` directory.
 
 Klunok considers only files that are edited by applications that humans use to edit files,
 for example, Vim and LibreOffice.
-Please note that Klunok must be launched before these applications are to recognize them.
+Please note that Klunok must be launched before these applications are launched
+for it to recognize them.
 
 Here is a simple demo:
 

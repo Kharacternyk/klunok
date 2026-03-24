@@ -23,7 +23,7 @@ Once the file is downloaded, mark it as executable:
 chmod +x ~/Downloads/klunok
 ```
 
-Also, you can copy the binary to somewhere in you `$PATH`, for example:
+You can also copy the binary somewhere in your `$PATH`, for example:
 
 ```bash
 sudo cp ~/Downloads/klunok /bin/
@@ -52,7 +52,7 @@ nix profile install github:Kharacternyk/klunok/v1
 
 Avoid installing `github:Kharacternyk/klunok` (without a version tag),
 as this is the development version that is more likely to have bugs.
-Instead use `github:Kharacternyk/klunok/v1` for the latest stable version.
+Instead, use `github:Kharacternyk/klunok/v1` for the latest stable version.
 
   </TabItem>
   <TabItem value="source" label="From source">

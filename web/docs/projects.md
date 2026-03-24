@@ -15,7 +15,7 @@ Files within the versions are hard links to files in the ordinary store
 [The `debounce_seconds` setting](./configuration.md#debounce_seconds) applies to
 the projects as well.
 A new version of a project is stored if no files within the project are edited
-for this amount of seconds.
+for this number of seconds.
 
 If you have a common directory for projects,
 for example `~/Projects` or `~/src`,
