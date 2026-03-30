@@ -295,12 +295,28 @@ ignored_leading_dots['.custom-hidden'] = true
 
 ```lua title="pre-config"
 ignored_leading_dots = {
+  ['.clang-format'] = true,
+  ['.clang-format-ignore'] = true,
+  ['.clang-tidy'] = true,
+  ['.clangd'] = true,
   ['.dockerignore'] = true,
   ['.editorconfig'] = true,
   ['.gitattributes'] = true,
   ['.github'] = true,
   ['.gitignore'] = true,
+  ['.gitlab'] = true,
+  ['.gitlab-ci.yml'] = true,
   ['.mailmap'] = true,
+  ['.prettierignore'] = true,
+  ['.prettierrc'] = true,
+  ['.prettierrc.cjs'] = true,
+  ['.prettierrc.js'] = true,
+  ['.prettierrc.json'] = true,
+  ['.prettierrc.json5'] = true,
+  ['.prettierrc.mjs'] = true,
+  ['.prettierrc.toml'] = true,
+  ['.prettierrc.yaml'] = true,
+  ['.prettierrc.yml'] = true,
 }
 ```
 

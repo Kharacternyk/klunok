@@ -61,8 +61,17 @@ static const char *const excluded_paths[] = {};
 static const char *const included_paths[] = {};
 static const char *const cluded_paths[] = {};
 static const char *const ignored_leading_dots[] = {
-    ".dockerignore", ".editorconfig", ".gitattributes",
-    ".github",       ".gitignore",    ".mailmap",
+    ".clang-format",    ".clang-format-ignore",
+    ".clang-tidy",      ".clangd",
+    ".dockerignore",    ".editorconfig",
+    ".gitattributes",   ".github",
+    ".gitignore",       ".gitlab",
+    ".gitlab-ci.yml",   ".mailmap",
+    ".prettierignore",  ".prettierrc",
+    ".prettierrc.cjs",  ".prettierrc.js",
+    ".prettierrc.json", ".prettierrc.json5",
+    ".prettierrc.mjs",  ".prettierrc.toml",
+    ".prettierrc.yaml", ".prettierrc.yml",
 };
 static const char *const event_open_exec_not_editor;
 static const char *const event_open_exec_editor;
