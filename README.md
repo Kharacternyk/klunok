@@ -24,14 +24,12 @@ some methods (`do_Y(struct X *x)`),
 and a destructor (`free_X(struct X *x)`).
 Names of constructors and destructors contain the name of the class,
 whereas methods generally should not.
-If there's a "parent" and a "child" class within one component,
-the constructor of the child class is generally not exposed;
-instances of the child class are obtained through some methods of the parent class instead.
+If there's a "whole" and a "part" class within one component,
+the constructor and destructor of the "part" class might not be exposed;
+instances of the "part" class are obtained through some methods of the "whole" class instead.
 Component headers do not include each other and therefore do not contain include guards.
 If a header needs to reference a `struct` from another header,
 the `struct` is just redeclared (`struct trace;`).
-
-`clang-format` with the default configuration is used for formatting.
 
 For error handling in the project's own code,
 only the `trace` component is used, not return values or `errno`.
@@ -61,6 +59,8 @@ guess from context what is going to be passed as `buffer` and `trace`.
 Macros are generally used only for things that are impossible to implement without them
 (`TNEG` and `TNULL`) or for compile-time string concatenation (testing code mostly).
 Otherwise functions and `static const` variables are preferred.
+
+`clang-format` with the default configuration is used for formatting.
 
 ## High-level Flow From a Security Perspective
 
