@@ -60,6 +60,8 @@ Macros are generally used only for things that are impossible to implement witho
 (`TNEG` and `TNULL`) or for compile-time string concatenation (testing code mostly).
 Otherwise functions and `static const` variables are preferred.
 
+Destructors must accept `NULL` like the regular `free()`.
+
 `clang-format` with the default configuration is used for formatting.
 
 ## High-level Flow From a Security Perspective
