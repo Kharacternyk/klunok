@@ -1,3 +1,5 @@
+Read the [README](./README.md) for general project guidance.
+
 If tools such as `meson` are unavailable, ask the user to activate a development shell.
 
 Use `XDG_RUNTIME_DIR=. meson test -C build` to run tests.
