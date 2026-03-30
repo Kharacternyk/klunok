@@ -13,8 +13,8 @@ The rest of this README is a developer guide.
 ## C Code Style
 
 The C code is divided into "components".
-Each component consists of a header in `inc/`,
-an implementation in `src/` and a test in `tests/`.
+Each component consists of a header in [`inc/`](./inc/),
+an implementation in [`src/`](./src/) and a test in [`tests/`](./tests/).
 
 The header of a component is either a namespace of related functions
 or a namespace of related class-like APIs: a constructor
@@ -82,8 +82,8 @@ See the relevant [section of the user guide](./web/docs/security.md).
 ### High-level
 
 - `config`: shared configuration interface with both a Lua
-  (`config-lua.c`, [`lua/`](./lua/))
-  and a compile-time (`config-static.c`) implementation.
+  ([`config-lua.c`](./src/config-lua.c), [`lua/`](./lua/))
+  and a compile-time ([`config-static.c`](./src/config-static.c)) implementation.
 - `handler`: most of the high-level logic.
 - `linq`: an implementation of a filesystem-backed debouncing queue of paths with metadata.
 
