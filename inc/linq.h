@@ -19,5 +19,5 @@ const char *get_path(const struct linq_head *head)
 time_t get_pause(const struct linq_head *head)
     __attribute__((pure, nonnull, warn_unused_result));
 size_t get_metadata(const struct linq_head *head)
-    __attribute__((pure, warn_unused_result));
+    __attribute__((pure, nonnull, warn_unused_result));
 void free_linq_head(struct linq_head *head);
