@@ -19,6 +19,7 @@ struct config {
   struct set *excluded_paths;
   struct set *included_paths;
   struct set *cluded_paths;
+  struct set *ignored_leading_dots;
   char *store_root;
   char *project_store_root;
   char *unstable_project_store_root;
@@ -129,6 +130,8 @@ struct config *load_config(const char *path, struct trace *trace) {
   config->excluded_paths = read_lua_set(lua, "excluded_paths", trace);
   config->included_paths = read_lua_set(lua, "included_paths", trace);
   config->cluded_paths = read_lua_set(lua, "cluded_paths", trace);
+  config->ignored_leading_dots =
+      read_lua_set(lua, "ignored_leading_dots", trace);
   config->store_root = read_lua_string(lua, "store_root", trace);
   config->project_store_root =
       read_lua_string(lua, "project_store_root", trace);
@@ -202,6 +205,10 @@ const struct set *get_included_paths(const struct config *config) {
 
 const struct set *get_cluded_paths(const struct config *config) {
   return config->cluded_paths;
+}
+
+const struct set *get_ignored_leading_dots(const struct config *config) {
+  return config->ignored_leading_dots;
 }
 
 const char *get_store_root(const struct config *config) {
@@ -297,6 +304,7 @@ void free_config(struct config *config) {
     free_set(config->excluded_paths);
     free_set(config->included_paths);
     free_set(config->cluded_paths);
+    free_set(config->ignored_leading_dots);
     free(config->store_root);
     free(config->project_store_root);
     free(config->unstable_project_store_root);

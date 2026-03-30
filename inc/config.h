@@ -20,6 +20,8 @@ const struct set *get_included_paths(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const struct set *get_cluded_paths(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
+const struct set *get_ignored_leading_dots(const struct config *config)
+    __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const char *get_store_root(const struct config *config)
     __attribute__((pure, returns_nonnull, nonnull, warn_unused_result));
 const char *get_project_store_root(const struct config *config)

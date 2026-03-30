@@ -21,13 +21,21 @@ void test_config_lua(struct trace *trace) {
   assert(ok(trace));
 
   const struct set *editors = get_editors(config);
+  const struct set *ignored_leading_dots = get_ignored_leading_dots(config);
   struct buffer_view *cat = create_buffer_view("cat", trace);
   struct buffer_view *vi = create_buffer_view("vi", trace);
+  struct buffer_view *custom_hidden =
+      create_buffer_view(".custom-hidden", trace);
+  struct buffer_view *env = create_buffer_view(".env", trace);
   assert(ok(trace));
   assert(is_within(cat, editors));
   assert(!is_within(vi, editors));
+  assert(is_within(custom_hidden, ignored_leading_dots));
+  assert(!is_within(env, ignored_leading_dots));
   free_buffer_view(cat);
   free_buffer_view(vi);
+  free_buffer_view(custom_hidden);
+  free_buffer_view(env);
 
   const char *version_pattern = get_version_pattern(config);
   assert(!strcmp(version_pattern, "override"));

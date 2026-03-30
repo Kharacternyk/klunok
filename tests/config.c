@@ -9,13 +9,20 @@
 void check_default_config(struct config *config) {
   struct trace *trace = create_trace();
   const struct set *editors = get_editors(config);
+  const struct set *ignored_leading_dots = get_ignored_leading_dots(config);
   struct buffer_view *cat = create_buffer_view("cat", trace);
   struct buffer_view *vi = create_buffer_view("vi", trace);
+  struct buffer_view *github = create_buffer_view(".github", trace);
+  struct buffer_view *env = create_buffer_view(".env", trace);
   assert(ok(trace));
   assert(!is_within(cat, editors));
   assert(is_within(vi, editors));
+  assert(is_within(github, ignored_leading_dots));
+  assert(!is_within(env, ignored_leading_dots));
   free_buffer_view(cat);
   free_buffer_view(vi);
+  free_buffer_view(github);
+  free_buffer_view(env);
   free(trace);
 
   assert(is_empty(get_project_roots(config)));

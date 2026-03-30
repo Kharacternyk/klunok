@@ -60,6 +60,10 @@ static const char *const history_paths[] = {};
 static const char *const excluded_paths[] = {};
 static const char *const included_paths[] = {};
 static const char *const cluded_paths[] = {};
+static const char *const ignored_leading_dots[] = {
+    ".dockerignore", ".editorconfig", ".gitattributes",
+    ".github",       ".gitignore",    ".mailmap",
+};
 static const char *const event_open_exec_not_editor;
 static const char *const event_open_exec_editor;
 static const char *const event_close_write_ignored;
@@ -76,6 +80,7 @@ struct config {
   struct set *excluded_paths;
   struct set *included_paths;
   struct set *cluded_paths;
+  struct set *ignored_leading_dots;
 };
 
 static struct set *load_set(const char *const *array, size_t size,
@@ -108,6 +113,8 @@ struct config *load_config(const char *path, struct trace *trace) {
   config->included_paths =
       load_set(included_paths, sizeof included_paths, trace);
   config->cluded_paths = load_set(cluded_paths, sizeof cluded_paths, trace);
+  config->ignored_leading_dots =
+      load_set(ignored_leading_dots, sizeof ignored_leading_dots, trace);
 
   if (!ok(trace)) {
     free_config(config);
@@ -142,6 +149,10 @@ const struct set *get_included_paths(const struct config *config) {
 
 const struct set *get_cluded_paths(const struct config *config) {
   return config->cluded_paths;
+}
+
+const struct set *get_ignored_leading_dots(const struct config *config) {
+  return config->ignored_leading_dots;
 }
 
 const char *get_store_root(const struct config *config) { return store_root; }
@@ -231,6 +242,7 @@ void free_config(struct config *config) {
     free_set(config->excluded_paths);
     free_set(config->included_paths);
     free_set(config->cluded_paths);
+    free_set(config->ignored_leading_dots);
     free(config);
   }
 }

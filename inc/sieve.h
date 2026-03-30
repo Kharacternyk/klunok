@@ -4,6 +4,7 @@ struct set;
 struct trace;
 
 struct sieved_path *sieve(const char *path, size_t relative_path_offset,
+                          const struct set *ignored_leading_dots,
                           const struct set **sets, size_t set_count,
                           struct trace *trace)
     __attribute__((warn_unused_result));

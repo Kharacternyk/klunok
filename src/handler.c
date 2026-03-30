@@ -165,7 +165,8 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
       get_project_roots(handler->config),  get_project_parents(handler->config),
   };
   struct sieved_path *sieved_path =
-      sieve(path, handler->common_parent_path_length, sets,
+      sieve(path, handler->common_parent_path_length,
+            get_ignored_leading_dots(handler->config), sets,
             sizeof sets / sizeof sets[0], trace);
 
   if (!ok(trace)) {

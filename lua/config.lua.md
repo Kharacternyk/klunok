@@ -248,7 +248,8 @@ declare('version_pattern', 'v' .. journal_timestamp_pattern, is_string)
 By default, a file is copied to the store only if it's written to by
 an editor application and it's not hidden.
 A file is hidden if its name or the name of one of its ancestor directories begins with a dot,
-for example `.config`.
+for example `.config`,
+unless that whole path segment is listed in [`ignored_leading_dots`](#ignored_leading_dots).
 
 Relative paths are interpreted relative to the common parent of directories
 monitored via
@@ -280,6 +281,32 @@ With this configuration:
 - `/home/nazar/.config/file.txt` is excluded because the `.config` directory is hidden;
 - `/home/nazar/.config/klunok/file.txt` is included;
 - `/home/nazar/.config/klunok/.file.txt` is excluded.
+
+### `ignored_leading_dots`
+
+Path segments whose leading dot does not make a path hidden.
+This applies only to exact segment names, not prefixes.
+For example, if `.github` is listed here, then `.github/workflows/ci.yml` is not hidden,
+but `.github/.env` is still hidden because `.env` is not listed.
+
+```lua title="example"
+ignored_leading_dots['.custom-hidden'] = true
+```
+
+```lua title="pre-config"
+ignored_leading_dots = {
+  ['.dockerignore'] = true,
+  ['.editorconfig'] = true,
+  ['.gitattributes'] = true,
+  ['.github'] = true,
+  ['.gitignore'] = true,
+  ['.mailmap'] = true,
+}
+```
+
+```lua title="post-config"
+declare('ignored_leading_dots', nil, is_set_of_strings)
+```
 
 ### `editors`
 
