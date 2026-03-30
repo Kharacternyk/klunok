@@ -1,4 +1,4 @@
-# <img src='./misc/logo.svg' alt="Klunok logotype — a blue-yellow floppy disk with a trident" height="64"/> Klunok
+# <img src='./misc/logo.svg' alt="Klunok logotype — a blue-yellow floppy disk with a trident" height="32"/> Klunok
 
 Klunok is a smart versioning and automatic backup daemon for Linux.
 It keeps a versioned history of files that you edit,
@@ -62,13 +62,13 @@ Macros are generally used only for things that are impossible to implement witho
 (`TNEG` and `TNULL`) or for compile-time string concatenation (testing code mostly).
 Otherwise functions and `static const` variables are preferred.
 
-### High-level Flow From a Security Perspective
+## High-level Flow From a Security Perspective
 
 See the relevant [section of the user guide](./web/docs/security.md).
 
-### Important Components Overview
+## Important Components
 
-#### Low-level
+### Low-level
 
 - `buffer`: a growable string that knows its size and has lazy hashing.
 - `set`: a multi-set of `buffer`s.
@@ -79,7 +79,7 @@ See the relevant [section of the user guide](./web/docs/security.md).
 - `sync`: copy files and directories.
 - `trace`: error handling, discussed above.
 
-#### High-level
+### High-level
 
 - `config`: shared configuration interface with both a Lua
   (`config-lua.c`, [`lua/`](./lua/))
@@ -94,6 +94,7 @@ See the relevant [section of the user guide](./web/docs/security.md).
 
 Tests are run with Valgrind if available,
 and must free all allocated memory to pass in this case.
+Testing with Valgrind is preferred.
 
 To test with different Lua versions, as well as without Lua,
 run `nix flake check` (slow).
