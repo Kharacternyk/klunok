@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 struct buffer_view;
 struct trace;
@@ -11,17 +12,17 @@ bool is_empty(const struct set *set)
     __attribute__((pure, nonnull, warn_unused_result));
 
 void add(const char *value, struct set *set, struct trace *trace);
-void add_with_metadata(const char *value, unsigned metadata, struct set *set,
-                       struct trace *trace);
+void add_with_metadata(const char *value, uint_fast64_t metadata,
+                       struct set *set, struct trace *trace);
 
 bool is_within(const struct buffer_view *value, const struct set *set)
     __attribute__((pure, nonnull, warn_unused_result));
 void pop(const struct buffer_view *value, struct set *set)
     __attribute__((nonnull));
-size_t get_count(const struct buffer_view *value, const struct set *set)
+uint_fast32_t get_count(const struct buffer_view *value, const struct set *set)
     __attribute__((pure, nonnull, warn_unused_result));
-unsigned get_last_metadata(const struct buffer_view *value,
-                           const struct set *set)
+uint_fast64_t get_last_metadata(const struct buffer_view *value,
+                                const struct set *set)
     __attribute__((pure, nonnull, warn_unused_result));
 
 void free_set(struct set *set);
