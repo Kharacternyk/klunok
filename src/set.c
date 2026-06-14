@@ -9,8 +9,8 @@
 struct entry {
   struct buffer *value;
   /* TODO use these types instead of size_t in a lot of places */
-  uint_fast32_t count;
-  uint_fast64_t metadata;
+  uint32_t count;
+  uint64_t metadata;
   struct entry *next;
 };
 
@@ -71,9 +71,9 @@ enum attribute {
   count,
 };
 
-static uint_fast64_t get_attribute(enum attribute attribute,
-                                   const struct buffer_view *value,
-                                   const struct set *set) {
+static uint64_t get_attribute(enum attribute attribute,
+                              const struct buffer_view *value,
+                              const struct set *set) {
   if (is_empty(set)) {
     return 0;
   }
@@ -84,13 +84,12 @@ static uint_fast64_t get_attribute(enum attribute attribute,
   return 0;
 }
 
-uint_fast32_t get_count(const struct buffer_view *value,
-                        const struct set *set) {
+uint32_t get_count(const struct buffer_view *value, const struct set *set) {
   return get_attribute(count, value, set);
 }
 
-uint_fast64_t get_last_metadata(const struct buffer_view *value,
-                                const struct set *set) {
+uint64_t get_last_metadata(const struct buffer_view *value,
+                           const struct set *set) {
   return get_attribute(metadata, value, set);
 }
 
@@ -98,8 +97,8 @@ bool is_within(const struct buffer_view *value, const struct set *set) {
   return get_count(value, set);
 }
 
-void add_with_metadata(const char *value, uint_fast64_t metadata,
-                       struct set *set, struct trace *trace) {
+void add_with_metadata(const char *value, uint64_t metadata, struct set *set,
+                       struct trace *trace) {
   struct buffer *buffer = create_buffer(trace);
   concat_string(value, buffer, trace);
   if (!ok(trace)) {
