@@ -6,6 +6,7 @@ components = [
   'elfinterp',
   'extension',
   'handler',
+  'flusher',
   'journal',
   'linq',
   'list',
