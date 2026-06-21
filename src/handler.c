@@ -141,9 +141,9 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   free_buffer_view(exe_filename_view);
 }
 
-static const size_t linq_meta_is_project = 1;
-static const size_t linq_meta_is_history = 2;
-static const size_t linq_meta_project_offset = 2;
+static const uint16_t linq_meta_is_project = 1;
+static const uint16_t linq_meta_is_history = 2;
+static const uint16_t linq_meta_project_offset = 2;
 
 enum status {
   cluded,
@@ -213,7 +213,7 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
     return false;
   }
 
-  size_t metadata = 0;
+  uint16_t metadata = 0;
   if (is_history) {
     metadata |= linq_meta_is_history;
   }
@@ -308,8 +308,187 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   free(file_path);
 }
 
+static void store(const char *path, uint16_t metadata, struct handler *handler,
+                  struct trace *trace) {
+  char *version =
+      get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
+  if (ok(trace) && strchr(version, '/')) {
+    throw_context(version, trace);
+    throw_static(messages.handler.version.has_slashes, trace);
+  }
+  if (!ok(trace)) {
+    free(version);
+    return;
+  }
+
+  const char *event = get_event_queue_head_stored(handler->config);
+  const char *relative_path = path + handler->common_parent_path_length;
+
+  if (metadata & linq_meta_is_project) {
+    const char *project_name = strrchr(path, '/') + 1;
+    struct store_path *store_path = create_store_path(
+        get_project_store_root(handler->config), project_name, version, trace);
+    struct buffer *unstable_path = create_buffer(trace);
+    concat_string(get_unstable_project_store_root(handler->config),
+                  unstable_path, trace);
+    concat_char('/', unstable_path, trace);
+    concat_string(project_name, unstable_path, trace);
+
+    free(version);
+
+    while (ok(trace)) {
+      try(trace);
+      sync_shallow_tree(get_current_path(store_path),
+                        get_string(get_view(unstable_path)), path, trace);
+      if (catch_static(messages.sync.destination_already_exists, trace)) {
+        finally(trace);
+        increment(store_path, trace);
+      } else {
+        if (catch_static(messages.sync.source_does_not_exist, trace)) {
+          event = get_event_queue_head_deleted(handler->config);
+        } else if (catch_static(messages.sync.source_permission_denied,
+                                trace)) {
+          event = get_event_queue_head_forbidden(handler->config);
+        };
+        finally(trace);
+        break;
+      }
+    }
+
+    record_event(event, 0, relative_path, handler, trace);
+    pop_head(handler->linq, trace);
+    free_store_path(store_path);
+    free_buffer(unstable_path);
+    return;
+  }
+
+  struct store_path *store_path = create_store_path(
+      get_store_root(handler->config), relative_path, version, trace);
+  free(version);
+
+  struct buffer *offset_path = create_buffer(trace);
+  concat_string(get_offset_store_root(handler->config), offset_path, trace);
+  concat_char('/', offset_path, trace);
+  concat_string(relative_path, offset_path, trace);
+
+  bool is_history_path = metadata & linq_meta_is_history;
+  size_t offset = is_history_path
+                      ? read_counter(get_string(get_view(offset_path)), trace)
+                      : 0;
+
+  /* TODO: just recompute metadata on pop.
+   * history_paths can be appended to included_path in Lua.*/
+  size_t project_root_end_offset = metadata >> linq_meta_project_offset;
+
+  if (ok(trace) && project_root_end_offset &&
+      (project_root_end_offset > strlen(path) ||
+       path[project_root_end_offset] != '/')) {
+    throw_context(path, trace);
+    throw_static(messages.linq.invalid_entry, trace);
+  }
+
+  if (!ok(trace)) {
+    free_store_path(store_path);
+    free_buffer(offset_path);
+    return;
+  }
+
+  bool is_stored = false;
+
+  for (;;) {
+    try(trace);
+    size_t new_offset =
+        sync_file(get_current_path(store_path), path, offset, trace);
+    if (!is_history_path) {
+      new_offset = 0;
+    }
+    if (catch_static(messages.sync.source_does_not_exist, trace) ||
+        catch_static(messages.sync.source_is_not_regular_file, trace)) {
+      event = get_event_queue_head_deleted(handler->config);
+    } else if (catch_static(messages.sync.source_permission_denied, trace)) {
+      event = get_event_queue_head_forbidden(handler->config);
+    } else if (catch_static(messages.sync.destination_already_exists, trace)) {
+      increment(store_path, trace);
+      continue;
+    } else {
+      write_counter(get_string(get_view(offset_path)), new_offset, trace);
+      is_stored = ok(trace);
+    }
+    finally(trace);
+
+    pop_head(handler->linq, trace);
+
+    if (!ok(trace)) {
+      throw_context(path, trace);
+      throw_static(messages.handler.store.cannot_copy, trace);
+      free_store_path(store_path);
+      free_buffer(offset_path);
+      return;
+    }
+
+    break;
+  }
+
+  if (ok(trace) && is_stored &&
+      get_working_copy_link_name(handler->config)[0]) {
+    struct stat working_copy_stat;
+    struct buffer *working_copy_path = create_buffer(trace);
+    concat_string(get_store_root(handler->config), working_copy_path, trace);
+    concat_char('/', working_copy_path, trace);
+    concat_string(relative_path, working_copy_path, trace);
+    concat_char('/', working_copy_path, trace);
+    concat_string(get_working_copy_link_name(handler->config),
+                  working_copy_path, trace);
+    concat_string(get_file_extension(relative_path), working_copy_path, trace);
+
+    if (ok(trace) && lstat(get_string(get_view(working_copy_path)),
+                           &working_copy_stat) < 0) {
+      if (errno != ENOENT) {
+        throw_errno(trace);
+      }
+    } else if (ok(trace)) {
+      free_buffer(working_copy_path);
+      working_copy_path = NULL;
+    }
+
+    if (ok(trace) && working_copy_path) {
+      TNEG(symlink(path, get_string(get_view(working_copy_path))), trace);
+    }
+
+    free_buffer(working_copy_path);
+  }
+
+  if (ok(trace) && project_root_end_offset && is_stored) {
+    size_t project_name_length = 0;
+    while (*(path + project_root_end_offset - 1 - project_name_length) != '/') {
+      ++project_name_length;
+    }
+
+    struct buffer *project_path = create_buffer(trace);
+    concat_string(get_unstable_project_store_root(handler->config),
+                  project_path, trace);
+    concat_char('/', project_path, trace);
+    concat_bytes(path + project_root_end_offset - project_name_length,
+                 project_name_length, project_path, trace);
+    concat_string(path + project_root_end_offset, project_path, trace);
+
+    if (ok(trace) && unlink(get_string(get_view(project_path))) < 0 &&
+        errno != ENOENT) {
+      throw_errno(trace);
+    }
+    create_parents(get_string(get_view(project_path)), trace);
+    TNEG(link(get_current_path(store_path), get_string(get_view(project_path))),
+         trace);
+  }
+
+  record_event(event, 0, relative_path, handler, trace);
+
+  free_store_path(store_path);
+  free_buffer(offset_path);
+}
+
 time_t handle_timeout(struct handler *handler, struct trace *trace) {
-  while (ok(trace)) {
+  for (;;) {
     try(trace);
     struct linq_head *head = get_head(handler->linq, trace);
     finally_rethrow_static(messages.handler.linq.cannot_get_head, trace);
@@ -323,200 +502,13 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       return pause;
     }
 
-    char *version =
-        get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
-    if (ok(trace) && strchr(version, '/')) {
-      throw_context(version, trace);
-      throw_static(messages.handler.version.has_slashes, trace);
-    }
-    if (!ok(trace)) {
-      free_linq_head(head);
-      free(version);
-      return 0;
-    }
-
-    const char *event = get_event_queue_head_stored(handler->config);
-    const char *relative_path =
-        get_path(head) + handler->common_parent_path_length;
-
-    if (get_metadata(head) & linq_meta_is_project) {
-      const char *project_name = strrchr(get_path(head), '/') + 1;
-      struct store_path *store_path =
-          create_store_path(get_project_store_root(handler->config),
-                            project_name, version, trace);
-      struct buffer *unstable_path = create_buffer(trace);
-      concat_string(get_unstable_project_store_root(handler->config),
-                    unstable_path, trace);
-      concat_char('/', unstable_path, trace);
-      concat_string(project_name, unstable_path, trace);
-
-      free(version);
-
-      while (ok(trace)) {
-        try(trace);
-        sync_shallow_tree(get_current_path(store_path),
-                          get_string(get_view(unstable_path)), get_path(head),
-                          trace);
-        if (catch_static(messages.sync.destination_already_exists, trace)) {
-          finally(trace);
-          increment(store_path, trace);
-        } else {
-          if (catch_static(messages.sync.source_does_not_exist, trace)) {
-            event = get_event_queue_head_deleted(handler->config);
-          } else if (catch_static(messages.sync.source_permission_denied,
-                                  trace)) {
-            event = get_event_queue_head_forbidden(handler->config);
-          };
-          finally(trace);
-          break;
-        }
-      }
-
-      record_event(event, 0, relative_path, handler, trace);
-      pop_head(handler->linq, trace);
-      free_store_path(store_path);
-      free_buffer(unstable_path);
-      free_linq_head(head);
-      continue;
-    }
-
-    struct store_path *store_path = create_store_path(
-        get_store_root(handler->config), relative_path, version, trace);
-    free(version);
-
-    struct buffer *offset_path = create_buffer(trace);
-    concat_string(get_offset_store_root(handler->config), offset_path, trace);
-    concat_char('/', offset_path, trace);
-    concat_string(relative_path, offset_path, trace);
-
-    bool is_history_path = get_metadata(head) & linq_meta_is_history;
-    size_t offset = is_history_path
-                        ? read_counter(get_string(get_view(offset_path)), trace)
-                        : 0;
-
-    /* TODO: just recompute metadata on pop.
-     * history_paths can be appended to included_path in Lua.*/
-    size_t project_root_end_offset =
-        get_metadata(head) >> linq_meta_project_offset;
-
-    if (ok(trace) && project_root_end_offset &&
-        (project_root_end_offset > strlen(get_path(head)) ||
-         get_path(head)[project_root_end_offset] != '/')) {
-      throw_context(get_path(head), trace);
-      throw_static(messages.linq.invalid_entry, trace);
-    }
-
-    if (!ok(trace)) {
-      free_linq_head(head);
-      free_store_path(store_path);
-      free_buffer(offset_path);
-      return 0;
-    }
-
-    bool is_stored = false;
-
-    for (;;) {
-      try(trace);
-      size_t new_offset = sync_file(get_current_path(store_path),
-                                    get_path(head), offset, trace);
-      if (!is_history_path) {
-        new_offset = 0;
-      }
-      if (catch_static(messages.sync.source_does_not_exist, trace) ||
-          catch_static(messages.sync.source_is_not_regular_file, trace)) {
-        event = get_event_queue_head_deleted(handler->config);
-      } else if (catch_static(messages.sync.source_permission_denied, trace)) {
-        event = get_event_queue_head_forbidden(handler->config);
-      } else if (catch_static(messages.sync.destination_already_exists,
-                              trace)) {
-        increment(store_path, trace);
-        continue;
-      } else {
-        write_counter(get_string(get_view(offset_path)), new_offset, trace);
-        is_stored = ok(trace);
-      }
-      finally(trace);
-
-      pop_head(handler->linq, trace);
-
-      if (!ok(trace)) {
-        throw_context(get_path(head), trace);
-        throw_static(messages.handler.store.cannot_copy, trace);
-        free_linq_head(head);
-        free_store_path(store_path);
-        free_buffer(offset_path);
-        return 0;
-      }
-
-      break;
-    }
-
-    if (ok(trace) && is_stored &&
-        get_working_copy_link_name(handler->config)[0]) {
-      struct stat working_copy_stat;
-      struct buffer *working_copy_path = create_buffer(trace);
-      concat_string(get_store_root(handler->config), working_copy_path, trace);
-      concat_char('/', working_copy_path, trace);
-      concat_string(relative_path, working_copy_path, trace);
-      concat_char('/', working_copy_path, trace);
-      concat_string(get_working_copy_link_name(handler->config),
-                    working_copy_path, trace);
-      concat_string(get_file_extension(relative_path), working_copy_path,
-                    trace);
-
-      if (ok(trace) && lstat(get_string(get_view(working_copy_path)),
-                             &working_copy_stat) < 0) {
-        if (errno != ENOENT) {
-          throw_errno(trace);
-        }
-      } else if (ok(trace)) {
-        free_buffer(working_copy_path);
-        working_copy_path = NULL;
-      }
-
-      if (ok(trace) && working_copy_path) {
-        TNEG(symlink(get_path(head), get_string(get_view(working_copy_path))),
-             trace);
-      }
-
-      free_buffer(working_copy_path);
-    }
-
-    if (ok(trace) && project_root_end_offset && is_stored) {
-      size_t project_name_length = 0;
-      while (*(get_path(head) + project_root_end_offset - 1 -
-               project_name_length) != '/') {
-        ++project_name_length;
-      }
-
-      struct buffer *project_path = create_buffer(trace);
-      concat_string(get_unstable_project_store_root(handler->config),
-                    project_path, trace);
-      concat_char('/', project_path, trace);
-      concat_bytes(get_path(head) + project_root_end_offset -
-                       project_name_length,
-                   project_name_length, project_path, trace);
-      concat_string(get_path(head) + project_root_end_offset, project_path,
-                    trace);
-
-      if (ok(trace) && unlink(get_string(get_view(project_path))) < 0 &&
-          errno != ENOENT) {
-        throw_errno(trace);
-      }
-      create_parents(get_string(get_view(project_path)), trace);
-      TNEG(link(get_current_path(store_path),
-                get_string(get_view(project_path))),
-           trace);
-    }
-
-    record_event(event, 0, relative_path, handler, trace);
-
+    store(get_path(head), get_metadata(head), handler, trace);
     free_linq_head(head);
-    free_store_path(store_path);
-    free_buffer(offset_path);
-  }
 
-  return 0;
+    if (!ok(trace)) {
+      return 0;
+    }
+  }
 }
 
 void free_handler(struct handler *handler) {
