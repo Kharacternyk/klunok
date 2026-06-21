@@ -48,6 +48,8 @@ size_t get_elf_interpreter_count_guess(const struct config *config)
     __attribute__((pure, nonnull, warn_unused_result));
 size_t get_queue_size_guess(const struct config *config)
     __attribute__((pure, nonnull, warn_unused_result));
+size_t get_flushed_path_count_guess(const struct config *config)
+    __attribute__((pure, nonnull, warn_unused_result));
 pid_t get_max_pid_guess(const struct config *config)
     __attribute__((pure, nonnull, warn_unused_result));
 const char *get_event_open_exec_not_editor(const struct config *config)

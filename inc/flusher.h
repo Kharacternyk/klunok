@@ -3,7 +3,7 @@
 
 struct trace;
 
-struct flusher *create_flusher(size_t flushed_file_count_guess,
+struct flusher *create_flusher(size_t flushed_path_count_guess,
                                struct trace *trace)
     __attribute__((warn_unused_result));
 bool should_flush(const char *path, struct flusher *flusher,

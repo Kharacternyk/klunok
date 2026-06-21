@@ -19,6 +19,7 @@ static const size_t path_length_guess = 1024;
 static const pid_t max_pid_guess = 1 << 15;
 static const size_t elf_interpreter_count_guess = 1;
 static const size_t queue_size_guess = 2 * debounce_seconds;
+static const size_t flushed_path_count_guess = 32;
 static const char *const editors[] = {
     "atom",
     "code",
@@ -225,6 +226,10 @@ size_t get_elf_interpreter_count_guess(const struct config *config) {
 
 size_t get_queue_size_guess(const struct config *config) {
   return queue_size_guess;
+}
+
+size_t get_flushed_path_count_guess(const struct config *config) {
+  return flushed_path_count_guess;
 }
 
 const char *get_event_open_exec_not_editor(const struct config *config) {

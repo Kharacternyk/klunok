@@ -548,6 +548,19 @@ elf_interpreter_count_guess = 1
 declare('elf_interpreter_count_guess', nil, is_positive)
 ```
 
+### `flushed_path_count_guess`
+
+Guess of how many flushes of distinct paths happen during the lifetime
+of one Klunok process.
+
+```lua title="pre-config"
+flushed_path_count_guess = 32
+```
+
+```lua title="post-config"
+declare('flushed_path_count_guess', nil, is_positive)
+```
+
 ## Events
 
 If a setting from this section is `nil`, the corresponding event is not logged to

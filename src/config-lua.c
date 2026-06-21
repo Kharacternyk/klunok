@@ -33,6 +33,7 @@ struct config {
   size_t path_length_guess;
   size_t elf_interpreter_count_guess;
   size_t queue_size_guess;
+  size_t flushed_path_count_guess;
   pid_t max_pid_guess;
   char *event_open_exec_not_editor;
   char *event_open_exec_editor;
@@ -174,6 +175,8 @@ struct config *load_config(const char *path, struct trace *trace) {
   config->elf_interpreter_count_guess =
       read_lua_size(lua, "elf_interpreter_count_guess");
   config->queue_size_guess = read_lua_size(lua, "queue_size_guess");
+  config->flushed_path_count_guess =
+      read_lua_size(lua, "flushed_path_count_guess");
 
   lua_close(lua);
   return config;
@@ -265,6 +268,10 @@ size_t get_elf_interpreter_count_guess(const struct config *config) {
 
 size_t get_queue_size_guess(const struct config *config) {
   return config->queue_size_guess;
+}
+
+size_t get_flushed_path_count_guess(const struct config *config) {
+  return config->flushed_path_count_guess;
 }
 
 const char *get_event_open_exec_not_editor(const struct config *config) {
