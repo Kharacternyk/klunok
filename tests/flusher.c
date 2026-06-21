@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/xattr.h>
 #include <unistd.h>
@@ -40,8 +41,9 @@ void test_flusher(struct trace *trace) {
   assert(!close(fd));
 
   static const char *name = "user.klunok.test";
-  assert(!setxattr(path, name, "", 0, 0));
-  assert(!removexattr(path, name));
+  if (setxattr(path, name, "", 0, 0) || removexattr(path, name)) {
+    exit(77);
+  }
 
   struct flusher *flusher = create_flusher(1, trace);
   assert(ok(trace));
