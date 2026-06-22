@@ -40,15 +40,18 @@ void test_flusher(struct trace *trace) {
   assert(fd >= 0);
   assert(!close(fd));
 
-  static const char *name = "user.klunok.test";
-  if (setxattr(path, name, "", 0, 0) || removexattr(path, name)) {
+  const char *written_action = "!123";
+  if (setxattr(path, "user.klunok.flush.action", written_action,
+               strlen(written_action), 0)) {
     exit(77);
   }
 
   struct flusher *flusher = create_flusher(1, trace);
   assert(ok(trace));
 
-  assert(!should_flush(path, flusher, trace));
+  char action[5] = {'a', 'b', 'c', 'd', 'e'};
+
+  assert(!should_flush(path, action, sizeof action, flusher, trace));
   assert(ok(trace));
 
   char boot_id[BOOT_ID_SIZE];
@@ -56,21 +59,29 @@ void test_flusher(struct trace *trace) {
   assert(
       !setxattr(path, "user.klunok.flush.boot_id", boot_id, boot_id_size, 0));
 
+  assert(!should_flush(path, action, sizeof action, flusher, trace));
+  assert(ok(trace));
+
   const char *timestamp_attribute = "user.klunok.flush.timestamp";
   assert(!setxattr(path, timestamp_attribute, TIMESTAMP "0",
                    strlen(TIMESTAMP "0"), 0));
 
-  assert(should_flush(path, flusher, trace));
+  assert(should_flush(path, action, sizeof action, flusher, trace));
   assert(ok(trace));
+  assert(!strcmp(action, written_action));
 
-  assert(!should_flush(path, flusher, trace));
+  action[0] = 0;
+  action[4] = 'a';
+
+  assert(!should_flush(path, action, sizeof action, flusher, trace));
   assert(ok(trace));
 
   assert(!setxattr(path, timestamp_attribute, TIMESTAMP "1",
                    strlen(TIMESTAMP "1"), 0));
 
-  assert(should_flush(path, flusher, trace));
+  assert(should_flush(path, action, sizeof action, flusher, trace));
   assert(ok(trace));
+  assert(!strcmp(action, written_action));
 
   assert(!setxattr(path, timestamp_attribute, TIMESTAMP "2",
                    strlen(TIMESTAMP "2"), 0));
@@ -78,7 +89,7 @@ void test_flusher(struct trace *trace) {
   boot_id[0] = boot_id[0] == '0' ? '1' : '0';
   assert(
       !setxattr(path, "user.klunok.flush.boot_id", boot_id, boot_id_size, 0));
-  assert(!should_flush(path, flusher, trace));
+  assert(!should_flush(path, action, sizeof action, flusher, trace));
   assert(ok(trace));
 
   free_flusher(flusher);

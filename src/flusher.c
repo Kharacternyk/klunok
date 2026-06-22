@@ -70,7 +70,8 @@ struct flusher *create_flusher(size_t flushed_path_count_guess,
   return flusher;
 }
 
-bool should_flush(const char *path, struct flusher *flusher,
+bool should_flush(const char *path, char *action_destination,
+                  size_t action_destination_size, struct flusher *flusher,
                   struct trace *trace) {
   if (!ok(trace)) {
     return false;
@@ -85,32 +86,16 @@ bool should_flush(const char *path, struct flusher *flusher,
     return false;
   }
 
-  const char *timestamp_attribute = "user.klunok.flush.timestamp";
-  ssize_t timestamp_size = getxattr(path, timestamp_attribute, NULL, 0);
-
+  char timestamp[32];
+  ssize_t timestamp_size = getxattr(path, "user.klunok.flush.timestamp",
+                                    timestamp, sizeof timestamp - 1);
   if (timestamp_size < 0) {
-    return false;
-  }
-
-  char *timestamp = TNULL(malloc(timestamp_size + 1), trace);
-
-  if (!ok(trace)) {
-    return false;
-  }
-
-  timestamp_size =
-      getxattr(path, timestamp_attribute, timestamp, timestamp_size);
-
-  if (timestamp_size < 0) {
-    free(timestamp);
     return false;
   }
 
   timestamp[timestamp_size] = 0;
 
   uint64_t timestamp_value = strtoull(timestamp, NULL, 10);
-
-  free(timestamp);
 
   if (timestamp_value <= flusher->global_timestamp) {
     return false;
@@ -132,7 +117,21 @@ bool should_flush(const char *path, struct flusher *flusher,
 
   add_with_metadata(path, timestamp_value, flusher->path_timestamps, trace);
 
-  return ok(trace);
+  if (!ok(trace)) {
+    return false;
+  }
+
+  ssize_t action_size =
+      getxattr(path, "user.klunok.flush.action", action_destination,
+               action_destination_size - 1);
+
+  if (action_size < 0) {
+    return false;
+  }
+
+  action_destination[action_size] = 0;
+
+  return true;
 }
 
 void free_flusher(struct flusher *flusher) {
