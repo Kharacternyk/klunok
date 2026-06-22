@@ -408,6 +408,7 @@ static void store(const char *path, uint32_t metadata, struct handler *handler,
     } else if (catch_static(messages.sync.source_permission_denied, trace)) {
       event = get_event_queue_head_forbidden(handler->config);
     } else if (catch_static(messages.sync.destination_already_exists, trace)) {
+      finally(trace);
       increment(store_path, trace);
       continue;
     } else {

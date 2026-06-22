@@ -28,6 +28,8 @@ void rethrow_context(const char *message, struct trace *trace)
 
 void unwind(int fd, const struct trace *trace) __attribute__((nonnull));
 
+void free_trace(struct trace *trace);
+
 #define TNEG(call, trace)                                                      \
   ({                                                                           \
     typeof(call) _tneg_result = -1;                                            \

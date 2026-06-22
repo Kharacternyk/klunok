@@ -3,7 +3,6 @@
 #include "set.h"
 #include "trace.h"
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 
 void check_default_config(struct config *config) {
@@ -23,7 +22,7 @@ void check_default_config(struct config *config) {
   free_buffer_view(vi);
   free_buffer_view(github);
   free_buffer_view(env);
-  free(trace);
+  free_trace(trace);
 
   assert(is_empty(get_project_roots(config)));
   assert(is_empty(get_project_parents(config)));

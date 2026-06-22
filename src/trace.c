@@ -149,3 +149,14 @@ void unwind(int fd, const struct trace *trace) {
     ++depth;
   }
 }
+
+void free_trace(struct trace *trace) {
+  if (trace) {
+    assert(!trace->pre_throw_depth);
+    assert(!trace->post_throw_depth);
+    while (trace->head) {
+      pop_trace_message(trace);
+    }
+    free(trace);
+  }
+}

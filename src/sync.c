@@ -20,7 +20,7 @@ static void clean_up(const char *destination) {
     try(cleanup_trace);
     remove_empty_parents(destination, cleanup_trace);
     finally_catch_all(cleanup_trace);
-    free(cleanup_trace);
+    free_trace(cleanup_trace);
   }
 }
 

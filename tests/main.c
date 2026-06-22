@@ -32,5 +32,5 @@ int main(int argc, const char **argv) {
   free(cwd);
 
   test_function(trace);
-  free(trace);
+  free_trace(trace);
 }
