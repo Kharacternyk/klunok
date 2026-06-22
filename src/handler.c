@@ -141,9 +141,9 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   free_buffer_view(exe_filename_view);
 }
 
-static const uint16_t linq_meta_is_project = 1;
-static const uint16_t linq_meta_is_history = 2;
-static const uint16_t linq_meta_project_offset = 2;
+static const uint32_t linq_meta_is_project = 1;
+static const uint32_t linq_meta_is_history = 2;
+static const uint32_t linq_meta_project_offset = 2;
 
 enum status {
   cluded,
@@ -213,7 +213,7 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
     return false;
   }
 
-  uint16_t metadata = 0;
+  uint32_t metadata = 0;
   if (is_history) {
     metadata |= linq_meta_is_history;
   }
@@ -308,7 +308,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   free(file_path);
 }
 
-static void store(const char *path, uint16_t metadata, struct handler *handler,
+static void store(const char *path, uint32_t metadata, struct handler *handler,
                   struct trace *trace) {
   char *version =
       get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);

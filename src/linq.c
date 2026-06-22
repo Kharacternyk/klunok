@@ -27,7 +27,7 @@ struct linq {
 struct linq_head {
   char *target;
   char *path;
-  uint16_t metadata;
+  uint32_t metadata;
   time_t pause;
 };
 
@@ -152,7 +152,7 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
                              entry_length_guess, true, trace);
 }
 
-static void concat_metadata(struct buffer *buffer, uint16_t metadata,
+static void concat_metadata(struct buffer *buffer, uint32_t metadata,
                             struct trace *trace) {
   size_t bit_length = 0;
 
@@ -168,7 +168,7 @@ static void concat_metadata(struct buffer *buffer, uint16_t metadata,
   }
 }
 
-void push(const char *path, uint16_t metadata, struct linq *linq,
+void push(const char *path, uint32_t metadata, struct linq *linq,
           struct trace *trace) {
   if (!ok(trace)) {
     return;
@@ -297,7 +297,7 @@ void pop_head(struct linq *linq, struct trace *trace) {
 
 const char *get_path(const struct linq_head *head) { return head->path; }
 
-uint16_t get_metadata(const struct linq_head *head) { return head->metadata; }
+uint32_t get_metadata(const struct linq_head *head) { return head->metadata; }
 
 time_t get_pause(const struct linq_head *head) { return head->pause; }
 
