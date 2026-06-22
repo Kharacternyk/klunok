@@ -2,6 +2,7 @@
 #include "buffer.h"
 #include "set.h"
 #include "trace.h"
+#include <assert.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -77,6 +78,8 @@ bool should_flush(const char *path, char *action_destination,
     return false;
   }
 
+  assert(action_destination_size);
+
   char boot_id[sizeof flusher->boot_id];
   ssize_t boot_id_size =
       getxattr(path, "user.klunok.flush.boot_id", boot_id, sizeof boot_id);
@@ -115,12 +118,6 @@ bool should_flush(const char *path, char *action_destination,
     return false;
   }
 
-  add_with_metadata(path, timestamp_value, flusher->path_timestamps, trace);
-
-  if (!ok(trace)) {
-    return false;
-  }
-
   ssize_t action_size =
       getxattr(path, "user.klunok.flush.action", action_destination,
                action_destination_size - 1);
@@ -130,8 +127,9 @@ bool should_flush(const char *path, char *action_destination,
   }
 
   action_destination[action_size] = 0;
+  add_with_metadata(path, timestamp_value, flusher->path_timestamps, trace);
 
-  return true;
+  return ok(trace);
 }
 
 void free_flusher(struct flusher *flusher) {
