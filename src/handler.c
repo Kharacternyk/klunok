@@ -480,6 +480,7 @@ static void store(const char *path, uint32_t metadata, struct handler *handler,
     create_parents(get_string(get_view(project_path)), trace);
     TNEG(link(get_current_path(store_path), get_string(get_view(project_path))),
          trace);
+    free_buffer(project_path);
   }
 
   record_event(event, 0, relative_path, handler, trace);
