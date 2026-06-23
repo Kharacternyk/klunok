@@ -517,7 +517,7 @@ declare('queue_size_guess', debounce_seconds * 2, is_positive)
 Guess of the maximum length of the majority of the paths in the system.
 
 ```lua title="pre-config"
-path_length_guess = 1024
+path_length_guess = 256
 ```
 
 ```lua title="post-config"
