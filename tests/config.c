@@ -43,7 +43,7 @@ void check_default_config(struct config *config) {
   assert(!strcmp(get_working_copy_link_name(config), ""));
 
   assert(get_debounce_seconds(config) == 60);
-  assert(get_path_length_guess(config) == 1024);
+  assert(get_path_length_guess(config) == 256);
   assert(get_max_pid_guess(config) == 1 << 15);
   assert(get_elf_interpreter_count_guess(config) == 1);
   assert(get_queue_size_guess(config) == get_debounce_seconds(config) * 2);

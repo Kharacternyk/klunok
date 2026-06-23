@@ -1,7 +1,6 @@
 #include "config.h"
 #include "set.h"
 #include "trace.h"
-#include <errno.h>
 #include <messages.h>
 #include <stdlib.h>
 
@@ -15,7 +14,7 @@ static const char *const journal_timestamp_pattern = "%Y-%m-%d-%H-%M";
 static const char *const version_pattern = "v%Y-%m-%d-%H-%M";
 static const char *const working_copy_link_name = "";
 static const size_t debounce_seconds = 60;
-static const size_t path_length_guess = 1024;
+static const size_t path_length_guess = 256;
 static const pid_t max_pid_guess = 1 << 15;
 static const size_t elf_interpreter_count_guess = 1;
 static const size_t queue_size_guess = 2 * debounce_seconds;
