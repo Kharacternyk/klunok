@@ -141,29 +141,26 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   free_buffer_view(exe_filename_view);
 }
 
-static const uint32_t linq_meta_is_project = 1;
-static const uint32_t linq_meta_is_history = 2;
-static const uint32_t linq_meta_project_offset = 2;
-
-enum status {
-  cluded,
-  included,
-  excluded,
-  history,
-  project,
-  project_parent,
-};
-
 static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
                          struct trace *trace) {
   if (!ok(trace)) {
     return false;
   }
+
+  enum status {
+    cluded,
+    included,
+    excluded,
+    history,
+    project,
+    project_parent,
+  };
   const struct set *sets[] = {
       get_cluded_paths(handler->config),   get_included_paths(handler->config),
       get_excluded_paths(handler->config), get_history_paths(handler->config),
       get_project_roots(handler->config),  get_project_parents(handler->config),
   };
+
   struct sieved_path *sieved_path =
       sieve(path, handler->common_parent_path_length,
             get_ignored_leading_dots(handler->config), sets,
@@ -178,12 +175,10 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
   const char *farthest_end = get_hiding_dot(sieved_path);
   bool is_written_by_editor = get_bit(pid, handler->editor_pid_bitmap);
   bool is_pushed = !get_hiding_dot(sieved_path) && is_written_by_editor;
-  bool is_history = false;
 
   for (size_t i = 0; i < sizeof sets / sizeof sets[0]; ++i) {
     if (ends[i] > farthest_end) {
       farthest_end = ends[i];
-      is_history = i == history;
       switch (i) {
       case cluded:
         is_pushed = is_written_by_editor;
@@ -213,16 +208,8 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
     return false;
   }
 
-  uint32_t metadata = 0;
-  if (is_history) {
-    metadata |= linq_meta_is_history;
-  }
-  if (project_root_end) {
-    metadata |= (project_root_end - path) << linq_meta_project_offset;
-  }
-
   try(trace);
-  push(path, metadata, handler->linq, trace);
+  push(path, handler->linq, trace);
   rethrow_context(path, trace);
   finally_rethrow_static(messages.handler.linq.cannot_push, trace);
 
@@ -231,7 +218,7 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
     path[project_root_end - path] = 0;
 
     try(trace);
-    push(path, linq_meta_is_project, handler->linq, trace);
+    push(path, handler->linq, trace);
     rethrow_context(path, trace);
     finally_rethrow_static(messages.handler.linq.cannot_push, trace);
 
@@ -308,7 +295,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   free(file_path);
 }
 
-static void store(const char *path, uint32_t metadata, struct handler *handler,
+static void store(const char *path, struct handler *handler,
                   struct trace *trace) {
   char *version =
       get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
@@ -324,7 +311,49 @@ static void store(const char *path, uint32_t metadata, struct handler *handler,
   const char *event = get_event_queue_head_stored(handler->config);
   const char *relative_path = path + handler->common_parent_path_length;
 
-  if (metadata & linq_meta_is_project) {
+  enum status {
+    cluded,
+    included,
+    excluded,
+    history,
+    project,
+    project_parent,
+  };
+  const struct set *sets[] = {
+      get_cluded_paths(handler->config),   get_included_paths(handler->config),
+      get_excluded_paths(handler->config), get_history_paths(handler->config),
+      get_project_roots(handler->config),  get_project_parents(handler->config),
+  };
+
+  struct sieved_path *sieved_path =
+      sieve(path, handler->common_parent_path_length,
+            get_ignored_leading_dots(handler->config), sets,
+            sizeof sets / sizeof sets[0], trace);
+
+  if (!ok(trace)) {
+    return;
+  }
+
+  const char *const *ends = get_sieved_ends(sieved_path);
+  const char *farthest_end = path;
+  bool is_history = false;
+
+  for (size_t i = 0; i < sizeof sets / sizeof sets[0]; ++i) {
+    if (ends[i] > farthest_end) {
+      farthest_end = ends[i];
+      is_history = i == history;
+    }
+  }
+
+  const char *project_root_end = NULL;
+
+  if (ends[project_parent] > ends[project] && *ends[project_parent]) {
+    project_root_end = strchr(ends[project_parent] + 1, '/');
+  } else if (ends[project] && *ends[project]) {
+    project_root_end = ends[project];
+  }
+
+  if (project_root_end && !*project_root_end) {
     const char *project_name = strrchr(path, '/') + 1;
     struct store_path *store_path = create_store_path(
         get_project_store_root(handler->config), project_name, version, trace);
@@ -359,6 +388,7 @@ static void store(const char *path, uint32_t metadata, struct handler *handler,
     pop_head(handler->linq, trace);
     free_store_path(store_path);
     free_buffer(unstable_path);
+    free_sieved_path(sieved_path);
     return;
   }
 
@@ -371,25 +401,13 @@ static void store(const char *path, uint32_t metadata, struct handler *handler,
   concat_char('/', offset_path, trace);
   concat_string(relative_path, offset_path, trace);
 
-  bool is_history_path = metadata & linq_meta_is_history;
-  size_t offset = is_history_path
-                      ? read_counter(get_string(get_view(offset_path)), trace)
-                      : 0;
-
-  /* TODO: just recompute metadata on pop.
-   * history_paths can be appended to included_path in Lua.*/
-  size_t project_root_end_offset = metadata >> linq_meta_project_offset;
-
-  if (ok(trace) && project_root_end_offset &&
-      (project_root_end_offset > strlen(path) ||
-       path[project_root_end_offset] != '/')) {
-    throw_context(path, trace);
-    throw_static(messages.linq.invalid_entry, trace);
-  }
+  size_t offset =
+      is_history ? read_counter(get_string(get_view(offset_path)), trace) : 0;
 
   if (!ok(trace)) {
     free_store_path(store_path);
     free_buffer(offset_path);
+    free_sieved_path(sieved_path);
     return;
   }
 
@@ -399,7 +417,7 @@ static void store(const char *path, uint32_t metadata, struct handler *handler,
     try(trace);
     size_t new_offset =
         sync_file(get_current_path(store_path), path, offset, trace);
-    if (!is_history_path) {
+    if (!is_history) {
       new_offset = 0;
     }
     if (catch_static(messages.sync.source_does_not_exist, trace) ||
@@ -424,6 +442,7 @@ static void store(const char *path, uint32_t metadata, struct handler *handler,
       throw_static(messages.handler.store.cannot_copy, trace);
       free_store_path(store_path);
       free_buffer(offset_path);
+      free_sieved_path(sieved_path);
       return;
     }
 
@@ -459,9 +478,9 @@ static void store(const char *path, uint32_t metadata, struct handler *handler,
     free_buffer(working_copy_path);
   }
 
-  if (ok(trace) && project_root_end_offset && is_stored) {
+  if (ok(trace) && project_root_end && *project_root_end && is_stored) {
     size_t project_name_length = 0;
-    while (*(path + project_root_end_offset - 1 - project_name_length) != '/') {
+    while (*(project_root_end - 1 - project_name_length) != '/') {
       ++project_name_length;
     }
 
@@ -469,9 +488,9 @@ static void store(const char *path, uint32_t metadata, struct handler *handler,
     concat_string(get_unstable_project_store_root(handler->config),
                   project_path, trace);
     concat_char('/', project_path, trace);
-    concat_bytes(path + project_root_end_offset - project_name_length,
-                 project_name_length, project_path, trace);
-    concat_string(path + project_root_end_offset, project_path, trace);
+    concat_bytes(project_root_end - project_name_length, project_name_length,
+                 project_path, trace);
+    concat_string(project_root_end, project_path, trace);
 
     if (ok(trace) && unlink(get_string(get_view(project_path))) < 0 &&
         errno != ENOENT) {
@@ -487,6 +506,7 @@ static void store(const char *path, uint32_t metadata, struct handler *handler,
 
   free_store_path(store_path);
   free_buffer(offset_path);
+  free_sieved_path(sieved_path);
 }
 
 time_t handle_timeout(struct handler *handler, struct trace *trace) {
@@ -504,7 +524,7 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       return pause;
     }
 
-    store(get_path(head), get_metadata(head), handler, trace);
+    store(get_path(head), handler, trace);
     free_linq_head(head);
 
     if (!ok(trace)) {
