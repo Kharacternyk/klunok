@@ -11,7 +11,7 @@
 #define F1 CONFIG
 #define F2 TEST_ROOT "/lua/empty.lua"
 #define EMPTY "empty"
-#define IN_STORE(PATH) "./klunok/store/" PATH "/version"
+#define IN_STORE(PATH) "klunok/store/" PATH "/version"
 
 void test_handler(struct trace *trace) {
   struct handler *handler = load_handler(CONFIG, 1, trace);
@@ -78,7 +78,7 @@ void test_handler(struct trace *trace) {
   close(fd);
   free_handler(handler);
 
-  handler = load_handler(CONFIG, sizeof TEST_ROOT, trace);
+  handler = load_handler(CONFIG, sizeof TEST_ROOT - 1, trace);
   assert(ok(trace));
   fd = open(CONFIG, O_RDONLY);
   assert(fd >= 0);
@@ -86,11 +86,12 @@ void test_handler(struct trace *trace) {
   assert(ok(trace));
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
+
   pause = handle_timeout(handler, trace);
   assert(pause < 0);
   assert(ok(trace));
   assert(access(IN_STORE(CONFIG_BASE) ".lua", F_OK) == 0);
-  assert(access("./klunok/projects/lua/version/handler.lua", F_OK) == 0);
+  assert(access("klunok/projects/lua/version/handler.lua", F_OK) == 0);
 
   close(fd);
   free_handler(handler);

@@ -349,7 +349,7 @@ static void store(const char *path, struct handler *handler,
 
   if (ends[project_parent] > ends[project] && *ends[project_parent]) {
     project_root_end = strchr(ends[project_parent] + 1, '/');
-  } else if (ends[project] && *ends[project]) {
+  } else if (ends[project]) {
     project_root_end = ends[project];
   }
 
