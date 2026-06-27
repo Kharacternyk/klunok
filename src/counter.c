@@ -23,8 +23,8 @@ size_t read_counter(const char *path, struct trace *trace) {
   size_t total_read = 0;
 
   while (total_read + 1 < sizeof digits) {
-    size_t iter_read =
-        TNEG(read(fd, digits + total_read, sizeof digits - total_read), trace);
+    size_t iter_read = TNEG(
+        read(fd, digits + total_read, sizeof digits - total_read - 1), trace);
 
     if (!ok(trace)) {
       close(fd);
@@ -59,6 +59,14 @@ void write_counter(const char *path, size_t counter, struct trace *trace) {
 
   struct buffer *buffer = create_buffer(trace);
   concat_size(counter, buffer, trace);
+
+  if (!ok(trace)) {
+    free_buffer(buffer);
+    if (fd >= 0) {
+      close(fd);
+    }
+    return;
+  };
 
   const struct buffer_view *view = get_view(buffer);
   size_t length = get_length(view);
