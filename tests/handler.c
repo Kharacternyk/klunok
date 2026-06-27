@@ -90,6 +90,7 @@ void test_handler(struct trace *trace) {
   assert(pause < 0);
   assert(ok(trace));
   assert(access(IN_STORE(CONFIG_BASE) ".lua", F_OK) == 0);
+  assert(access("./klunok/projects/lua/version/handler.lua", F_OK) == 0);
 
   close(fd);
   free_handler(handler);
