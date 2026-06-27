@@ -6,8 +6,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-/* FIXME avoid one-char IO */
-
 size_t read_counter(const char *path, struct trace *trace) {
   if (!ok(trace)) {
     return 0;
@@ -21,20 +19,28 @@ size_t read_counter(const char *path, struct trace *trace) {
     return 0;
   }
 
-  size_t counter = 0;
+  char digits[21];
+  size_t total_read = 0;
 
-  for (;;) {
-    char digit = 0;
-    if (TNEG(read(fd, &digit, 1), trace) <= 0 || digit < '0' || digit > '9') {
+  while (total_read + 1 < sizeof digits) {
+    size_t iter_read =
+        TNEG(read(fd, digits + total_read, sizeof digits - total_read), trace);
+
+    if (!ok(trace)) {
+      close(fd);
+      return 0;
+    }
+    if (!iter_read) {
       break;
     }
-    counter *= 10;
-    counter += digit - '0';
+
+    total_read += iter_read;
   }
 
   close(fd);
+  digits[total_read] = 0;
 
-  return counter;
+  return strtoll(digits, NULL, 10);
 }
 
 void write_counter(const char *path, size_t counter, struct trace *trace) {
@@ -54,8 +60,12 @@ void write_counter(const char *path, size_t counter, struct trace *trace) {
   struct buffer *buffer = create_buffer(trace);
   concat_size(counter, buffer, trace);
 
-  for (size_t i = 0; ok(trace) && i < get_length(get_view(buffer)); ++i) {
-    TNEG(write(fd, get_string(get_view(buffer)) + i, 1), trace);
+  const struct buffer_view *view = get_view(buffer);
+  size_t length = get_length(view);
+  const char *string = get_string(view);
+
+  for (size_t i = 0; ok(trace) && i < length;) {
+    i += TNEG(write(fd, string + i, length - i), trace);
   }
 
   if (fd >= 0) {
