@@ -331,6 +331,7 @@ static void store(const char *path, struct handler *handler,
             sizeof sets / sizeof sets[0], trace);
 
   if (!ok(trace)) {
+    free(version);
     return;
   }
 
