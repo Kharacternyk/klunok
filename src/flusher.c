@@ -94,8 +94,10 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
                      sizeof xattr.timestamp + sizeof xattr.request.id +
                      sizeof xattr.request.time];
 
-  if (getxattr(path, "user.klunok.flush", wire_xattr, sizeof wire_xattr) <
-      sizeof wire_xattr) {
+  ssize_t wire_xattr_size =
+      getxattr(path, "user.klunok.flush", wire_xattr, sizeof wire_xattr);
+
+  if (wire_xattr_size < 0 || wire_xattr_size < sizeof wire_xattr) {
     return NULL;
   }
 
@@ -109,7 +111,7 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
   for (size_t k = i; i < k + sizeof xattr.boot_id; ++i) {
     xattr.boot_id[i - k] = wire_xattr[i];
   }
-  if (!memcmp(xattr.boot_id, flusher->boot_id, flusher->boot_id_size)) {
+  if (memcmp(xattr.boot_id, flusher->boot_id, flusher->boot_id_size)) {
     return NULL;
   }
 

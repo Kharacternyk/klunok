@@ -3,15 +3,41 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/xattr.h>
 #include <unistd.h>
 
-#define TIMESTAMP "1844674407370955161"
 #define BOOT_ID_SIZE 36
 
-static size_t read_boot_id(char boot_id[BOOT_ID_SIZE]) {
+static size_t write_u64(uint64_t value, uint8_t *destination) {
+  for (size_t i = sizeof value; i; --i) {
+    destination[i - 1] = value;
+    value >>= 8;
+  }
+
+  return sizeof value;
+}
+
+static int set_flush_xattr(const char *path, uint8_t version,
+                           const char *boot_id, uint64_t timestamp, uint64_t id,
+                           uint64_t time) {
+  uint8_t xattr[sizeof(uint8_t) + BOOT_ID_SIZE + 3 * sizeof(uint64_t)];
+  size_t i = 0;
+
+  xattr[i++] = version;
+  memcpy(xattr + i, boot_id, BOOT_ID_SIZE);
+  i += BOOT_ID_SIZE;
+  i += write_u64(timestamp, xattr + i);
+  i += write_u64(id, xattr + i);
+  i += write_u64(time, xattr + i);
+  assert(i == sizeof xattr);
+
+  return setxattr(path, "user.klunok.flush", xattr, sizeof xattr, 0);
+}
+
+static void read_boot_id(char *boot_id) {
   int fd = open("/proc/sys/kernel/random/boot_id", O_RDONLY);
   assert(fd >= 0);
 
@@ -30,8 +56,6 @@ static size_t read_boot_id(char boot_id[BOOT_ID_SIZE]) {
   }
 
   assert(!close(fd));
-
-  return total_read;
 }
 
 void test_flusher(struct trace *trace) {
@@ -40,56 +64,44 @@ void test_flusher(struct trace *trace) {
   assert(fd >= 0);
   assert(!close(fd));
 
-  const char *written_action = "!123";
-  if (setxattr(path, "user.klunok.flush.action", written_action,
-               strlen(written_action), 0)) {
-    exit(77);
-  }
-
   struct flusher *flusher = create_flusher(1, trace);
   assert(ok(trace));
 
-  char action[5] = {'a', 'b', 'c', 'd', 'e'};
-
-  assert(!should_flush(path, action, sizeof action, flusher, trace));
+  assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
   char boot_id[BOOT_ID_SIZE];
-  size_t boot_id_size = read_boot_id(boot_id);
-  assert(
-      !setxattr(path, "user.klunok.flush.boot_id", boot_id, boot_id_size, 0));
+  read_boot_id(boot_id);
 
-  assert(!should_flush(path, action, sizeof action, flusher, trace));
+  char wrong_boot_id[BOOT_ID_SIZE];
+  memcpy(wrong_boot_id, boot_id, sizeof wrong_boot_id);
+  wrong_boot_id[0] = wrong_boot_id[0] == '0' ? '1' : '0';
+
+  set_flush_xattr(path, 1, wrong_boot_id, UINT64_MAX - 2, 11, 22);
+  assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
-  const char *timestamp_attribute = "user.klunok.flush.timestamp";
-  assert(!setxattr(path, timestamp_attribute, TIMESTAMP "0",
-                   strlen(TIMESTAMP "0"), 0));
-
-  assert(should_flush(path, action, sizeof action, flusher, trace));
+  set_flush_xattr(path, 1, boot_id, UINT64_MAX - 2, 11, 22);
+  struct flush_request *request = get_request(path, flusher, trace);
   assert(ok(trace));
-  assert(!strcmp(action, written_action));
+  assert(request);
+  assert(get_id(request) == 11);
+  assert(get_time(request) == 22);
+  free(request);
 
-  action[0] = 0;
-  action[4] = 'a';
-
-  assert(!should_flush(path, action, sizeof action, flusher, trace));
+  assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
-  assert(!setxattr(path, timestamp_attribute, TIMESTAMP "1",
-                   strlen(TIMESTAMP "1"), 0));
-
-  assert(should_flush(path, action, sizeof action, flusher, trace));
+  set_flush_xattr(path, 1, boot_id, UINT64_MAX - 1, 33, 44);
+  request = get_request(path, flusher, trace);
   assert(ok(trace));
-  assert(!strcmp(action, written_action));
+  assert(request);
+  assert(get_id(request) == 33);
+  assert(get_time(request) == 44);
+  free(request);
 
-  assert(!setxattr(path, timestamp_attribute, TIMESTAMP "2",
-                   strlen(TIMESTAMP "2"), 0));
-
-  boot_id[0] = boot_id[0] == '0' ? '1' : '0';
-  assert(
-      !setxattr(path, "user.klunok.flush.boot_id", boot_id, boot_id_size, 0));
-  assert(!should_flush(path, action, sizeof action, flusher, trace));
+  set_flush_xattr(path, 2, boot_id, UINT64_MAX, 55, 66);
+  assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
   free_flusher(flusher);
