@@ -34,7 +34,8 @@ struct flusher *create_flusher(size_t flushed_path_count_guess,
     return NULL;
   }
 
-  flusher->global_timestamp = timespec.tv_nsec + 1000000000 * timespec.tv_sec;
+  flusher->global_timestamp =
+      timespec.tv_nsec + 1000000000 * (uint64_t)timespec.tv_sec;
   flusher->path_timestamps = path_timestamps;
 
   size_t total_read = 0;

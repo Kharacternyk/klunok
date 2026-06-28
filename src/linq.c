@@ -69,7 +69,8 @@ static char *read_entry(const char *entry, const struct linq *linq,
   for (;;) {
     try(trace);
     char *target = TNULL(malloc(max_size), trace);
-    int length = TNEG(readlinkat(linq->dirfd, entry, target, max_size), trace);
+    ssize_t length =
+        TNEG(readlinkat(linq->dirfd, entry, target, max_size), trace);
     rethrow_context(entry, trace);
     finally_rethrow_static(messages.linq.invalid_entry, trace);
 

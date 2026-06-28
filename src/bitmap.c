@@ -27,12 +27,12 @@ void set_bit(size_t bit, struct bitmap *bitmap, struct trace *trace) {
   }
 
   if (bit >= bitmap->size) {
-    size_t new_size = bit * 2;
+    size_t new_size = (bit + 1) * 2;
     bool *new_array = TNULL(calloc(new_size, sizeof(bool)), trace);
     if (!ok(trace)) {
       return;
     }
-    memcpy(new_array, bitmap->array, bitmap->size);
+    memcpy(new_array, bitmap->array, bitmap->size * sizeof(bool));
     free(bitmap->array);
     bitmap->array = new_array;
     bitmap->size = new_size;
