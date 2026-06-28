@@ -71,66 +71,94 @@ struct flusher *create_flusher(size_t flushed_path_count_guess,
   return flusher;
 }
 
-bool should_flush(const char *path, char *action_destination,
-                  size_t action_destination_size, struct flusher *flusher,
-                  struct trace *trace) {
+struct flush_request {
+  uint64_t id;
+  uint64_t time;
+};
+
+struct flush_xattr {
+  uint8_t version;
+  char boot_id[36];
+  uint64_t timestamp;
+  struct flush_request request;
+};
+
+struct flush_request *get_request(const char *path, struct flusher *flusher,
+                                  struct trace *trace) {
   if (!ok(trace)) {
-    return false;
+    return NULL;
   }
 
-  assert(action_destination_size);
+  struct flush_xattr xattr = {};
+  uint8_t wire_xattr[sizeof xattr.version + sizeof xattr.boot_id +
+                     sizeof xattr.timestamp + sizeof xattr.request.id +
+                     sizeof xattr.request.time];
 
-  char boot_id[sizeof flusher->boot_id];
-  ssize_t boot_id_size =
-      getxattr(path, "user.klunok.flush.boot_id", boot_id, sizeof boot_id);
-
-  if (boot_id_size != flusher->boot_id_size ||
-      memcmp(boot_id, flusher->boot_id, boot_id_size)) {
-    return false;
+  if (getxattr(path, "user.klunok.flush", wire_xattr, sizeof wire_xattr) <
+      sizeof wire_xattr) {
+    return NULL;
   }
 
-  char timestamp[32];
-  ssize_t timestamp_size = getxattr(path, "user.klunok.flush.timestamp",
-                                    timestamp, sizeof timestamp - 1);
-  if (timestamp_size < 0) {
-    return false;
+  size_t i = 0;
+  xattr.version = wire_xattr[i++];
+
+  if (xattr.version != 1) {
+    return NULL;
   }
 
-  timestamp[timestamp_size] = 0;
+  for (size_t k = i; i < k + sizeof xattr.boot_id; ++i) {
+    xattr.boot_id[i - k] = wire_xattr[i];
+  }
+  if (!memcmp(xattr.boot_id, flusher->boot_id, flusher->boot_id_size)) {
+    return NULL;
+  }
 
-  uint64_t timestamp_value = strtoull(timestamp, NULL, 10);
-
-  if (timestamp_value <= flusher->global_timestamp) {
-    return false;
+  for (size_t k = i; i < k + sizeof xattr.timestamp; ++i) {
+    xattr.timestamp <<= 8;
+    xattr.timestamp += wire_xattr[i];
+  }
+  if (xattr.timestamp < flusher->global_timestamp) {
+    return NULL;
   }
 
   struct buffer_view *path_view = create_buffer_view(path, trace);
 
   if (!ok(trace)) {
-    return false;
+    return NULL;
   }
 
   uint64_t last_timestamp =
       get_last_metadata(path_view, flusher->path_timestamps);
   free_buffer_view(path_view);
 
-  if (timestamp_value <= last_timestamp) {
-    return false;
+  if (xattr.timestamp <= last_timestamp) {
+    return NULL;
   }
 
-  ssize_t action_size =
-      getxattr(path, "user.klunok.flush.action", action_destination,
-               action_destination_size - 1);
-
-  if (action_size < 0) {
-    return false;
+  for (size_t k = i; i < k + sizeof xattr.request.id; ++i) {
+    xattr.request.id <<= 8;
+    xattr.request.id += wire_xattr[i];
+  }
+  for (size_t k = i; i < k + sizeof xattr.request.time; ++i) {
+    xattr.request.time <<= 8;
+    xattr.request.time += wire_xattr[i];
   }
 
-  action_destination[action_size] = 0;
-  add_with_metadata(path, timestamp_value, flusher->path_timestamps, trace);
+  add_with_metadata(path, xattr.timestamp, flusher->path_timestamps, trace);
+  struct flush_request *request =
+      TNULL(malloc(sizeof(struct flush_request)), trace);
 
-  return ok(trace);
+  if (!ok(trace)) {
+    return NULL;
+  }
+
+  *request = xattr.request;
+
+  return request;
 }
+
+uint64_t get_id(struct flush_request *request) { return request->id; }
+uint64_t get_time(struct flush_request *request) { return request->time; }
 
 void free_flusher(struct flusher *flusher) {
   if (flusher) {
