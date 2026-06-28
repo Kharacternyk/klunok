@@ -77,11 +77,14 @@ void test_flusher(struct trace *trace) {
   memcpy(wrong_boot_id, boot_id, sizeof wrong_boot_id);
   wrong_boot_id[0] = wrong_boot_id[0] == '0' ? '1' : '0';
 
-  set_flush_xattr(path, 1, wrong_boot_id, UINT64_MAX - 2, 11, 22);
+  if (set_flush_xattr(path, 1, wrong_boot_id, UINT64_MAX - 2, 11, 22)) {
+    exit(77);
+  }
+
   assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
-  set_flush_xattr(path, 1, boot_id, UINT64_MAX - 2, 11, 22);
+  assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX - 2, 11, 22));
   struct flush_request *request = get_request(path, flusher, trace);
   assert(ok(trace));
   assert(request);
@@ -92,7 +95,7 @@ void test_flusher(struct trace *trace) {
   assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
-  set_flush_xattr(path, 1, boot_id, UINT64_MAX - 1, 33, 44);
+  assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX - 1, 33, 44));
   request = get_request(path, flusher, trace);
   assert(ok(trace));
   assert(request);
@@ -100,7 +103,7 @@ void test_flusher(struct trace *trace) {
   assert(get_time(request) == 44);
   free(request);
 
-  set_flush_xattr(path, 2, boot_id, UINT64_MAX, 55, 66);
+  assert(!set_flush_xattr(path, 2, boot_id, UINT64_MAX, 55, 66));
   assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
