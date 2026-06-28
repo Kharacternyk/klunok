@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/xattr.h>
 #include <time.h>
 #include <unistd.h>
@@ -15,6 +16,9 @@ struct flusher {
   uint8_t boot_id_size;
   uint64_t global_timestamp;
   struct set *path_timestamps;
+
+  pid_t last_pid;
+  int last_pid_fd;
 };
 
 struct flusher *create_flusher(size_t flushed_path_count_guess,
@@ -34,6 +38,8 @@ struct flusher *create_flusher(size_t flushed_path_count_guess,
     return NULL;
   }
 
+  flusher->last_pid = 0;
+  flusher->last_pid_fd = -1;
   flusher->global_timestamp =
       timespec.tv_nsec + 1000000000 * (uint64_t)timespec.tv_sec;
   flusher->path_timestamps = path_timestamps;
@@ -61,13 +67,7 @@ struct flusher *create_flusher(size_t flushed_path_count_guess,
 
   flusher->boot_id_size = total_read;
 
-  TNEG(close(fd), trace);
-
-  if (!ok(trace)) {
-    free(flusher);
-    free_set(path_timestamps);
-    return NULL;
-  }
+  close(fd);
 
   return flusher;
 }
@@ -162,6 +162,50 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
 
 uint64_t get_id(struct flush_request *request) { return request->id; }
 uint64_t get_time(struct flush_request *request) { return request->time; }
+
+void acknowledge_flush(uint64_t id, pid_t pid, struct flusher *flusher,
+                       struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
+
+  if (pid != flusher->last_pid) {
+    struct buffer *path = create_buffer(trace);
+    concat_string("/tmp/klunok.", path, trace);
+    concat_size(pid, path, trace);
+
+    if (!ok(trace)) {
+      free_buffer(path);
+      return;
+    }
+
+    int fd = open(get_string(get_view(path)), O_WRONLY | O_NONBLOCK);
+
+    free_buffer(path);
+
+    if (fd < 0) {
+      return;
+    }
+
+    struct stat stat;
+
+    if (fstat(fd, &stat) || !S_ISFIFO(stat.st_mode)) {
+      close(fd);
+      return;
+    }
+
+    if (flusher->last_pid_fd >= 0) {
+      close(flusher->last_pid_fd);
+    }
+
+    flusher->last_pid = pid;
+    flusher->last_pid_fd = fd;
+  }
+
+  /* No looping here, sizeof id is less than PIPE_BUF */
+  int unused __attribute__((unused)) =
+      write(flusher->last_pid_fd, &id, sizeof id);
+}
 
 void free_flusher(struct flusher *flusher) {
   if (flusher) {

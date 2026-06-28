@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <grp.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/fanotify.h>
@@ -120,6 +121,8 @@ int main(int argc, const char **argv) {
     throw_static(messages.main.cannot_drop_privileges, trace);
     return fail(trace);
   }
+
+  signal(SIGPIPE, SIG_IGN);
 
   struct handler *handler =
       load_handler(get_config_path(params), common_parent_path_length, trace);
