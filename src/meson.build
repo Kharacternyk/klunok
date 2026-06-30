@@ -1,32 +1,19 @@
-components = [
-  'bitmap',
-  'buffer',
-  'counter',
-  'deref',
-  'elfinterp',
-  'extension',
-  'handler',
-  'flusher',
-  'journal',
-  'linq',
-  'list',
-  'logstep',
-  'messages',
-  'mountinfo',
-  'params',
-  'parents',
-  'set',
-  'sieve',
-  'storepath',
-  'sync',
-  'timestamp',
-  'trace',
-] + ('config-' + (lua.found() ? 'lua' : 'static'))
+fs = import('fs')
 
-sources = lua.found() ? lua_sources : []
+components = fs.read('components.few').strip().split()
+
+if lua.found()
+  components += 'config-lua'
+  sources = lua_sources
+else
+  components += 'config-static'
+  sources = []
+endif
+
 foreach component: components
   sources += files(component + '.c')
 endforeach
+
 main_sources = sources + 'main.c'
 
 executable(
