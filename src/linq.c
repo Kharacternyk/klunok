@@ -37,8 +37,17 @@ static int dot_filter(const struct dirent *dirent) {
 }
 
 static int compare(const struct dirent **first, const struct dirent **second) {
-  return strtol((*first)->d_name, NULL, 10) -
-         strtol((*second)->d_name, NULL, 10);
+  long first_number = strtol((*first)->d_name, NULL, 10);
+  long second_number = strtol((*second)->d_name, NULL, 10);
+
+  /* We don't just subtract because long has bigger range than int. */
+  if (first_number > second_number) {
+    return 1;
+  }
+  if (first_number < second_number) {
+    return -1;
+  }
+  return 0;
 }
 
 static void create_linq_path(const char *path, struct trace *trace) {
