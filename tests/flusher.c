@@ -1,4 +1,5 @@
 #include "flusher.h"
+#include "serialize.h"
 #include "trace.h"
 #include <assert.h>
 #include <fcntl.h>
@@ -11,15 +12,6 @@
 
 #define BOOT_ID_SIZE 36
 
-static size_t write_u64(uint64_t value, uint8_t *destination) {
-  for (size_t i = sizeof value; i; --i) {
-    destination[i - 1] = value;
-    value >>= 8;
-  }
-
-  return sizeof value;
-}
-
 static int set_flush_xattr(const char *path, uint8_t version,
                            const char *boot_id, uint64_t timestamp, uint64_t id,
                            uint64_t time) {
@@ -29,9 +21,11 @@ static int set_flush_xattr(const char *path, uint8_t version,
   xattr[i++] = version;
   memcpy(xattr + i, boot_id, BOOT_ID_SIZE);
   i += BOOT_ID_SIZE;
-  i += write_u64(timestamp, xattr + i);
-  i += write_u64(id, xattr + i);
-  i += write_u64(time, xattr + i);
+
+  i += (write_u64(timestamp, xattr + i), sizeof timestamp);
+  i += (write_u64(id, xattr + i), sizeof id);
+  i += (write_u64(time, xattr + i), sizeof time);
+
   assert(i == sizeof xattr);
 
   return setxattr(path, "user.klunok.flush", xattr, sizeof xattr, 0);

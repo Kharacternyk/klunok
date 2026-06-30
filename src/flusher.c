@@ -1,8 +1,10 @@
 #include "flusher.h"
 #include "buffer.h"
+#include "serialize.h"
 #include "set.h"
 #include "trace.h"
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -202,9 +204,20 @@ void acknowledge_flush(uint64_t id, pid_t pid, struct flusher *flusher,
     flusher->last_pid_fd = fd;
   }
 
+  uint8_t response[9];
+  response[0] = 1;
+  write_u64(id, response + 1);
+
   /* No looping here, sizeof id is less than PIPE_BUF */
-  int unused __attribute__((unused)) =
-      write(flusher->last_pid_fd, &id, sizeof id);
+  if (write(flusher->last_pid_fd, &response, sizeof response) < 0 &&
+      errno == EPIPE) {
+    flusher->last_pid = 0;
+
+    if (flusher->last_pid_fd > 0) {
+      close(flusher->last_pid_fd);
+      flusher->last_pid_fd = -1;
+    }
+  }
 }
 
 void free_flusher(struct flusher *flusher) {
