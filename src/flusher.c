@@ -213,7 +213,7 @@ void acknowledge_flush(uint64_t id, pid_t pid, struct flusher *flusher,
       errno == EPIPE) {
     flusher->last_pid = 0;
 
-    if (flusher->last_pid_fd > 0) {
+    if (flusher->last_pid_fd >= 0) {
       close(flusher->last_pid_fd);
       flusher->last_pid_fd = -1;
     }
@@ -222,6 +222,10 @@ void acknowledge_flush(uint64_t id, pid_t pid, struct flusher *flusher,
 
 void free_flusher(struct flusher *flusher) {
   if (flusher) {
+    if (flusher->last_pid_fd >= 0) {
+      close(flusher->last_pid_fd);
+    }
+
     free_set(flusher->path_timestamps);
     free(flusher);
   }

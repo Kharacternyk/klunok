@@ -1,4 +1,5 @@
 #include "flusher.h"
+#include "buffer.h"
 #include "serialize.h"
 #include "trace.h"
 #include <assert.h>
@@ -7,6 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/xattr.h>
 #include <unistd.h>
 
@@ -50,6 +52,16 @@ static void read_boot_id(char *boot_id) {
   }
 
   assert(!close(fd));
+}
+
+static void assert_acknowledgement(int fd, uint64_t id) {
+  uint8_t expected[sizeof(uint8_t) + sizeof id];
+  expected[0] = 1;
+  write_u64(id, expected + 1);
+
+  uint8_t actual[sizeof expected / sizeof expected[0]];
+  assert(read(fd, actual, sizeof actual) == sizeof actual);
+  assert(!memcmp(actual, expected, sizeof expected));
 }
 
 void test_flusher(struct trace *trace) {
@@ -100,6 +112,33 @@ void test_flusher(struct trace *trace) {
   assert(!set_flush_xattr(path, 2, boot_id, UINT64_MAX, 55, 66));
   assert(!get_request(path, flusher, trace));
   assert(ok(trace));
+
+  struct buffer *acknowledgement_path = create_buffer(trace);
+  concat_string("/tmp/klunok.", acknowledgement_path, trace);
+  concat_size(getpid(), acknowledgement_path, trace);
+  assert(ok(trace));
+
+  const char *acknowledgement_path_string =
+      get_string(get_view(acknowledgement_path));
+
+  assert(!mkfifo(acknowledgement_path_string, 0600));
+
+  int acknowledgement_fd =
+      open(acknowledgement_path_string, O_RDONLY | O_NONBLOCK);
+  assert(acknowledgement_fd >= 0);
+
+  uint64_t base_id = 0x0102030405060708;
+
+  for (uint8_t i = 0; i < 2; ++i) {
+    uint64_t id = base_id + i * 0xaabbccddeeffaabb;
+    acknowledge_flush(id, getpid(), flusher, trace);
+    assert(ok(trace));
+    assert_acknowledgement(acknowledgement_fd, id);
+  }
+
+  assert(!close(acknowledgement_fd));
+  assert(!unlink(acknowledgement_path_string));
+  free_buffer(acknowledgement_path);
 
   free_flusher(flusher);
 }
