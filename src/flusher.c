@@ -162,7 +162,6 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
   return request;
 }
 
-uint64_t get_id(struct flush_request *request) { return request->id; }
 uint64_t get_time(struct flush_request *request) { return request->time; }
 
 void acknowledge(const struct flush_request *request, pid_t pid,
