@@ -262,6 +262,7 @@ void pop_head(struct linq *linq, struct trace *trace) {
   TNEG(unlinkat(linq->dirfd, get_string(get_view(link)), 0), trace);
 
   if (ok(trace)) {
+    *target = '/';
     struct buffer_view *path_view =
         create_buffer_view(strip_legacy_metadata(target), trace);
 
