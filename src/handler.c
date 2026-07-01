@@ -6,6 +6,7 @@
 #include "deref.h"
 #include "elfinterp.h"
 #include "extension.h"
+#include "flusher.h"
 #include "journal.h"
 #include "linq.h"
 #include "messages.h"
@@ -31,6 +32,7 @@ struct handler {
   struct linq *linq;
   struct bitmap *editor_pid_bitmap;
   struct set *elf_interpreters;
+  struct flusher *flusher;
 };
 
 struct handler *load_handler(const char *config_path,
@@ -56,6 +58,7 @@ struct handler *load_handler(const char *config_path,
   finally_rethrow_static(messages.handler.config.cannot_load, trace);
 
   if (ok(trace)) {
+    handler->flusher = create_flusher(32, trace);
     handler->elf_interpreters =
         create_set(get_elf_interpreter_count_guess(handler->config), trace);
     handler->editor_pid_bitmap =
@@ -89,10 +92,12 @@ struct handler *load_handler(const char *config_path,
 
 static void record_event(const char *event, pid_t pid, const char *path,
                          const struct handler *handler, struct trace *trace) {
-  try(trace);
-  note(event, pid, path, handler->journal, trace);
-  rethrow_context(get_journal_path(handler->config), trace);
-  finally_rethrow_static(messages.handler.journal.cannot_write_to, trace);
+  if (ok(trace)) {
+    try(trace);
+    note(event, pid, path, handler->journal, trace);
+    rethrow_context(get_journal_path(handler->config), trace);
+    finally_rethrow_static(messages.handler.journal.cannot_write_to, trace);
+  }
 }
 
 void handle_open_exec(pid_t pid, int fd, struct handler *handler,
@@ -226,73 +231,6 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
   }
 
   return true;
-}
-
-void handle_close_write(pid_t pid, int fd, struct handler *handler,
-                        struct trace *trace) {
-  if (!ok(trace)) {
-    return;
-  }
-  char *file_path = deref_fd(fd, get_path_length_guess(handler->config), trace);
-  if (!ok(trace)) {
-    return;
-  }
-
-  const char *event = get_event_close_write_ignored(handler->config);
-
-  if (push_to_linq(pid, file_path, handler, trace)) {
-    event = get_event_close_write_not_ignored(handler->config);
-  }
-
-  record_event(event, pid, file_path, handler, trace);
-
-  if (ok(trace) && handler->config_path &&
-      !strcmp(file_path, handler->config_path)) {
-    try(trace);
-    struct config *new_config = load_config(handler->config_path, trace);
-    rethrow_context(handler->config_path, trace);
-    finally_rethrow_static(messages.handler.config.cannot_reload, trace);
-
-    struct linq *new_linq = NULL;
-    if (ok(trace) &&
-        strcmp(get_queue_path(handler->config), get_queue_path(new_config))) {
-      try(trace);
-      new_linq = load_linq(get_queue_path(new_config),
-                           get_debounce_seconds(new_config),
-                           get_queue_size_guess(new_config),
-                           get_path_length_guess(new_config), trace);
-      rethrow_context(get_queue_path(new_config), trace);
-      finally_rethrow_static(messages.handler.linq.cannot_reload, trace);
-    }
-
-    struct journal *new_journal = NULL;
-    if (ok(trace)) {
-      try(trace);
-      new_journal =
-          open_journal(get_journal_path(new_config),
-                       get_journal_timestamp_pattern(new_config), trace);
-      rethrow_context(get_journal_path(new_config), trace);
-      finally_rethrow_static(messages.handler.journal.cannot_open, trace);
-    }
-
-    if (ok(trace)) {
-      free_config(handler->config);
-      handler->config = new_config;
-      free_journal(handler->journal);
-      handler->journal = new_journal;
-      if (new_linq) {
-        free_linq(handler->linq);
-        handler->linq = new_linq;
-      }
-      redebounce(get_debounce_seconds(new_config), handler->linq);
-    } else {
-      free_config(new_config);
-      free_linq(new_linq);
-      free_journal(new_journal);
-    }
-  }
-
-  free(file_path);
 }
 
 static void store(const char *path, struct handler *handler,
@@ -510,6 +448,90 @@ static void store(const char *path, struct handler *handler,
   free_sieved_path(sieved_path);
 }
 
+void handle_close_write(pid_t pid, int fd, struct handler *handler,
+                        struct trace *trace) {
+  if (!ok(trace)) {
+    return;
+  }
+  char *file_path = deref_fd(fd, get_path_length_guess(handler->config), trace);
+  struct flush_request *request =
+      get_request(file_path, handler->flusher, trace);
+
+  if (!ok(trace)) {
+    free(file_path);
+    return;
+  }
+
+  if (request) {
+    store(file_path, handler, trace);
+    *file_path = 0;
+    push(file_path, handler->linq, trace);
+    acknowledge(request, pid, handler->flusher, trace);
+    record_event(get_event_close_write_not_ignored(handler->config), pid,
+                 file_path, handler, trace);
+
+    free(request);
+    free(file_path);
+    return;
+  }
+
+  const char *event = get_event_close_write_ignored(handler->config);
+
+  if (push_to_linq(pid, file_path, handler, trace)) {
+    event = get_event_close_write_not_ignored(handler->config);
+  }
+
+  record_event(event, pid, file_path, handler, trace);
+
+  if (ok(trace) && handler->config_path &&
+      !strcmp(file_path, handler->config_path)) {
+    try(trace);
+    struct config *new_config = load_config(handler->config_path, trace);
+    rethrow_context(handler->config_path, trace);
+    finally_rethrow_static(messages.handler.config.cannot_reload, trace);
+
+    struct linq *new_linq = NULL;
+    if (ok(trace) &&
+        strcmp(get_queue_path(handler->config), get_queue_path(new_config))) {
+      try(trace);
+      new_linq = load_linq(get_queue_path(new_config),
+                           get_debounce_seconds(new_config),
+                           get_queue_size_guess(new_config),
+                           get_path_length_guess(new_config), trace);
+      rethrow_context(get_queue_path(new_config), trace);
+      finally_rethrow_static(messages.handler.linq.cannot_reload, trace);
+    }
+
+    struct journal *new_journal = NULL;
+    if (ok(trace)) {
+      try(trace);
+      new_journal =
+          open_journal(get_journal_path(new_config),
+                       get_journal_timestamp_pattern(new_config), trace);
+      rethrow_context(get_journal_path(new_config), trace);
+      finally_rethrow_static(messages.handler.journal.cannot_open, trace);
+    }
+
+    if (ok(trace)) {
+      free_config(handler->config);
+      handler->config = new_config;
+      free_journal(handler->journal);
+      handler->journal = new_journal;
+      if (new_linq) {
+        free_linq(handler->linq);
+        handler->linq = new_linq;
+      }
+      redebounce(get_debounce_seconds(new_config), handler->linq);
+    } else {
+      free_config(new_config);
+      free_linq(new_linq);
+      free_journal(new_journal);
+    }
+  }
+
+  free(file_path);
+}
+
 time_t handle_timeout(struct handler *handler, struct trace *trace) {
   for (;;) {
     try(trace);
@@ -525,11 +547,15 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
       return pause;
     }
 
-    store(get_path(head), handler, trace);
-    free_linq_head(head);
+    const char *path = get_path(head);
 
-    if (!ok(trace)) {
-      return 0;
+    if (*path) {
+      store(path, handler, trace);
+      free_linq_head(head);
+
+      if (!ok(trace)) {
+        return 0;
+      }
     }
   }
 }
@@ -542,6 +568,7 @@ void free_handler(struct handler *handler) {
     free_linq(handler->linq);
     free_bitmap(handler->editor_pid_bitmap);
     free_set(handler->elf_interpreters);
+    free_flusher(handler->flusher);
     free(handler);
   }
 }

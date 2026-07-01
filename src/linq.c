@@ -19,7 +19,7 @@ struct linq {
   int dirfd;
   time_t debounce_seconds;
   size_t length_guess;
-  size_t head_index;
+  long head_index;
   size_t size;
   struct set *set;
 };
@@ -137,6 +137,7 @@ load_or_create_linq(const char *path, time_t debounce_seconds,
   for (size_t i = 0; i < entry_count && ok(trace); ++i) {
     char *entry_target = read_entry(entries[i]->d_name, linq, trace);
     if (ok(trace)) {
+      *entry_target = '/';
       add(strip_legacy_metadata(entry_target), set, trace);
       free(entry_target);
     }
@@ -161,11 +162,11 @@ struct linq *load_linq(const char *path, time_t debounce_seconds,
                              entry_length_guess, true, trace);
 }
 
-void push(const char *path, struct linq *linq, struct trace *trace) {
+void push(char *path, struct linq *linq, struct trace *trace) {
   if (!ok(trace)) {
     return;
   }
-  assert(*path == '/');
+  assert(*path == '/' || !*path);
 
   struct buffer *link_buffer = create_buffer(trace);
   concat_size(linq->head_index + linq->size, link_buffer, trace);
@@ -176,7 +177,12 @@ void push(const char *path, struct linq *linq, struct trace *trace) {
   TNEG(symlinkat(get_string(get_view(target_buffer)), linq->dirfd,
                  get_string(get_view(link_buffer))),
        trace);
+
+  char first = *path;
+  *path = '/';
   add(path, linq->set, trace);
+  *path = first;
+
   if (ok(trace)) {
     ++linq->size;
   }
