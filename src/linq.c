@@ -166,7 +166,7 @@ void push(char *path, struct linq *linq, struct trace *trace) {
   if (!ok(trace)) {
     return;
   }
-  assert(*path == '/' || !*path);
+  assert(*path == '/' || *path == '!');
 
   struct buffer *link_buffer = create_buffer(trace);
   concat_size(linq->head_index + linq->size, link_buffer, trace);

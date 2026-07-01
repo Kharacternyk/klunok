@@ -58,7 +58,8 @@ struct handler *load_handler(const char *config_path,
   finally_rethrow_static(messages.handler.config.cannot_load, trace);
 
   if (ok(trace)) {
-    handler->flusher = create_flusher(32, trace);
+    handler->flusher =
+        create_flusher(get_flushed_path_count_guess(handler->config), trace);
     handler->elf_interpreters =
         create_set(get_elf_interpreter_count_guess(handler->config), trace);
     handler->editor_pid_bitmap =
@@ -233,7 +234,7 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
   return true;
 }
 
-static void store(const char *path, struct handler *handler,
+static void store(const char *path, bool pop, struct handler *handler,
                   struct trace *trace) {
   char *version =
       get_timestamp(get_version_pattern(handler->config), NAME_MAX, trace);
@@ -324,7 +325,11 @@ static void store(const char *path, struct handler *handler,
     }
 
     record_event(event, 0, relative_path, handler, trace);
-    pop_head(handler->linq, trace);
+
+    if (pop) {
+      pop_head(handler->linq, trace);
+    }
+
     free_store_path(store_path);
     free_buffer(unstable_path);
     free_sieved_path(sieved_path);
@@ -374,7 +379,9 @@ static void store(const char *path, struct handler *handler,
     }
     finally(trace);
 
-    pop_head(handler->linq, trace);
+    if (pop) {
+      pop_head(handler->linq, trace);
+    }
 
     if (!ok(trace)) {
       throw_context(path, trace);
@@ -463,9 +470,12 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   }
 
   if (request) {
-    store(file_path, handler, trace);
-    *file_path = 0;
+    store(file_path, false, handler, trace);
+
+    *file_path = '!';
     push(file_path, handler->linq, trace);
+    *file_path = '/';
+
     acknowledge(request, pid, handler->flusher, trace);
     record_event(get_event_close_write_not_ignored(handler->config), pid,
                  file_path, handler, trace);
@@ -549,8 +559,8 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
 
     const char *path = get_path(head);
 
-    if (*path) {
-      store(path, handler, trace);
+    if (*path == '/') {
+      store(path, true, handler, trace);
       free_linq_head(head);
 
       if (!ok(trace)) {
