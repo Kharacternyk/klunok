@@ -54,14 +54,10 @@ static void read_boot_id(char *boot_id) {
   assert(!close(fd));
 }
 
-static void assert_acknowledgement(int fd, uint64_t id) {
-  uint8_t expected[sizeof(uint8_t) + sizeof id];
-  expected[0] = 1;
-  write_u64(id, expected + 1);
-
-  uint8_t actual[sizeof expected / sizeof expected[0]];
-  assert(read(fd, actual, sizeof actual) == sizeof actual);
-  assert(!memcmp(actual, expected, sizeof expected));
+static void assert_acknowledgement(int fd) {
+  uint8_t response[20];
+  assert(read(fd, response, sizeof response) == 9);
+  assert(response[0] == 1);
 }
 
 void test_flusher(struct trace *trace) {
@@ -90,29 +86,6 @@ void test_flusher(struct trace *trace) {
   assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
-  assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX - 2, 11, 22));
-  struct flush_request *request = get_request(path, flusher, trace);
-  assert(ok(trace));
-  assert(request);
-  assert(get_id(request) == 11);
-  assert(get_time(request) == 22);
-  free(request);
-
-  assert(!get_request(path, flusher, trace));
-  assert(ok(trace));
-
-  assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX - 1, 33, 44));
-  request = get_request(path, flusher, trace);
-  assert(ok(trace));
-  assert(request);
-  assert(get_id(request) == 33);
-  assert(get_time(request) == 44);
-  free(request);
-
-  assert(!set_flush_xattr(path, 2, boot_id, UINT64_MAX, 55, 66));
-  assert(!get_request(path, flusher, trace));
-  assert(ok(trace));
-
   struct buffer *acknowledgement_path = create_buffer(trace);
   concat_string("/tmp/klunok.", acknowledgement_path, trace);
   concat_size(getpid(), acknowledgement_path, trace);
@@ -127,14 +100,36 @@ void test_flusher(struct trace *trace) {
       open(acknowledgement_path_string, O_RDONLY | O_NONBLOCK);
   assert(acknowledgement_fd >= 0);
 
-  uint64_t base_id = 0x0102030405060708;
+  assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX - 2, 11, 22));
+  struct flush_request *request = get_request(path, flusher, trace);
+  assert(ok(trace));
+  assert(request);
+  assert(get_time(request) == 22);
 
-  for (uint8_t i = 0; i < 2; ++i) {
-    uint64_t id = base_id + i * 0xaabbccddeeffaabb;
-    acknowledge_flush(id, getpid(), flusher, trace);
-    assert(ok(trace));
-    assert_acknowledgement(acknowledgement_fd, id);
-  }
+  acknowledge(request, getpid(), flusher, trace);
+  assert(ok(trace));
+  assert_acknowledgement(acknowledgement_fd);
+
+  free(request);
+
+  assert(!get_request(path, flusher, trace));
+  assert(ok(trace));
+
+  assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX - 1, 33, 44));
+  request = get_request(path, flusher, trace);
+  assert(ok(trace));
+  assert(request);
+  assert(get_time(request) == 44);
+
+  acknowledge(request, getpid(), flusher, trace);
+  assert(ok(trace));
+  assert_acknowledgement(acknowledgement_fd);
+
+  free(request);
+
+  assert(!set_flush_xattr(path, 2, boot_id, UINT64_MAX, 55, 66));
+  assert(!get_request(path, flusher, trace));
+  assert(ok(trace));
 
   assert(!close(acknowledgement_fd));
   assert(!unlink(acknowledgement_path_string));

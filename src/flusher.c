@@ -165,8 +165,8 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
 uint64_t get_id(struct flush_request *request) { return request->id; }
 uint64_t get_time(struct flush_request *request) { return request->time; }
 
-void acknowledge_flush(uint64_t id, pid_t pid, struct flusher *flusher,
-                       struct trace *trace) {
+void acknowledge(const struct flush_request *request, pid_t pid,
+                 struct flusher *flusher, struct trace *trace) {
   if (!ok(trace)) {
     return;
   }
@@ -206,7 +206,7 @@ void acknowledge_flush(uint64_t id, pid_t pid, struct flusher *flusher,
 
   uint8_t response[9];
   response[0] = 1;
-  write_u64(id, response + 1);
+  write_u64(request->id, response + 1);
 
   /* No looping here, sizeof id is less than PIPE_BUF */
   if (write(flusher->last_pid_fd, &response, sizeof response) < 0 &&
