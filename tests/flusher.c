@@ -1,22 +1,19 @@
 #include "flusher.h"
 #include "buffer.h"
 #include "serialize.h"
+#include "test-flusher.h"
 #include "trace.h"
 #include <assert.h>
 #include <fcntl.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/xattr.h>
 #include <unistd.h>
 
-#define BOOT_ID_SIZE 36
-
-static int set_flush_xattr(const char *path, uint8_t version,
-                           const char *boot_id, uint64_t timestamp, uint64_t id,
-                           uint64_t time) {
+int set_flush_xattr(const char *path, uint8_t version, const char *boot_id,
+                    uint64_t timestamp, uint64_t id, uint64_t time) {
   uint8_t xattr[sizeof(uint8_t) + BOOT_ID_SIZE + 3 * sizeof(uint64_t)];
   size_t i = 0;
 
@@ -33,7 +30,7 @@ static int set_flush_xattr(const char *path, uint8_t version,
   return setxattr(path, "user.klunok.flush", xattr, sizeof xattr, 0);
 }
 
-static void read_boot_id(char *boot_id) {
+void read_boot_id(char *boot_id) {
   int fd = open("/proc/sys/kernel/random/boot_id", O_RDONLY);
   assert(fd >= 0);
 
@@ -54,10 +51,21 @@ static void read_boot_id(char *boot_id) {
   assert(!close(fd));
 }
 
-static void assert_acknowledgement(int fd) {
-  uint8_t response[20];
-  assert(read(fd, response, sizeof response) == 9);
-  assert(response[0] == 1);
+void assert_acknowledgement(int fd, uint64_t id) {
+  uint8_t expected[sizeof(uint8_t) + sizeof id];
+  expected[0] = 1;
+  write_u64(id, expected + 1);
+
+  uint8_t response[2 * sizeof expected];
+  assert(read(fd, response, sizeof response) == sizeof expected);
+  assert(!memcmp(response, expected, sizeof expected));
+}
+
+struct buffer *create_acknowledgement_path(struct trace *trace) {
+  struct buffer *acknowledgement_path = create_buffer(trace);
+  concat_string("/tmp/klunok.", acknowledgement_path, trace);
+  concat_size(getpid(), acknowledgement_path, trace);
+  return acknowledgement_path;
 }
 
 void test_flusher(struct trace *trace) {
@@ -86,14 +94,13 @@ void test_flusher(struct trace *trace) {
   assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
-  struct buffer *acknowledgement_path = create_buffer(trace);
-  concat_string("/tmp/klunok.", acknowledgement_path, trace);
-  concat_size(getpid(), acknowledgement_path, trace);
+  struct buffer *acknowledgement_path = create_acknowledgement_path(trace);
   assert(ok(trace));
 
   const char *acknowledgement_path_string =
       get_string(get_view(acknowledgement_path));
 
+  unlink(acknowledgement_path_string);
   assert(!mkfifo(acknowledgement_path_string, 0600));
 
   int acknowledgement_fd =
@@ -108,7 +115,7 @@ void test_flusher(struct trace *trace) {
 
   acknowledge(request, getpid(), flusher, trace);
   assert(ok(trace));
-  assert_acknowledgement(acknowledgement_fd);
+  assert_acknowledgement(acknowledgement_fd, 11);
 
   free(request);
 
@@ -123,7 +130,7 @@ void test_flusher(struct trace *trace) {
 
   acknowledge(request, getpid(), flusher, trace);
   assert(ok(trace));
-  assert_acknowledgement(acknowledgement_fd);
+  assert_acknowledgement(acknowledgement_fd, 33);
 
   free(request);
 

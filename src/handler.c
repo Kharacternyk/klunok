@@ -553,10 +553,10 @@ time_t handle_timeout(struct handler *handler, struct trace *trace) {
 
     if (*path == '/') {
       store(path, handler, trace);
-      free_linq_head(head);
     }
 
     pop_head(handler->linq, trace);
+    free_linq_head(head);
 
     if (!ok(trace)) {
       return 0;
