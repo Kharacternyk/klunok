@@ -22,6 +22,7 @@ jobs:
           extra_nix_config: |
             build-dir = /nix-builds
       - run: sudo mkdir /nix-builds
+      - run: findmnt -T /nix-builds
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - run: nix flake check
       - run: nix build .#static
