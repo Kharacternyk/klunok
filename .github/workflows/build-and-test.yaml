@@ -20,9 +20,8 @@ jobs:
       - uses: cachix/install-nix-action@v19
         with:
           extra_nix_config: |
-            build-dir = ${{ runner.temp }}
-      - run: findmnt -T "${RUNNER_TEMP}"
-      - run: sudo chmod ugo+rwx "${RUNNER_TEMP}"
+            build-dir = /nix-builds
+      - run: sudo mkdir /nix-builds
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - run: nix flake check
       - run: nix build .#static
