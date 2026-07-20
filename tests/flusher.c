@@ -88,6 +88,7 @@ void test_flusher(struct trace *trace) {
   wrong_boot_id[0] = wrong_boot_id[0] == '0' ? '1' : '0';
 
   if (set_flush_xattr(path, 1, wrong_boot_id, UINT64_MAX - 2, 11, 22)) {
+    free_flusher(flusher);
     exit(77);
   }
 
