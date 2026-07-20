@@ -22,6 +22,7 @@ jobs:
           extra_nix_config: |
             build-dir = ${{ runner.temp }}/nix-builds
       - run: findmnt -T "${RUNNER_TEMP}"
+      - run: sudo chmod ugo+rwx "${RUNNER_TEMP}/nix-builds"
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - run: nix flake check
       - run: nix build .#static
