@@ -99,4 +99,4 @@ and must free all allocated memory to pass in this case.
 Testing with Valgrind is preferred.
 
 To test with different Lua versions, as well as without Lua,
-run `nix flake check` (slow).
+and with both `glibc` and `musl`, run `nix flake check` (slow).
