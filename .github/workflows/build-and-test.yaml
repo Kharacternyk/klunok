@@ -18,6 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v19
+        with:
+          extra_nix_config: |
+            build-dir = ${{ runner.temp }}/nix-builds
+      - run: findmnt -T "${RUNNER_TEMP}"
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - run: nix flake check
       - run: nix build .#static
