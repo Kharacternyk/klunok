@@ -24,7 +24,8 @@ const struct translation messages = {
              .source_permission_denied = "Permission denied",
              .destination_already_exists = "The destination already exists"},
     .config = {.is_static = "Configuration files are not supported"},
-    .linq = {.invalid_entry = "The queue contains an invalid entry"},
+    .linq = {.invalid_entry = "The queue contains an invalid entry",
+             .cannot_fsync = "Cannot fsync the queue"},
     .params = {.unknown_option = "An unknown option has been passed",
                .stray_option =
                    "An option without a required value has been passed",

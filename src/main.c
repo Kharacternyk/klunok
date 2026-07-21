@@ -141,14 +141,17 @@ int main(int argc, const char **argv) {
 
   for (;;) {
     int status = poll(&pollfd, 1, pause * 1000);
+
     if (status < 0 || (status > 0 && pollfd.revents ^ POLLIN)) {
       throw_errno(trace);
       throw_static(messages.main.fanotify.cannot_poll, trace);
     } else if (status > 0) {
       struct fanotify_event_metadata event;
+
       try(trace);
       TNEG(read(fanotify_fd, &event, sizeof event) - sizeof event, trace);
       finally_rethrow_static(messages.main.fanotify.cannot_read_event, trace);
+
       if (ok(trace)) {
         if (event.vers != FANOTIFY_METADATA_VERSION) {
           throw_static(messages.main.fanotify.version_mismatch, trace);
@@ -167,11 +170,11 @@ int main(int argc, const char **argv) {
           close(event.fd);
         }
       }
+    } else {
+      try(trace);
+      pause = handle_timeout(handler, trace);
+      finally_rethrow_static(messages.main.cannot_handle_timeout, trace);
     }
-
-    try(trace);
-    pause = handle_timeout(handler, trace);
-    finally_rethrow_static(messages.main.cannot_handle_timeout, trace);
 
     if (!ok(trace)) {
       return fail(trace);

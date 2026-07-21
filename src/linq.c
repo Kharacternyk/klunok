@@ -190,6 +190,12 @@ void push(char *path, struct linq *linq, struct trace *trace) {
   free_buffer(target_buffer);
 }
 
+static void fsync_linq(struct linq *linq, struct trace *trace) {
+  try(trace);
+  TNEG(fsync(linq->dirfd), trace);
+  finally_rethrow_static(messages.linq.cannot_fsync, trace);
+}
+
 struct linq_head *get_head(struct linq *linq, struct trace *trace) {
   struct linq_head *head = TNULL(malloc(sizeof(struct linq_head)), trace);
   if (!ok(trace)) {
@@ -197,6 +203,13 @@ struct linq_head *get_head(struct linq *linq, struct trace *trace) {
   }
 
   if (!linq->size) {
+    fsync_linq(linq, trace);
+
+    if (!ok(trace)) {
+      free(head);
+      return NULL;
+    }
+
     head->pause = -1;
     return head;
   }
@@ -217,6 +230,13 @@ struct linq_head *get_head(struct linq *linq, struct trace *trace) {
   time_t link_age = time(NULL) - link_stat.st_mtime;
   if (link_age < linq->debounce_seconds) {
     free_buffer(link);
+    fsync_linq(linq, trace);
+
+    if (!ok(trace)) {
+      free(head);
+      return NULL;
+    }
+
     head->pause = linq->debounce_seconds - link_age;
     return head;
   }
