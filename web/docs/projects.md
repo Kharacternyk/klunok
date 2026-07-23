@@ -4,6 +4,8 @@ sidebar_position: 6
 
 # Projects
 
+<span className="badge badge--secondary">≥ v1.0.0</span>
+
 Projects let you track the history
 of directories as a whole in addition to the history of individual files.
 Add a directory to [the `project_roots` setting](./configuration.md#project_roots)
@@ -16,6 +18,8 @@ Files within the versions are hard links to files in the ordinary store
 the projects as well.
 A new version of a project is stored if no files within the project are edited
 for this number of seconds.
+
+<span className="badge badge--secondary">≥ v1.1.0</span>
 
 If you have a common directory for projects,
 for example `~/Projects` or `~/src`,
