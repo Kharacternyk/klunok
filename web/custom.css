@@ -25,3 +25,8 @@ html[data-theme="dark"] .badge--primary {
 .tabs__item {
   margin-top: 0;
 }
+
+.footer {
+  --ifm-footer-padding-vertical: 0.5rem;
+  font-size: 0.875rem;
+}
