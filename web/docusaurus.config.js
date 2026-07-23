@@ -23,6 +23,7 @@ const config = {
   ],
   plugins: [
     () => ({
+      name: "fix-symlinks",
       configureWebpack: () => ({
         resolve: {
           symlinks: false,
@@ -42,7 +43,9 @@ const config = {
     },
     prism: {
       theme: prism.themes.okaidia,
-      additionalLanguages: ["lua"],
+      additionalLanguages: [
+        "lua",
+      ],
     },
     algolia: {
       appId: "S86UJLB8SZ",
@@ -50,7 +53,9 @@ const config = {
       indexName: "klunok",
     },
   },
-  themes: ["@docusaurus/theme-mermaid"],
+  themes: [
+    "@docusaurus/theme-mermaid",
+  ],
   markdown: {
     mermaid: true,
   },
