@@ -27,6 +27,13 @@ const config = {
       logo: {
         src: "logo.svg",
       },
+      items: [
+        {
+          href: "https://github.com/Kharacternyk/klunok",
+          label: "GitHub",
+          position: "right",
+        },
+      ],
     },
     colorMode: {
       respectPrefersColorScheme: true,
