@@ -18,6 +18,10 @@ html[data-theme="dark"] {
   --ifm-color-primary-lightest: #fdfcd3;
 }
 
+html[data-theme="dark"] .badge--primary {
+  --ifm-badge-color: var(--ifm-color-black);
+}
+
 .tabs__item {
   margin-top: 0;
 }
