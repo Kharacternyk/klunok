@@ -21,16 +21,6 @@ const config = {
       },
     ],
   ],
-  plugins: [
-    () => ({
-      name: "fix-symlinks",
-      configureWebpack: () => ({
-        resolve: {
-          symlinks: false,
-        },
-      }),
-    }),
-  ],
   themeConfig: {
     navbar: {
       title: "Klunok",
