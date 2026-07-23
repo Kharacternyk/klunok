@@ -2,6 +2,8 @@
 sidebar_position: 5
 ---
 
+import Release from '../src/release-badge.jsx';
+
 # Configuration
 
 Klunok can be configured with the Lua programming language.
@@ -124,7 +126,7 @@ end
 
 ### `prefix`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Prefix used by default for all of the paths that Klunok writes to.
 
@@ -142,7 +144,7 @@ declare('prefix', nil, is_string)
 
 ### `prefix_var`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Prefix used by default for non-store paths that Klunok writes to.
 
@@ -152,7 +154,7 @@ declare('prefix_var', prefix .. '/var', is_string)
 
 ### `store_root`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Root of the store.
 This is where the backed up versions of files that you edit are placed.
@@ -163,7 +165,7 @@ declare('store_root', prefix .. '/store', is_string)
 
 ### `queue_path`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Path to the queue.
 The queue is a directory that contains symbolic links to files that you edit.
@@ -175,7 +177,7 @@ declare('queue_path', prefix_var .. '/queue', is_string)
 
 ### `journal_path`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Path to the journal.
 The journal is a file where Klunok records various events,
@@ -194,7 +196,7 @@ declare('journal_path', prefix_var .. '/journal', is_nil_or_string)
 
 ### `offset_store_root`
 
-<span className="badge badge--primary">≥ v1.0.0</span>
+<Release>1.0.0</Release>
 
 Root of an auxiliary store used for keeping track of offsets of
 [`history_paths`](#history_paths).
@@ -205,7 +207,7 @@ declare('offset_store_root', prefix_var .. '/offsets', is_string)
 
 ### `working_copy_link_name`
 
-<span className="badge badge--primary">≥ v1.2.0</span>
+<Release>1.2.0</Release>
 
 If not empty, a symbolic link with this name plus the original file extension
 will be kept in the store alongside the backed-up versions and will point to the
@@ -222,7 +224,7 @@ without any further modifications.
 
 ### `debounce_seconds`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 The delay, in seconds, before a file is copied to the store after the last modification.
 
@@ -241,7 +243,7 @@ These settings use
 
 ### `journal_timestamp_pattern`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Pattern of timestamps in the journal.
 
@@ -255,7 +257,7 @@ declare('journal_timestamp_pattern', nil, is_string)
 
 ### `version_pattern`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Pattern of file versions in the store.
 
@@ -304,7 +306,7 @@ With this configuration:
 
 ### `ignored_leading_dots`
 
-<span className="badge badge--primary">≥ v1.3.0</span>
+<Release>1.3.0</Release>
 
 Path segments whose leading dot does not make a path hidden.
 This applies only to exact segment names, not prefixes.
@@ -350,7 +352,7 @@ declare('ignored_leading_dots', nil, is_set_of_strings)
 
 ### `editors`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Filenames of executables that are considered editors.
 By default, only files edited by these applications are copied to the store.
@@ -407,7 +409,7 @@ declare('editors', nil, is_set_of_strings)
 
 ### `history_paths`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Paths that are assumed to be always appended to.
 Only changes will be stored as new versions.
@@ -428,7 +430,7 @@ declare('history_paths', nil, is_set_of_strings)
 
 ### `excluded_paths`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Paths that are never copied to the store.
 
@@ -442,7 +444,7 @@ declare('excluded_paths', nil, is_set_of_strings)
 
 ### `included_paths`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Paths that are copied to the store regardless of the application that writes to them,
 and hence regardless of [the `editors` setting](#editors).
@@ -457,7 +459,7 @@ declare('included_paths', nil, is_set_of_strings)
 
 ### `cluded_paths`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Paths that are copied to the store only if they are written to by an editor application.
 Editor applications are defined in [the `editors` setting](#editors).
@@ -485,7 +487,7 @@ See [the projects section](./projects.md).
 
 ### `project_roots`
 
-<span className="badge badge--primary">≥ v1.0.0</span>
+<Release>1.0.0</Release>
 
 Roots of projects.
 
@@ -503,7 +505,7 @@ declare('project_roots', nil, is_set_of_strings)
 
 ### `project_parents`
 
-<span className="badge badge--primary">≥ v1.1.0</span>
+<Release>1.1.0</Release>
 
 Directories that contain roots of projects.
 
@@ -521,7 +523,7 @@ declare('project_parents', nil, is_set_of_strings)
 
 ### `project_store_root`
 
-<span className="badge badge--primary">≥ v1.0.0</span>
+<Release>1.0.0</Release>
 
 Root of the project store.
 
@@ -531,7 +533,7 @@ declare('project_store_root', prefix .. '/projects', is_string)
 
 ### `unstable_project_store_root`
 
-<span className="badge badge--primary">≥ v1.0.0</span>
+<Release>1.0.0</Release>
 
 Root of the unstable project store.
 
@@ -546,7 +548,7 @@ Tinkering with these settings cannot impact Klunok in any other way.
 
 ### `queue_size_guess`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Guess of the maximum queue size.
 
@@ -556,7 +558,7 @@ declare('queue_size_guess', debounce_seconds * 2, is_positive)
 
 ### `path_length_guess`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Guess of the maximum length of the majority of the paths in the system.
 
@@ -570,7 +572,7 @@ declare('path_length_guess', nil, is_positive)
 
 ### `max_pid_guess`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Guess of the maximum PID (process ID) in the system while Klunok is running.
 
@@ -584,7 +586,7 @@ declare('max_pid_guess', nil, is_positive)
 
 ### `elf_interpreter_count_guess`
 
-<span className="badge badge--primary">≥ v0.1.0</span>
+<Release>0.1.0</Release>
 
 Guess of how many ELF interpreters there are in the system.
 
@@ -598,7 +600,7 @@ declare('elf_interpreter_count_guess', nil, is_positive)
 
 ### `flushed_path_count_guess`
 
-<span className="badge badge--danger">unreleased</span>
+<Release />
 
 Guess of how many flushes of distinct paths happen during the lifetime
 of one Klunok process.

@@ -2,9 +2,11 @@
 sidebar_position: 6
 ---
 
+import Release from '../src/release-badge.jsx';
+
 # Projects
 
-<span className="badge badge--primary">≥ v1.0.0</span>
+<Release>1.0.0</Release>
 
 Projects let you track the history
 of directories as a whole in addition to the history of individual files.
@@ -19,7 +21,7 @@ the projects as well.
 A new version of a project is stored if no files within the project are edited
 for this number of seconds.
 
-<span className="badge badge--primary">≥ v1.1.0</span>
+<Release>1.1.0</Release>
 
 If you have a common directory for projects,
 for example `~/Projects` or `~/src`,
