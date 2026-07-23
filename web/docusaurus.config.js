@@ -35,6 +35,10 @@ const config = {
         },
       ],
     },
+    footer: {
+      copyright:
+        '&copy; 2022&ndash;2026, Nazar Vinnichuk (<a href="https://vinnich.uk">https://vinnich.uk</a>)',
+    },
     colorMode: {
       respectPrefersColorScheme: true,
     },
