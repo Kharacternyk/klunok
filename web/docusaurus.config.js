@@ -37,7 +37,7 @@ const config = {
     },
     footer: {
       copyright:
-        '&copy; 2022&ndash;2026, Nazar Vinnichuk (<a href="https://vinnich.uk">https://vinnich.uk</a>)',
+        '&copy; 2022&ndash;2026, Nazar Vinnichuk (<a href="https://vinnich.uk">https://vinnich.uk</a>)<br/>You are free to copy, modify, and distribute Klunok and its documentation under the GNU GPLv3',
     },
     colorMode: {
       respectPrefersColorScheme: true,
