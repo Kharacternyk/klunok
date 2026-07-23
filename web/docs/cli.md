@@ -74,7 +74,7 @@ klunok -h
 ```
 
 ```
-Klunok 0.1.1, Lua 5.4.6, compiled with Nix support
+Klunok 1.3.0, Lua 5.4.7, compiled with Nix support
 Usage: klunok [-h | -v | -c PATH | -d PATH | -w PATH | -e PATH]...
 ```
 
@@ -87,5 +87,5 @@ klunok -v
 ```
 
 ```
-Klunok 0.1.1, Lua 5.4.6, compiled with Nix support
+Klunok 1.3.0, Lua 5.4.7, compiled with Nix support
 ```
