@@ -22,7 +22,6 @@ struct translation {
   } config;
   struct {
     const char *invalid_entry;
-    const char *cannot_fsync;
   } linq;
   struct {
     const char *unknown_option;
