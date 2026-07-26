@@ -22,6 +22,10 @@ struct linq {
   long head_index;
   size_t size;
   struct set *set;
+  struct {
+    time_t value;
+    bool valid;
+  } head_mtime;
 };
 
 struct linq_head {
@@ -128,6 +132,7 @@ load_or_create_linq(const char *path, time_t debounce_seconds,
     linq->debounce_seconds = debounce_seconds;
     linq->length_guess = entry_length_guess;
     linq->set = set;
+    linq->head_mtime.valid = false;
     if (entry_count > 0) {
       linq->head_index = strtol(entries[0]->d_name, NULL, 10);
     } else {
@@ -201,28 +206,52 @@ struct linq_head *get_head(struct linq *linq, struct trace *trace) {
     return head;
   }
 
-  struct buffer *link = create_buffer(trace);
-  concat_size(linq->head_index, link, trace);
+  struct buffer *link = NULL;
 
-  struct stat link_stat;
-  TNEG(fstatat(linq->dirfd, get_string(get_view(link)), &link_stat,
-               AT_SYMLINK_NOFOLLOW),
-       trace);
-  if (!ok(trace)) {
-    free_buffer(link);
-    free(head);
-    return NULL;
+  if (!linq->head_mtime.valid) {
+    link = create_buffer(trace);
+    concat_size(linq->head_index, link, trace);
+
+    struct stat link_stat;
+    TNEG(fstatat(linq->dirfd, get_string(get_view(link)), &link_stat,
+                 AT_SYMLINK_NOFOLLOW),
+         trace);
+
+    if (ok(trace)) {
+      linq->head_mtime.valid = true;
+      linq->head_mtime.value = link_stat.st_mtim.tv_sec;
+    } else {
+      free_buffer(link);
+      free(head);
+      return NULL;
+    }
   }
 
-  time_t link_age = time(NULL) - link_stat.st_mtime;
+  time_t link_age = time(NULL) - linq->head_mtime.value;
   if (link_age < linq->debounce_seconds) {
     free_buffer(link);
     head->pause = linq->debounce_seconds - link_age;
     return head;
   }
 
+  if (!link) {
+    link = create_buffer(trace);
+    concat_size(linq->head_index, link, trace);
+  }
+
+  if (!ok(trace)) {
+    free_buffer(link);
+    free(head);
+    return NULL;
+  }
+
   char *target = read_entry(get_string(get_view(link)), linq, trace);
   free_buffer(link);
+
+  if (!ok(trace)) {
+    free(head);
+    return NULL;
+  }
 
   char *path = strip_legacy_metadata(target);
   struct buffer_view *path_view = create_buffer_view(path, trace);
@@ -255,6 +284,9 @@ void pop_head(struct linq *linq, struct trace *trace) {
     return;
   }
   assert(linq->size);
+
+  linq->head_mtime.valid = false;
+
   struct buffer *link = create_buffer(trace);
   concat_size(linq->head_index, link, trace);
   char *target = read_entry(get_string(get_view(link)), linq, trace);
