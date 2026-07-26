@@ -56,6 +56,7 @@ struct translation {
     const char *cli_usage_violated;
     const char *cannot_parse_cli;
     const char *cannot_drop_privileges;
+    const char *cannot_create_signalfd;
     const char *cannot_load_handler;
     const char *cannot_handle_exec;
     const char *cannot_handle_write;

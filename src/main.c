@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/fanotify.h>
+#include <sys/signalfd.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -124,6 +125,19 @@ int main(int argc, const char **argv) {
 
   signal(SIGPIPE, SIG_IGN);
 
+  sigset_t mask;
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGINT);
+  sigaddset(&mask, SIGTERM);
+  sigprocmask(SIG_BLOCK, &mask, NULL);
+
+  int signal_fd = TNEG(signalfd(-1, &mask, 0), trace);
+
+  if (!ok(trace)) {
+    throw_static(messages.main.cannot_create_signalfd, trace);
+    return fail(trace);
+  }
+
   struct handler *handler =
       load_handler(get_config_path(params), common_parent_path_length, trace);
   if (!ok(trace)) {
@@ -133,18 +147,24 @@ int main(int argc, const char **argv) {
 
   pid_t self = getpid();
   time_t pause = 0;
-  struct pollfd pollfd = {
-      .fd = fanotify_fd,
-      .events = POLLIN,
-      .revents = 0,
+  struct pollfd poll_fds[2] = {
+      {
+          .fd = fanotify_fd,
+          .events = POLLIN,
+      },
+      {
+          .fd = signal_fd,
+          .events = POLLIN,
+      },
   };
 
   for (;;) {
-    int status = poll(&pollfd, 1, pause * 1000);
-    if (status < 0 || (status > 0 && pollfd.revents ^ POLLIN)) {
+    int status = poll(poll_fds, 2, pause * 1000);
+    if (status < 0 || (status > 0 && poll_fds[0].revents ^ POLLIN &&
+                       poll_fds[1].revents ^ POLLIN)) {
       throw_errno(trace);
       throw_static(messages.main.fanotify.cannot_poll, trace);
-    } else if (status > 0) {
+    } else if (status > 0 && poll_fds[0].revents & POLLIN) {
       struct fanotify_event_metadata event;
       try(trace);
       TNEG(read(fanotify_fd, &event, sizeof event) - sizeof event, trace);
@@ -167,6 +187,8 @@ int main(int argc, const char **argv) {
           close(event.fd);
         }
       }
+    } else if (status > 0) {
+      return EXIT_SUCCESS;
     }
 
     try(trace);
