@@ -99,8 +99,9 @@ end
 function is_positive(name)
   local value = _G[name]
   assert(
-    type(value) == 'number' and math.floor(value) == value and value >= 0,
-    name .. ' must be a positive integer'
+    type(value) == 'number' and math.floor(value) == value and value >= 0
+    and value < 10000000,
+    name .. ' must be a positive integer less than ten million'
   )
 end
 ```
