@@ -126,10 +126,10 @@ int main(int argc, const char **argv) {
   signal(SIGPIPE, SIG_IGN);
 
   sigset_t mask;
-  sigemptyset(&mask);
-  sigaddset(&mask, SIGINT);
-  sigaddset(&mask, SIGTERM);
-  sigprocmask(SIG_BLOCK, &mask, NULL);
+  TNEG(sigemptyset(&mask), trace);
+  TNEG(sigaddset(&mask, SIGINT), trace);
+  TNEG(sigaddset(&mask, SIGTERM), trace);
+  TNEG(sigprocmask(SIG_BLOCK, &mask, NULL), trace);
 
   int signal_fd = TNEG(signalfd(-1, &mask, 0), trace);
 
