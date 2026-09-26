@@ -149,6 +149,11 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
     xattr.request.time += wire_xattr[i];
   }
 
+  time_t request_time = xattr.request.time;
+  if (request_time < 0 || (uint64_t)request_time != xattr.request.time) {
+    return NULL;
+  }
+
   add_with_metadata(path, xattr.timestamp, flusher->path_timestamps, trace);
   struct flush_request *request =
       TNULL(malloc(sizeof(struct flush_request)), trace);

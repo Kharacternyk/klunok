@@ -4,10 +4,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-char *get_timestamp(const char *format, size_t max_length,
+char *get_timestamp(time_t time, const char *format, size_t max_length,
                     struct trace *trace) {
-  time_t t = time(NULL);
-  struct tm *tm = TNULL(localtime(&t), trace);
+  struct tm *tm = TNULL(localtime(&time), trace);
   size_t max_size = max_length + 1;
   char *timestamp = TNULL(malloc(max_size), trace);
 

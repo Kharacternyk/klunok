@@ -100,7 +100,7 @@ void test_handler(struct trace *trace) {
   close(fd);
   free_handler(handler);
 
-  handler = load_handler(CONFIG, 1, trace);
+  handler = load_handler(TEST_ROOT "/lua/flush.lua", 1, trace);
   assert(ok(trace));
 
   fd = open(FLUSHED, O_CREAT | O_RDONLY, S_IRWXU);
@@ -109,7 +109,7 @@ void test_handler(struct trace *trace) {
   char boot_id[BOOT_ID_SIZE];
   read_boot_id(boot_id);
 
-  if (set_flush_xattr(FLUSHED, 1, boot_id, UINT64_MAX, 77, 88)) {
+  if (set_flush_xattr(FLUSHED, 1, boot_id, UINT64_MAX - 1, 77, 22)) {
     exit(77);
   }
 
@@ -129,10 +129,6 @@ void test_handler(struct trace *trace) {
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
   assert_acknowledgement(acknowledgement_fd, 77);
-  assert(!close(acknowledgement_fd));
-  assert(!unlink(acknowledgement_path_string));
-  free_buffer(acknowledgement_path);
-  close(fd);
 
   struct buffer *flushed_store_path = create_buffer(trace);
   concat_string("klunok/store", flushed_store_path, trace);
@@ -145,11 +141,28 @@ void test_handler(struct trace *trace) {
 
   concat_char('/', flushed_store_path, trace);
   concat_string(FLUSHED, flushed_store_path, trace);
-  concat_string("/version.txt", flushed_store_path, trace);
+  concat_char('/', flushed_store_path, trace);
+  size_t flushed_path_length = get_length(get_view(flushed_store_path));
+  concat_string("22.txt", flushed_store_path, trace);
   assert(ok(trace));
 
   assert(access(get_string(get_view(flushed_store_path)), F_OK) == 0);
+
+  assert(!set_flush_xattr(FLUSHED, 1, boot_id, UINT64_MAX, 78, 0));
+  handle_close_write(getpid(), fd, handler, trace);
+  assert(ok(trace));
+  assert_acknowledgement(acknowledgement_fd, 78);
+
+  set_length(flushed_path_length, flushed_store_path);
+  concat_string("0.txt", flushed_store_path, trace);
+  assert(ok(trace));
+  assert(access(get_string(get_view(flushed_store_path)), F_OK) == 0);
   free_buffer(flushed_store_path);
+
+  assert(!close(acknowledgement_fd));
+  assert(!unlink(acknowledgement_path_string));
+  free_buffer(acknowledgement_path);
+  close(fd);
 
   pause = handle_timeout(handler, trace);
   assert(ok(trace));

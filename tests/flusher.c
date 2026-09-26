@@ -139,6 +139,17 @@ void test_flusher(struct trace *trace) {
   assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
+  assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX, 55, UINT64_MAX));
+  assert(!get_request(path, flusher, trace));
+  assert(ok(trace));
+
+  assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX, 55, 0));
+  request = get_request(path, flusher, trace);
+  assert(ok(trace));
+  assert(request);
+  assert(get_time(request) == 0);
+  free(request);
+
   assert(!close(acknowledgement_fd));
   assert(!unlink(acknowledgement_path_string));
   free_buffer(acknowledgement_path);

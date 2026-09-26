@@ -41,8 +41,8 @@ void note(const char *event, pid_t pid, const char *path,
   if (!journal || !event || !ok(trace)) {
     return;
   }
-  char *timestamp =
-      get_timestamp(journal->timestamp_pattern, /*FIXME*/ NAME_MAX, trace);
+  char *timestamp = get_timestamp(time(NULL), journal->timestamp_pattern,
+                                  /*FIXME*/ NAME_MAX, trace);
   struct buffer *buffer = create_buffer(trace);
   if (!ok(trace)) {
     free(timestamp);
