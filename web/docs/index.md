@@ -19,6 +19,10 @@ including Vim, Visual Studio Code, LibreOffice, and Inkscape.
 Klunok is also free and open source: https://github.com/Kharacternyk/klunok.
 
 ```mermaid
+---
+config:
+  layout: dagre
+---
 graph TD;
   subgraph "Work as you usually do…"
   w[Edit your files.];
