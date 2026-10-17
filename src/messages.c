@@ -56,6 +56,7 @@ const struct translation messages = {
             "Cannot drop privileges by assuming identity of "
             "the owner of a path",
         .cannot_load_handler = "Cannot load the event handler",
+        .cannot_apply_process_hardening = "Cannot apply process hardening",
         .cannot_create_signalfd =
             "Cannot create a signalfd for SIGINT and SIGTERM handling",
         .cannot_handle_exec = "Cannot handle a file execution event",

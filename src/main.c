@@ -11,11 +11,13 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <grp.h>
+#include <linux/prctl.h>
 #include <poll.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/fanotify.h>
+#include <sys/prctl.h>
 #include <sys/signalfd.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -120,6 +122,16 @@ int main(int argc, const char **argv) {
   if (!ok(trace) || !getuid() || !getgid()) {
     throw_context(get_privilege_dropping_path(params), trace);
     throw_static(messages.main.cannot_drop_privileges, trace);
+    return fail(trace);
+  }
+
+  TNEG(prctl(PR_SET_DUMPABLE, 0L), trace);
+  TNEG(prctl(PR_SET_NO_NEW_PRIVS, 1L, 0L, 0L, 0L), trace);
+  TNEG(prctl(PR_SET_MDWE, (unsigned long)PR_MDWE_REFUSE_EXEC_GAIN, 0L, 0L, 0L),
+       trace);
+
+  if (!ok(trace)) {
+    throw_static(messages.main.cannot_apply_process_hardening, trace);
     return fail(trace);
   }
 
