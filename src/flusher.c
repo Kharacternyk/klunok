@@ -150,7 +150,8 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
   }
 
   time_t request_time = xattr.request.time;
-  if (request_time < 0 || (uint64_t)request_time != xattr.request.time) {
+  if (request_time < 0 || (uint64_t)request_time != xattr.request.time ||
+      !localtime(&request_time)) {
     return NULL;
   }
 
