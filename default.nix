@@ -1,36 +1,37 @@
-{ lib
-, stdenv
-, meson
-, ninja
-, pkg-config
-, lua
-, valgrind-light
-, musl-fts
-, doCheckThoroughly ? (
+{
+  doCheckThoroughly ? (
     lib.meta.availableOn stdenv.hostPlatform valgrind-light && !valgrind-light.meta.broken
-  )
-}: stdenv.mkDerivation {
-  pname = "klunok";
-  version = builtins.readFile ./version
-    + (if lua == null then "no-lua" else "lua-${lua.version}");
-  src = ./.;
-
-  doCheck = !stdenv.targetPlatform.isStatic;
-  mesonFlags = lib.optionals (!stdenv.targetPlatform.isStatic) [
-    "-Dwatch_nix_store=true"
-  ];
-
-  nativeBuildInputs = [
-    meson
-    ninja
-    pkg-config
-  ];
+  ),
+  lib,
+  lua,
+  meson,
+  musl-fts,
+  ninja,
+  pkg-config,
+  stdenv,
+  valgrind-light,
+}:
+stdenv.mkDerivation {
   buildInputs = [
     lua
-  ] ++ lib.optionals stdenv.targetPlatform.isMusl [
+  ]
+  ++ lib.optionals stdenv.targetPlatform.isMusl [
     musl-fts
   ];
   checkInputs = lib.optionals doCheckThoroughly [
     valgrind-light
   ];
+  doCheck = !stdenv.targetPlatform.isStatic;
+  mesonFlags = lib.optionals (!stdenv.targetPlatform.isStatic) [
+    "-Dwatch_nix_store=true"
+  ];
+  nativeBuildInputs = [
+    meson
+    ninja
+    pkg-config
+  ];
+  pname = "klunok";
+  src = ./.;
+  version =
+    builtins.readFile ./version + (if lua == null then "no-lua" else "lua-${lua.version}");
 }
