@@ -30,21 +30,18 @@
                 inherit lua;
               };
           in
-          {
-            glibc =
-              mapAttrs
-                (
-                  _: lua:
-                  mkCheck {
-                    inherit (pkgs) callPackage;
-                    inherit lua;
-                  }
-                )
-                {
-                  inherit (pkgs) lua5_2 lua5_3 lua5_4;
-                  withoutLua = null;
-                };
-          };
+          mapAttrs
+            (
+              _: lua:
+              mkCheck {
+                inherit (pkgs) callPackage;
+                inherit lua;
+              }
+            )
+            {
+              inherit (pkgs) lua5_2 lua5_3 lua5_4;
+              withoutLua = null;
+            };
         packages =
           let
             mkPackage =
@@ -63,8 +60,7 @@
         };
       in
       {
-        inherit packages;
-        checks = checks.glibc // checks.musl;
+        inherit checks packages;
         devShells =
           let
             devShells =
