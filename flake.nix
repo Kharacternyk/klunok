@@ -44,12 +44,6 @@
                   inherit (pkgs) lua5_2 lua5_3 lua5_4;
                   withoutLua = null;
                 };
-            musl = pkgs.lib.optionalAttrs pkgs.stdenv.targetPlatform.is64bit {
-              muslWithoutLua = mkCheck {
-                inherit (pkgs.pkgsMusl) callPackage;
-                lua = null;
-              };
-            };
           };
         packages =
           let
