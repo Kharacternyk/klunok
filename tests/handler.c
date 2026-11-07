@@ -1,11 +1,13 @@
 #include "handler.h"
 #include "buffer.h"
+#include "sync.h"
 #include "test-constants.h"
 #include "test-flusher.h"
 #include "trace.h"
 #include <assert.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -14,7 +16,7 @@
 #define F1 CONFIG
 #define F2 TEST_ROOT "/lua/empty.lua"
 #define EMPTY "empty"
-#define FLUSHED "flushed.txt"
+#define FLUSHED "project/demo/flushed.txt"
 #define IN_STORE(PATH) "klunok/store/" PATH "/version"
 
 void test_handler(struct trace *trace) {
@@ -100,9 +102,17 @@ void test_handler(struct trace *trace) {
   close(fd);
   free_handler(handler);
 
-  handler = load_handler(TEST_ROOT "/lua/flush.lua", 1, trace);
+  sync_file("flush.lua", TEST_ROOT "/lua/flush.lua", 0, trace);
+  assert(ok(trace));
+  assert(!chmod("flush.lua", 0600));
+  char *cwd = getcwd(NULL, 0);
+  assert(cwd);
+  handler = load_handler("flush.lua", strlen(cwd) + 1, trace);
+  free(cwd);
   assert(ok(trace));
 
+  assert(!mkdir("project", 0700));
+  assert(!mkdir("project/demo", 0700));
   fd = open(FLUSHED, O_CREAT | O_RDONLY, S_IRWXU);
   assert(fd >= 0);
 
@@ -130,34 +140,25 @@ void test_handler(struct trace *trace) {
   assert(ok(trace));
   assert_acknowledgement(acknowledgement_fd, 77);
 
-  struct buffer *flushed_store_path = create_buffer(trace);
-  concat_string("klunok/store", flushed_store_path, trace);
-  assert(ok(trace));
-
-  char *cwd = getcwd(NULL, 0);
-  assert(cwd);
-  concat_string(cwd, flushed_store_path, trace);
-  free(cwd);
-
-  concat_char('/', flushed_store_path, trace);
-  concat_string(FLUSHED, flushed_store_path, trace);
-  concat_char('/', flushed_store_path, trace);
-  size_t flushed_path_length = get_length(get_view(flushed_store_path));
-  concat_string("22.txt", flushed_store_path, trace);
-  assert(ok(trace));
-
-  assert(access(get_string(get_view(flushed_store_path)), F_OK) == 0);
+  assert(!access("klunok/store/" FLUSHED "/22.txt", F_OK));
 
   assert(!set_flush_xattr(FLUSHED, 1, boot_id, UINT64_MAX, 78, 0));
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
   assert_acknowledgement(acknowledgement_fd, 78);
 
-  set_length(flushed_path_length, flushed_store_path);
-  concat_string("0.txt", flushed_store_path, trace);
+  assert(!access("klunok/store/" FLUSHED "/0.txt", F_OK));
+
+  /* A flushed config must reload before the queued project snapshot. */
+  int config_fd = open("flush.lua", O_WRONLY | O_APPEND);
+  assert(config_fd >= 0);
+  const char change[] = "version_pattern = 'reloaded'\n";
+  assert(write(config_fd, change, sizeof change - 1) == sizeof change - 1);
+  assert(!set_flush_xattr("flush.lua", 1, boot_id, UINT64_MAX, 79, 0));
+  handle_close_write(getpid(), config_fd, handler, trace);
   assert(ok(trace));
-  assert(access(get_string(get_view(flushed_store_path)), F_OK) == 0);
-  free_buffer(flushed_store_path);
+  assert_acknowledgement(acknowledgement_fd, 79);
+  assert(!close(config_fd));
 
   assert(!close(acknowledgement_fd));
   assert(!unlink(acknowledgement_path_string));
@@ -167,6 +168,7 @@ void test_handler(struct trace *trace) {
   pause = handle_timeout(handler, trace);
   assert(ok(trace));
   assert(pause < 0);
+  assert(!access("klunok/projects/demo/reloaded/flushed.txt", F_OK));
 
   free_handler(handler);
 }

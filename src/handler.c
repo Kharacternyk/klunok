@@ -147,8 +147,17 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   free_buffer_view(exe_filename_view);
 }
 
-static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
-                         struct trace *trace) {
+static const char *get_project_root_end(const char *project_end,
+                                        const char *parent_end) {
+  if (parent_end > project_end && *parent_end) {
+    return strchr(parent_end + 1, '/');
+  }
+
+  return project_end;
+}
+
+static bool push_to_linq(pid_t pid, char *path, bool flushed,
+                         struct handler *handler, struct trace *trace) {
   if (!ok(trace)) {
     return false;
   }
@@ -200,35 +209,35 @@ static bool push_to_linq(pid_t pid, char *path, struct handler *handler,
     }
   }
 
-  const char *project_root_end = NULL;
-
-  if (ends[project_parent] > ends[project] && *ends[project_parent]) {
-    project_root_end = strchr(ends[project_parent] + 1, '/');
-  } else if (ends[project] && *ends[project]) {
-    project_root_end = ends[project];
-  }
+  const char *project_root_end =
+      get_project_root_end(ends[project], ends[project_parent]);
 
   free_sieved_path(sieved_path);
 
-  if (!is_pushed) {
+  if (!is_pushed && !flushed) {
     return false;
   }
 
   try(trace);
+  if (flushed) {
+    *path = '!';
+  }
   push(path, handler->linq, trace);
+  *path = '/';
   rethrow_context(path, trace);
   finally_rethrow_static(messages.handler.linq.cannot_push, trace);
 
-  if (project_root_end) {
-    char original_end = *project_root_end;
-    path[project_root_end - path] = 0;
+  if (project_root_end && *project_root_end) {
+    /* Keep the trailing slash to distinguish project roots from files. */
+    char original_end = project_root_end[1];
+    path[project_root_end - path + 1] = 0;
 
     try(trace);
     push(path, handler->linq, trace);
     rethrow_context(path, trace);
     finally_rethrow_static(messages.handler.linq.cannot_push, trace);
 
-    path[project_root_end - path] = original_end;
+    path[project_root_end - path + 1] = original_end;
   }
 
   return true;
@@ -285,16 +294,17 @@ static void store(const char *path, time_t time, struct handler *handler,
     }
   }
 
-  const char *project_root_end = NULL;
+  const char *project_root_end =
+      get_project_root_end(ends[project], ends[project_parent]);
 
-  if (ends[project_parent] > ends[project] && *ends[project_parent]) {
-    project_root_end = strchr(ends[project_parent] + 1, '/');
-  } else if (ends[project]) {
-    project_root_end = ends[project];
-  }
-
-  if (project_root_end && !*project_root_end) {
-    const char *project_name = strrchr(path, '/') + 1;
+  if (project_root_end && (!*project_root_end || !project_root_end[1])) {
+    const char *project_name_start = project_root_end;
+    while (project_name_start > path && project_name_start[-1] != '/') {
+      --project_name_start;
+    }
+    char *project_name = TNULL(
+        strndup(project_name_start, project_root_end - project_name_start),
+        trace);
     struct store_path *store_path = create_store_path(
         get_project_store_root(handler->config), project_name, version, trace);
     struct buffer *unstable_path = create_buffer(trace);
@@ -303,6 +313,7 @@ static void store(const char *path, time_t time, struct handler *handler,
     concat_char('/', unstable_path, trace);
     concat_string(project_name, unstable_path, trace);
 
+    free(project_name);
     free(version);
 
     while (ok(trace)) {
@@ -461,25 +472,18 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
     return;
   }
 
+  const char *event = get_event_close_write_ignored(handler->config);
+
   if (request) {
     store(file_path, get_time(request), handler, trace);
 
-    *file_path = '!';
-    push(file_path, handler->linq, trace);
-    *file_path = '/';
+    if (push_to_linq(pid, file_path, true, handler, trace)) {
+      event = get_event_close_write_not_ignored(handler->config);
+    }
 
     acknowledge(request, pid, handler->flusher, trace);
-    record_event(get_event_close_write_not_ignored(handler->config), pid,
-                 file_path, handler, trace);
-
     free(request);
-    free(file_path);
-    return;
-  }
-
-  const char *event = get_event_close_write_ignored(handler->config);
-
-  if (push_to_linq(pid, file_path, handler, trace)) {
+  } else if (push_to_linq(pid, file_path, false, handler, trace)) {
     event = get_event_close_write_not_ignored(handler->config);
   }
 
