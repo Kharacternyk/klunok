@@ -6,10 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern const char _binary_lua_pre_config_lua_start;
-extern const char _binary_lua_pre_config_lua_end;
-extern const char _binary_lua_post_config_lua_start;
-extern const char _binary_lua_post_config_lua_end;
+extern const char _binary_lua_pre_config_lua_start[];
+extern const char _binary_lua_pre_config_lua_end[];
+extern const char _binary_lua_post_config_lua_start[];
+extern const char _binary_lua_post_config_lua_end[];
 
 struct config {
   struct set *editors;
@@ -98,9 +98,9 @@ struct config *load_config(const char *path, struct trace *trace) {
 
   if (ok(trace)) {
     luaL_openlibs(lua);
-    if (luaL_loadbuffer(lua, &_binary_lua_pre_config_lua_start,
-                        &_binary_lua_pre_config_lua_end -
-                            &_binary_lua_pre_config_lua_start,
+    if (luaL_loadbuffer(lua, _binary_lua_pre_config_lua_start,
+                        _binary_lua_pre_config_lua_end -
+                            _binary_lua_pre_config_lua_start,
                         "pre-config") ||
         lua_pcall(lua, 0, 0, 0)) {
       throw_dynamic(lua_tostring(lua, -1), trace);
@@ -110,16 +110,16 @@ struct config *load_config(const char *path, struct trace *trace) {
   if (ok(trace)) {
     if (path) {
       if (luaL_loadfile(lua, path) || lua_pcall(lua, 0, 0, 0) ||
-          luaL_loadbuffer(lua, &_binary_lua_post_config_lua_start,
-                          &_binary_lua_post_config_lua_end -
-                              &_binary_lua_post_config_lua_start,
+          luaL_loadbuffer(lua, _binary_lua_post_config_lua_start,
+                          _binary_lua_post_config_lua_end -
+                              _binary_lua_post_config_lua_start,
                           "post-config") ||
           lua_pcall(lua, 0, 0, 0)) {
         throw_dynamic(lua_tostring(lua, -1), trace);
       }
-    } else if (luaL_loadbuffer(lua, &_binary_lua_post_config_lua_start,
-                               &_binary_lua_post_config_lua_end -
-                                   &_binary_lua_post_config_lua_start,
+    } else if (luaL_loadbuffer(lua, _binary_lua_post_config_lua_start,
+                               _binary_lua_post_config_lua_end -
+                                   _binary_lua_post_config_lua_start,
                                "post-config") ||
                lua_pcall(lua, 0, 0, 0)) {
       throw_dynamic(lua_tostring(lua, -1), trace);
