@@ -103,8 +103,9 @@ end
 ```
 
 `is_set_of_strings` accepts Lua tables with string keys.
-Keys with truthy values belong to the set; `false` and `nil` exclude them.
-[Before Klunok v2.0.0 only `nil` excluded.](./migration.md#v2.0.0)
+Keys with truthy values belong to the set; `false`
+[(<Release>2.0.0</Release>)](./migration.md#v2.0.0)
+and `nil` exclude them.
 In Lua, all other values are truthy, including `0` and the empty string.
 For example, to add the string `'abc'` to the set `xyz`, you can write `xyz.abc = true`.
 To remove `'abc'` from the set, you can write `xyz.abc = nil` or `xyz.abc = false`.
