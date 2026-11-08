@@ -1,7 +1,3 @@
----
-sidebar_position: 5
----
-
 import Release from '../src/release-badge.jsx';
 
 # Configuration
@@ -107,9 +103,11 @@ end
 ```
 
 `is_set_of_strings` accepts Lua tables with string keys.
-Working with settings of this type usually means setting individual keys to `true` or `nil`.
+Keys with truthy values belong to the set; `false` and `nil` exclude them.
+[Before 2.0.0 only `nil` excluded.](./migration.md)
+In Lua, all other values are truthy, including `0` and the empty string.
 For example, to add the string `'abc'` to the set `xyz`, you can write `xyz.abc = true`.
-To remove `'abc'` from `xyz`, you can write `xyz.abc = nil`.
+To remove `'abc'` from the set, you can write `xyz.abc = nil` or `xyz.abc = false`.
 If the key contains characters that are not letters, for example string `'/@'`,
 you can add the key as `xyz['/@'] = true` and remove it as `xyz['/@'] = nil`.
 

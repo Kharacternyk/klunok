@@ -75,7 +75,9 @@ static struct set *read_lua_set(lua_State *lua, const char *name,
 
   lua_pushnil(lua);
   while (lua_next(lua, -2)) {
-    add(lua_tostring(lua, -2), set, trace);
+    if (lua_toboolean(lua, -1)) {
+      add(lua_tostring(lua, -2), set, trace);
+    }
     if (!ok(trace)) {
       free_set(set);
       return NULL;

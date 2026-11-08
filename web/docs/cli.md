@@ -1,7 +1,3 @@
----
-sidebar_position: 4
----
-
 # CLI
 
 ## `-c`: path to the configuration file

@@ -1,7 +1,3 @@
----
-sidebar_position: 7
----
-
 # Editors
 
 If you want to let Klunok back up files edited with an application that is not recognized

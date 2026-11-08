@@ -12,6 +12,7 @@ const config = {
       "classic",
       {
         docs: {
+          sidebarPath: "./sidebars.js",
           routeBasePath: "/",
           breadcrumbs: false,
         },

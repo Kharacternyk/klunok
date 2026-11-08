@@ -1,7 +1,3 @@
----
-sidebar_position: 6
----
-
 import Release from '../src/release-badge.jsx';
 
 # Projects

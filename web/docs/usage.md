@@ -1,7 +1,3 @@
----
-sidebar_position: 3
----
-
 import Asciinema from '../src/asciinema.jsx';
 
 # Usage
