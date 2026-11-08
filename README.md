@@ -99,4 +99,7 @@ and must free all allocated memory to pass in this case.
 Testing with Valgrind is preferred.
 
 To test with different Lua versions, as well as without Lua,
-and with both `glibc` and `musl`, run `nix flake check` (slow).
+run `nix flake check` (slow).
+
+To test whether the static binary builds,
+run `nix build .#static`.
