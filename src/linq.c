@@ -29,7 +29,6 @@ struct linq {
 };
 
 struct linq_head {
-  char *target;
   char *path;
   time_t pause;
 };
@@ -66,13 +65,6 @@ static void free_entries(struct dirent **entries, size_t entry_count) {
   free(entries);
 }
 
-static char *strip_legacy_metadata(char *target) {
-  while (target[1] == '/' || (target[1] == '.' && target[2] == '/')) {
-    ++target;
-  }
-  return target;
-}
-
 static char *read_entry(const char *entry, const struct linq *linq,
                         struct trace *trace) {
   if (!ok(trace)) {
@@ -93,6 +85,12 @@ static char *read_entry(const char *entry, const struct linq *linq,
     }
     if (length < max_size) {
       target[length] = 0;
+      if (length > 1 &&
+          (target[1] == '/' || (target[1] == '.' && target[2] == '/'))) {
+        throw_static(messages.linq.legacy_metadata, trace);
+        free(target);
+        return NULL;
+      }
       return target;
     }
 
@@ -143,7 +141,7 @@ load_or_create_linq(const char *path, time_t debounce_seconds,
     char *entry_target = read_entry(entries[i]->d_name, linq, trace);
     if (ok(trace)) {
       *entry_target = '/';
-      add(strip_legacy_metadata(entry_target), set, trace);
+      add(entry_target, set, trace);
       free(entry_target);
     }
   }
@@ -253,8 +251,7 @@ struct linq_head *get_head(struct linq *linq, struct trace *trace) {
     return NULL;
   }
 
-  char *path = strip_legacy_metadata(target);
-  struct buffer_view *path_view = create_buffer_view(path, trace);
+  struct buffer_view *path_view = create_buffer_view(target, trace);
 
   if (ok(trace) && get_count(path_view, linq->set) > 1) {
     free(target);
@@ -273,8 +270,7 @@ struct linq_head *get_head(struct linq *linq, struct trace *trace) {
   }
 
   head->pause = 0;
-  head->target = target;
-  head->path = path;
+  head->path = target;
 
   return head;
 }
@@ -295,8 +291,7 @@ void pop_head(struct linq *linq, struct trace *trace) {
 
   if (ok(trace)) {
     *target = '/';
-    struct buffer_view *path_view =
-        create_buffer_view(strip_legacy_metadata(target), trace);
+    struct buffer_view *path_view = create_buffer_view(target, trace);
 
     if (ok(trace)) {
       pop(path_view, linq->set);
@@ -334,7 +329,7 @@ void free_linq(struct linq *linq) {
 void free_linq_head(struct linq_head *head) {
   if (head) {
     if (!head->pause) {
-      free(head->target);
+      free(head->path);
     }
     free(head);
   }

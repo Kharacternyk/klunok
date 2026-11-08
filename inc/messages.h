@@ -25,6 +25,7 @@ struct translation {
   } config;
   struct {
     const char *invalid_entry;
+    const char *legacy_metadata;
   } linq;
   struct {
     const char *unknown_option;

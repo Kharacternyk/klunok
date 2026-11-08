@@ -1,4 +1,5 @@
 #include "linq.h"
+#include "messages.h"
 #include "test-constants.h"
 #include "trace.h"
 #include <assert.h>
@@ -24,6 +25,9 @@ void test_linq(struct trace *trace) {
   free_linq_head(head);
 
   push(f1, linq, trace);
+  assert(ok(trace));
+  free_linq(linq);
+  linq = load_linq("linq/instant", 0, 0, 0, trace);
   assert(ok(trace));
   head = get_head(linq, trace);
   assert(ok(trace));
@@ -65,6 +69,16 @@ void test_linq(struct trace *trace) {
   free_linq_head(head);
 
   free_linq(linq);
+
+  const char *legacy[] = {"//file", "/./file", "/.//./file"};
+  for (size_t i = 0; i < sizeof(legacy) / sizeof(*legacy); ++i) {
+    assert(!symlink(legacy[i], "linq/instant/0"));
+    try(trace);
+    assert(!load_linq("linq/instant", 0, 0, 0, trace));
+    assert(catch_static(messages.linq.legacy_metadata, trace));
+    finally(trace);
+    assert(!unlink("linq/instant/0"));
+  }
 
   linq = load_linq("linq/lag", 3600, 0, 0, trace);
   push(f1, linq, trace);
