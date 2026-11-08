@@ -18,6 +18,7 @@ const struct translation messages = {
     .parents = {.cannot_remove_ancestor = "Cannot remove an ancestor directory",
                 .cannot_create_ancestor =
                     "Cannot create an ancestor directory"},
+    .prctl = {.cannot_set_option = "Cannot set a process option"},
     .sync = {.source_is_not_regular_file =
                  "Cannot copy a file that is not a regular file",
              .source_does_not_exist = "The file does not exist",

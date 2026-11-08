@@ -6,6 +6,7 @@
 #include "mountinfo.h"
 #include "params.h"
 #include "parents.h"
+#include "prctl.h"
 #include "set.h"
 #include "trace.h"
 #include <assert.h>
@@ -17,7 +18,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/fanotify.h>
-#include <sys/prctl.h>
 #include <sys/signalfd.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -125,10 +125,9 @@ int main(int argc, const char **argv) {
     return fail(trace);
   }
 
-  TNEG(prctl(PR_SET_DUMPABLE, 0L), trace);
-  TNEG(prctl(PR_SET_NO_NEW_PRIVS, 1L, 0L, 0L, 0L), trace);
-  TNEG(prctl(PR_SET_MDWE, (unsigned long)PR_MDWE_REFUSE_EXEC_GAIN, 0L, 0L, 0L),
-       trace);
+  set_process_option(PR_SET_DUMPABLE, 0, trace);
+  set_process_option(PR_SET_NO_NEW_PRIVS, 1, trace);
+  set_process_option(PR_SET_MDWE, PR_MDWE_REFUSE_EXEC_GAIN, trace);
 
   if (!ok(trace)) {
     throw_static(messages.main.cannot_apply_process_hardening, trace);
