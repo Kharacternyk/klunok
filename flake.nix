@@ -86,10 +86,9 @@
                   static = mkShell pkgs.pkgsStatic packages.static;
                 };
                 glibc = mapAttrs (_: mkShell pkgs) checks.glibc;
-                musl = mapAttrs (_: mkShell pkgs.pkgsMusl) checks.musl;
               };
           in
-          devShells.glibc // devShells.musl // devShells.default;
+          devShells.glibc // devShells.default;
       }
     );
 }
