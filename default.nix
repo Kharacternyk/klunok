@@ -5,24 +5,29 @@
   lib,
   lua,
   meson,
-  musl-fts,
   ninja,
   pkg-config,
+  static,
   stdenv,
   valgrind-light,
 }:
 stdenv.mkDerivation {
   buildInputs = [
-    lua
+    (lua.override {
+      staticOnly = static;
+    })
   ]
-  ++ lib.optionals stdenv.targetPlatform.isMusl [
-    musl-fts
+  ++ lib.optionals static [
+    stdenv.cc.libc.static
   ];
   checkInputs = lib.optionals doCheckThoroughly [
     valgrind-light
   ];
-  doCheck = !stdenv.targetPlatform.isStatic;
-  mesonFlags = lib.optionals (!stdenv.targetPlatform.isStatic) [
+  doCheck = !static;
+  env = lib.optionalAttrs static {
+    NIX_CFLAGS_LINK = "-static";
+  };
+  mesonFlags = lib.optionals (!static) [
     "-Dwatch_nix_store=true"
   ];
   nativeBuildInputs = [

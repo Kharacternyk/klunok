@@ -19,7 +19,10 @@ main_sources = sources + 'main.c'
 executable(
   'klunok',
   main_sources,
-  dependencies: [lua, fts],
+  dependencies: [
+    lua,
+    m,
+  ],
   include_directories: inc,
   install: true
 )

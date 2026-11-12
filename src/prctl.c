@@ -4,7 +4,6 @@
 #include "trace.h"
 #include <sys/prctl.h>
 
-/* Keep libc's declarations separate from linux/prctl.h for musl. */
 void set_process_option(int option, unsigned long value, struct trace *trace) {
   if (!ok(trace)) {
     return;

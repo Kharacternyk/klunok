@@ -45,15 +45,16 @@
         packages =
           let
             mkPackage =
-              pkgs':
-              pkgs'.callPackage ./. {
+              static:
+              pkgs.callPackage ./. {
+                inherit static;
                 doCheckThoroughly = false;
-                lua = pkgs'.lua5_4;
+                lua = pkgs.lua5_4;
               };
           in
           {
-            default = mkPackage pkgs;
-            static = mkPackage pkgs.pkgsStatic;
+            default = mkPackage false;
+            static = mkPackage true;
           };
         pkgs = import nixpkgs {
           inherit system;

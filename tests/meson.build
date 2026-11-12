@@ -23,7 +23,11 @@ endforeach
 test_executable = executable(
   'klunok',
   test_sources,
-  dependencies: [lua, fts, dl],
+  dependencies: [
+    lua,
+    dl,
+    m,
+  ],
   link_args: '-Wl,--export-dynamic',
   include_directories: inc,
 )
