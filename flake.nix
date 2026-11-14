@@ -28,6 +28,7 @@
               }:
               callPackage ./. {
                 inherit lua;
+                static = false;
               };
           in
           mapAttrs
