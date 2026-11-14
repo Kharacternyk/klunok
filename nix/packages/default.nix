@@ -1,6 +1,7 @@
 {
   callPackage,
   gdb,
+  lib,
   lua,
   meson,
   mkShell,
@@ -39,6 +40,6 @@ stdenv.mkDerivation (finalAttrs: {
     };
   };
   pname = "klunok";
-  src = ../../.;
-  version = import ../version.nix lua;
+  src = ../..;
+  version = lib.fileContents ../../version;
 })
