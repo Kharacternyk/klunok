@@ -11,7 +11,7 @@ rec {
       pkgs
       // {
         klunok = packages.default;
-        lua = pkgs.lua5_4;
+        lua = pkgs.lua5_5;
       }
     );
     directory = ./packages;
