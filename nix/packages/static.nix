@@ -5,7 +5,9 @@
 }:
 (klunok.override (original: {
   libseccomp = original.libseccomp.overrideAttrs (previous: {
-    configureFlags = (previous.configureFlags or [ ]) ++ [ "--disable-shared" ];
+    configureFlags = (previous.configureFlags or [ ]) ++ [
+      "--disable-shared"
+    ];
     dontDisableStatic = true;
   });
   lua = lib.mapNullable (
