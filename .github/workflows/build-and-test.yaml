@@ -14,9 +14,20 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    name: Build & Test (${{ matrix.system }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-latest
+          - system: i686-linux
+            runner: ubuntu-latest
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v19
         with:
           extra_nix_config: |
@@ -24,4 +35,4 @@ jobs:
       - run: sudo mkdir /nix-builds
       - run: findmnt -T /nix-builds
       - uses: DeterminateSystems/magic-nix-cache-action@main
-      - run: nix flake check
+      - run: nix flake check --system ${{ matrix.system }}
