@@ -21,7 +21,7 @@ jobs:
       - run: git tag ${tag%.*}
       - run: git tag ${tag%.*.*}
       - run: git push --tags --force
-      - uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v3
         with:
           files: result/bin/klunok
           tag_name: ${{env.tag}}
