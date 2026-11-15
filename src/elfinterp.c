@@ -1,6 +1,7 @@
 #include "elfinterp.h"
 #include "trace.h"
 #include <elf.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -48,6 +49,9 @@ char *get_elf_interpreter(int exe_fd, struct trace *trace) {
     }
 
     if (program_header.p_type == PT_INTERP) {
+      if (program_header.p_filesz < 2 || program_header.p_filesz > PATH_MAX) {
+        return NULL;
+      }
       if (lseek(exe_fd, program_header.p_offset, SEEK_SET) < 0) {
         return NULL;
       }
@@ -66,6 +70,11 @@ char *get_elf_interpreter(int exe_fd, struct trace *trace) {
           return NULL;
         }
         total_read += iter_read;
+      }
+
+      if (result[program_header.p_filesz - 1] != '\0') {
+        free(result);
+        return NULL;
       }
 
       char *resolved = TNULL(realpath(result, NULL), trace);
