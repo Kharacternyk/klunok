@@ -2,9 +2,10 @@
   klunok,
 }:
 klunok.overrideAttrs (previous: {
-  hardeningDisable = (previous.hardeningDisable or [ ]) ++ [
-    "strictoverflow"
-  ];
+  env = previous.env // {
+    NIX_CFLAGS_COMPILE =
+      previous.env.NIX_CFLAGS_COMPILE + " -fno-sanitize-trap=signed-integer-overflow";
+  };
   mesonCheckFlags = [
     "--setup=fast"
   ];

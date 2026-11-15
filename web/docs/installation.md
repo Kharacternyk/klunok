@@ -82,13 +82,16 @@ sudo apt install lua5.4
 
 Once the dependencies are installed, get the source from
 [GitHub](https://github.com/Kharacternyk/klunok) and install Klunok with Meson.
-The whole process may look like this:
+The whole process may look like this,
+assuming GCC 14 or newer and some hardening applied:
 
 ```bash
 git clone https://github.com/Kharacternyk/klunok
 cd klunok
 git checkout v1
-meson setup build -Dbuildtype=release
+CC=gcc meson setup build -Dbuildtype=release \
+  -Dc_args='-fhardened -fsanitize=signed-integer-overflow -fsanitize-trap=signed-integer-overflow' \
+  -Dc_link_args=-fhardened
 cd build
 sudo meson install
 ```

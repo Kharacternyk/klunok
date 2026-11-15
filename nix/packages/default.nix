@@ -16,6 +16,10 @@ stdenv.mkDerivation (finalAttrs: {
     lua
   ];
   doCheck = true;
+  env.NIX_CFLAGS_COMPILE = "-fsanitize=signed-integer-overflow -fsanitize-trap=signed-integer-overflow";
+  hardeningDisable = [
+    "strictoverflow"
+  ];
   hardeningEnable = [
     "trivialautovarinit"
   ];
