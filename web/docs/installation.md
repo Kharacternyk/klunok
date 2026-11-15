@@ -55,10 +55,12 @@ Instead, use `github:Kharacternyk/klunok/v1` for the latest stable version.
 
 Installing from source requires a C compiler and the Meson build system.
 Meson also depends on the Ninja build system.
+Klunok also requires the libseccomp development files and pkg-config.
+It uses libseccomp to prevent new executable memory mappings at runtime.
 You can install them, for example, with `apt`:
 
 ```bash
-sudo apt install gcc meson ninja-build
+sudo apt install gcc meson ninja-build libseccomp-dev pkg-config
 ```
 
 The version of Meson installed with `apt` may not be new enough to build Klunok.

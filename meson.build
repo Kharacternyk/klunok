@@ -4,6 +4,7 @@ cc = meson.get_compiler('c')
 m = cc.find_library('m', static: true)
 dl = cc.find_library('dl')
 lua = dependency(get_option('lua'), required: false)
+seccomp = dependency('libseccomp')
 
 subdir('lua')
 subdir('inc')

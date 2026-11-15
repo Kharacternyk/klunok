@@ -9,6 +9,17 @@ void test_trace(struct trace *trace) {
   const char *b = "XYZ";
   const char *c = "///";
 
+  int calls = 0;
+  assert(TRET(++calls, trace) == 1);
+  assert(calls == 1 && ok(trace));
+  try(trace);
+  errno = EBUSY;
+  assert(TRET(-EACCES, trace) == -EACCES);
+  assert(errno == EBUSY && !ok(trace));
+  assert(TRET(++calls, trace) == -1);
+  assert(calls == 1);
+  finally_catch_all(trace);
+
   try(trace);
   throw_static(a, trace);
   assert(!catch_static(b, trace));

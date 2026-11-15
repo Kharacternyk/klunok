@@ -2,6 +2,7 @@
   callPackage,
   gdb,
   lib,
+  libseccomp,
   lua,
   meson,
   mkShell,
@@ -11,6 +12,7 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   buildInputs = [
+    libseccomp
     lua
   ];
   doCheck = true;

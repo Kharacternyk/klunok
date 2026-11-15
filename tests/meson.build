@@ -1,12 +1,12 @@
-add_test_setup('fast')
-add_test_setup('gdb', gdb: true)
+add_test_setup('fast', exclude_suites: ['valgrind'])
+add_test_setup('gdb', gdb: true, exclude_suites: ['valgrind'])
 
 valgrind = find_program('valgrind', required: false)
 
 if valgrind.found()
   add_test_setup(
     'valgrind',
-    exe_wrapper: [valgrind, '--error-exitcode=1', '--leak-check=full'],
+    exclude_suites: ['fast'],
     is_default: true
   )
 endif
@@ -27,16 +27,31 @@ test_executable = executable(
     lua,
     dl,
     m,
+    seccomp,
   ],
   link_args: '-Wl,--export-dynamic',
   include_directories: inc,
 )
 
 foreach component: components
+  test_function = 'test_' + component.underscorify()
+  should_fail = component == 'handler' and not lua.found()
+
   test(
-    component,
+    component == 'execmem' ? component : component + '-fast',
     test_executable,
-    args: 'test_' + component.underscorify(),
-    should_fail: component == 'handler' and not lua.found(),
+    args: test_function,
+    suite: component == 'execmem' ? 'execmem' : 'fast',
+    should_fail: should_fail,
   )
+
+  if valgrind.found() and component != 'execmem'
+    test(
+      component,
+      valgrind,
+      args: ['--error-exitcode=1', '--leak-check=full', test_executable, test_function],
+      suite: 'valgrind',
+      should_fail: should_fail,
+    )
+  endif
 endforeach

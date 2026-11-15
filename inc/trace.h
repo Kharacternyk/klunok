@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 struct trace *create_trace() __attribute__((warn_unused_result));
 
@@ -40,6 +41,18 @@ void free_trace(struct trace *trace);
       }                                                                        \
     }                                                                          \
     _tneg_result;                                                              \
+  })
+
+#define TRET(call, trace)                                                      \
+  ({                                                                           \
+    typeof(call) _tret_result = -1;                                            \
+    if (ok(trace)) {                                                           \
+      _tret_result = call;                                                     \
+      if (_tret_result < 0) {                                                  \
+        throw_dynamic(strerror(-_tret_result), trace);                          \
+      }                                                                        \
+    }                                                                          \
+    _tret_result;                                                              \
   })
 
 #define TNULL(call, trace)                                                     \

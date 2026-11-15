@@ -22,6 +22,7 @@ executable(
   dependencies: [
     lua,
     m,
+    seccomp,
   ],
   include_directories: inc,
   install: true

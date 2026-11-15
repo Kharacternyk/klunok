@@ -3,6 +3,7 @@ buffer
 counter
 deref
 elfinterp
+execmem
 extension
 flusher
 handler

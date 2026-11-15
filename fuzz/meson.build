@@ -9,7 +9,7 @@ if honggfuzz.found()
     fuzz_executable = executable(
       component,
       sources + files(component + '.c'),
-      dependencies: [lua, dl],
+      dependencies: [lua, dl, seccomp],
       include_directories: inc,
     )
 

@@ -1,4 +1,5 @@
 #include "buffer.h"
+#include "execmem.h"
 #include "handler.h"
 #include "list.h"
 #include "logstep.h"
@@ -33,6 +34,12 @@ int main(int argc, const char **argv) {
     logstep(2, NULL, messages.main.cannot_bootstrap, 0);
     logstep(2, messages.trace.because_of, messages.main.out_of_memory, 1);
     return EXIT_FAILURE;
+  }
+
+  refuse_executable_mappings(trace);
+  if (!ok(trace)) {
+    throw_static(messages.main.cannot_apply_process_hardening, trace);
+    return fail(trace);
   }
 
   struct params *params = parse_params(argc, argv, trace);
