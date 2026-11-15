@@ -16,6 +16,9 @@ stdenv.mkDerivation (finalAttrs: {
     lua
   ];
   doCheck = true;
+  hardeningEnable = [
+    "trivialautovarinit"
+  ];
   mesonFlags = [
     "-Dwatch_nix_store=true"
   ];
