@@ -20,6 +20,10 @@ void refuse_executable_mappings(struct trace *trace) {
   const uint32_t deny = SCMP_ACT_ERRNO(EPERM);
   TRET(seccomp_attr_set(filter, SCMP_FLTATR_ACT_BADARCH, deny), trace);
   TRET(seccomp_rule_add(filter, deny, SCMP_SYS(personality), 0), trace);
+  TRET(seccomp_rule_add(filter, deny, SCMP_SYS(shmat), 0), trace);
+  if (SCMP_SYS(ipc) >= 0) {
+    TRET(seccomp_rule_add(filter, deny, SCMP_SYS(ipc), 0), trace);
+  }
 
   uint32_t arch = seccomp_arch_native();
   const int mapping_syscalls[] = {

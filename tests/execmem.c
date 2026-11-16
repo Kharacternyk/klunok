@@ -6,6 +6,7 @@
 #include <seccomp.h>
 #include <sys/mman.h>
 #include <sys/prctl.h>
+#include <sys/shm.h>
 #include <unistd.h>
 
 void test_execmem(struct trace *trace) {
@@ -15,6 +16,13 @@ void test_execmem(struct trace *trace) {
 
   refuse_executable_mappings(trace);
   assert(ok(trace));
+
+  assert(shmat(-1, NULL, SHM_EXEC) == (void *)-1);
+  assert(errno == EPERM);
+  if (SCMP_SYS(ipc) >= 0) {
+    assert(syscall(SCMP_SYS(ipc), 0, 0, 0, 0, 0, 0) == -1);
+    assert(errno == EPERM);
+  }
 
   assert(iconv_open("ISO-2022-JP", "UTF-8") == (iconv_t)-1);
   assert(errno == EINVAL);

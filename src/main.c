@@ -134,7 +134,6 @@ int main(int argc, const char **argv) {
 
   set_process_option(PR_SET_DUMPABLE, 0, trace);
   set_process_option(PR_SET_NO_NEW_PRIVS, 1, trace);
-  set_process_option(PR_SET_MDWE, PR_MDWE_REFUSE_EXEC_GAIN, trace);
 
   if (!ok(trace)) {
     throw_static(messages.main.cannot_apply_process_hardening, trace);
