@@ -23,6 +23,7 @@ int LLVMFuzzerTestOneInput(const char *input, size_t size) {
 
   lseek(fd, 0, SEEK_SET);
   free(get_elf_interpreter(fd, trace));
+  free(trace);
   close(fd);
 
   return 0;
