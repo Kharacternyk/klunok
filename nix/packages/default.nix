@@ -27,6 +27,7 @@ stdenv.mkDerivation (finalAttrs: {
   mesonFlags = [
     "-Dwatch_nix_store=true"
   ];
+  meta.mainProgram = "klunok";
   nativeBuildInputs = [
     meson
     ninja
