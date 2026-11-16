@@ -3,8 +3,10 @@
 }:
 klunok.overrideAttrs (previous: {
   env = previous.env // {
-    NIX_CFLAGS_COMPILE =
-      previous.env.NIX_CFLAGS_COMPILE + " -fno-sanitize-trap=signed-integer-overflow";
+    NIX_CFLAGS_COMPILE = ''
+      ${previous.env.NIX_CFLAGS_COMPILE}
+      -fno-sanitize-trap=signed-integer-overflow
+    '';
   };
   mesonCheckFlags = [
     "--setup=fast"

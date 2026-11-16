@@ -16,12 +16,13 @@ stdenv.mkDerivation (finalAttrs: {
     lua
   ];
   doCheck = true;
-  env.NIX_CFLAGS_COMPILE = "-fsanitize=signed-integer-overflow -fsanitize-trap=signed-integer-overflow";
+  env.NIX_CFLAGS_COMPILE = ''
+    -fsanitize=signed-integer-overflow
+    -fsanitize-trap=signed-integer-overflow
+    -ftrivial-auto-var-init=zero
+  '';
   hardeningDisable = [
     "strictoverflow"
-  ];
-  hardeningEnable = [
-    "trivialautovarinit"
   ];
   mesonFlags = [
     "-Dwatch_nix_store=true"
@@ -32,13 +33,19 @@ stdenv.mkDerivation (finalAttrs: {
     pkg-config
   ];
   passthru = rec {
-    check = finalAttrs.finalPackage.overrideAttrs {
+    check = finalAttrs.finalPackage.overrideAttrs (previous: {
       checkInputs = [
         (callPackage ../valgrind.nix {
           inherit stdenv;
         })
       ];
-    };
+      env = previous.env // {
+        NIX_CFLAGS_COMPILE = ''
+          ${previous.env.NIX_CFLAGS_COMPILE}
+          -ftrivial-auto-var-init=uninitialized
+        '';
+      };
+    });
     devShell = mkShell {
       inputsFrom = [
         check
