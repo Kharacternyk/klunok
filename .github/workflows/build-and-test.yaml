@@ -28,11 +28,11 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
-      - uses: cachix/install-nix-action@v19
+      - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             build-dir = /nix-builds
       - run: sudo mkdir /nix-builds
       - run: findmnt -T /nix-builds
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@v15
       - run: nix flake check --system ${{ matrix.system }}
