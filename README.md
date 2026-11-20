@@ -62,6 +62,8 @@ Otherwise functions and `static const` variables are preferred.
 
 Destructors must accept `NULL` like the regular `free()`.
 
+Stdio is avoided, direct syscalls are preferred.
+
 `clang-format` with the default configuration is used for formatting.
 
 ## High-level Flow From a Security Perspective
