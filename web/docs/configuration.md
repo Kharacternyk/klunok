@@ -2,7 +2,7 @@ import Release from '../src/release-badge.jsx';
 
 # Configuration
 
-Klunok can be configured with the Lua programming language.
+Klunok can be configured with the [Lua](https://lua.org/) programming language.
 Settings are global Lua variables assigned in a file.
 (If you want to use an auxiliary variable with a name that is guaranteed not to clash
 with any future settings, begin the name with `aux` or `custom`).
