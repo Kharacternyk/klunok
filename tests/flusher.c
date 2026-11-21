@@ -63,9 +63,11 @@ void assert_acknowledgement(int fd, uint64_t id) {
   assert(!memcmp(response, expected, sizeof expected));
 }
 
-struct buffer *create_acknowledgement_path(struct trace *trace) {
+struct buffer *create_acknowledgement_path(const char *prefix,
+                                           struct trace *trace) {
   struct buffer *acknowledgement_path = create_buffer(trace);
-  concat_string("/tmp/klunok.", acknowledgement_path, trace);
+  concat_string(prefix, acknowledgement_path, trace);
+  concat_char('.', acknowledgement_path, trace);
   concat_size(getpid(), acknowledgement_path, trace);
   return acknowledgement_path;
 }
@@ -76,7 +78,8 @@ void test_flusher(struct trace *trace) {
   assert(fd >= 0);
   assert(!close(fd));
 
-  struct flusher *flusher = create_flusher(1, trace);
+  const char *prefix = "";
+  struct flusher *flusher = create_flusher(prefix, 1, trace);
   assert(ok(trace));
 
   assert(!get_request(path, flusher, trace));
@@ -98,7 +101,8 @@ void test_flusher(struct trace *trace) {
   assert(!get_request(path, flusher, trace));
   assert(ok(trace));
 
-  struct buffer *acknowledgement_path = create_acknowledgement_path(trace);
+  struct buffer *acknowledgement_path =
+      create_acknowledgement_path(prefix, trace);
   assert(ok(trace));
 
   const char *acknowledgement_path_string =
@@ -113,6 +117,10 @@ void test_flusher(struct trace *trace) {
 
   assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX - 2,
                           bypass_queue_with_timestamp, 11, 22));
+  struct flusher *disabled = create_flusher(NULL, 1, trace);
+  assert(!get_request(path, disabled, trace));
+  assert(ok(trace));
+  free_flusher(disabled);
   struct flush_request *request = get_request(path, flusher, trace);
   assert(ok(trace));
   assert(request);

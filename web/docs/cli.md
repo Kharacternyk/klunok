@@ -63,6 +63,12 @@ Example:
 klunok -d /home/nazar
 ```
 
+## `-f`: path prefix for flush acknowledgements
+
+<Release>2.0.0</Release>
+
+Documentation for this feature is under construction.
+
 ## `-h`: print help
 
 Example:
@@ -73,7 +79,7 @@ klunok -h
 
 ```
 Klunok 1.3.0, Lua 5.4.7, compiled with Nix support
-Usage: klunok [-h | -v | -y | -c PATH | -d PATH | -w PATH | -e PATH]...
+Usage: klunok [-h | -v | -y | -c PATH | -d PATH | -w PATH | -e PATH | -f PREFIX]...
 Use -y to display copyright and license information
 User manual: https://klunok.org/
 ```

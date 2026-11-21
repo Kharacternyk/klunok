@@ -12,7 +12,8 @@ enum flush_kind {
 
 struct trace;
 
-struct flusher *create_flusher(size_t flushed_path_count_guess,
+struct flusher *create_flusher(const char *fifo_prefix,
+                               size_t flushed_path_count_guess,
                                struct trace *trace)
     __attribute__((warn_unused_result));
 

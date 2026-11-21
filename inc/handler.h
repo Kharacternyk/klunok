@@ -2,7 +2,7 @@
 
 struct trace;
 
-struct handler *load_handler(const char *config_path,
+struct handler *load_handler(const char *config_path, const char *fifo_prefix,
                              size_t common_parent_path_length,
                              struct trace *trace)
     __attribute__((warn_unused_result));

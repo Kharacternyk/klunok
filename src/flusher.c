@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 struct flusher {
+  const char *fifo_prefix;
   char boot_id[36];
   uint8_t boot_id_size;
   uint64_t global_timestamp;
@@ -23,8 +24,12 @@ struct flusher {
   int last_pid_fd;
 };
 
-struct flusher *create_flusher(size_t flushed_path_count_guess,
+struct flusher *create_flusher(const char *fifo_prefix,
+                               size_t flushed_path_count_guess,
                                struct trace *trace) {
+  if (!fifo_prefix) {
+    return NULL;
+  }
   struct flusher *flusher = TNULL(malloc(sizeof(struct flusher)), trace);
   struct set *path_timestamps =
       TNULL(create_set(flushed_path_count_guess, trace), trace);
@@ -40,6 +45,7 @@ struct flusher *create_flusher(size_t flushed_path_count_guess,
     return NULL;
   }
 
+  flusher->fifo_prefix = fifo_prefix;
   flusher->last_pid = 0;
   flusher->last_pid_fd = -1;
   flusher->global_timestamp =
@@ -89,7 +95,7 @@ struct flush_xattr {
 
 struct flush_request *get_request(const char *path, struct flusher *flusher,
                                   struct trace *trace) {
-  if (!ok(trace)) {
+  if (!flusher || !ok(trace)) {
     return NULL;
   }
 
@@ -197,7 +203,8 @@ void acknowledge(const struct flush_request *request, pid_t pid,
 
   if (pid != flusher->last_pid) {
     struct buffer *path = create_buffer(trace);
-    concat_string("/tmp/klunok.", path, trace);
+    concat_string(flusher->fifo_prefix, path, trace);
+    concat_char('.', path, trace);
     concat_size(pid, path, trace);
 
     if (!ok(trace)) {

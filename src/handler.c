@@ -35,7 +35,7 @@ struct handler {
   struct flusher *flusher;
 };
 
-struct handler *load_handler(const char *config_path,
+struct handler *load_handler(const char *config_path, const char *fifo_prefix,
                              size_t common_parent_path_length,
                              struct trace *trace) {
   struct handler *handler = TNULL(calloc(1, sizeof(struct handler)), trace);
@@ -58,8 +58,8 @@ struct handler *load_handler(const char *config_path,
   finally_rethrow_static(messages.handler.config.cannot_load, trace);
 
   if (ok(trace)) {
-    handler->flusher =
-        create_flusher(get_flushed_path_count_guess(handler->config), trace);
+    handler->flusher = create_flusher(
+        fifo_prefix, get_flushed_path_count_guess(handler->config), trace);
     handler->elf_interpreters =
         create_set(get_elf_interpreter_count_guess(handler->config), trace);
     handler->editor_pid_bitmap =

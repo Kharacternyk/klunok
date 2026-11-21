@@ -2,7 +2,9 @@
 #include "constants.h"
 
 #define BARE_VERSION_MESSAGE "Klunok " VERSION ", Lua " LUA_VERSION
-#define USAGE "klunok [-h | -v | -y | -c PATH | -d PATH | -w PATH | -e PATH]..."
+#define USAGE                                                                  \
+  "klunok [-h | -v | -y | -c PATH | -d PATH | -w PATH | -e PATH | -f "         \
+  "PREFIX]..."
 
 #ifdef WATCH_NIX_STORE
 #define VERSION_MESSAGE BARE_VERSION_MESSAGE ", compiled with Nix support"

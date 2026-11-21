@@ -12,6 +12,7 @@ struct params {
   bool is_license_requested;
   const char *config_path;
   const char *privilege_dropping_path;
+  const char *fifo_prefix;
   struct list *write_mounts;
   struct list *exec_mounts;
 };
@@ -51,6 +52,15 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
         opt = 0;
       }
       break;
+    case 'f':
+      if (params->fifo_prefix) {
+        throw_context(argv[i - 1], trace);
+        throw_static(messages.params.redefined_option, trace);
+      } else {
+        params->fifo_prefix = argv[i];
+        opt = 0;
+      }
+      break;
     case 'w':
       join(argv[i], write_mounts, trace);
       opt = 0;
@@ -78,6 +88,7 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
       break;
     case 'c':
     case 'd':
+    case 'f':
     case 'w':
     case 'e':
       throw_context(argv[argc - 1], trace);
@@ -132,6 +143,10 @@ const char *get_config_path(const struct params *params) {
 
 const char *get_privilege_dropping_path(const struct params *params) {
   return params->privilege_dropping_path;
+}
+
+const char *get_fifo_prefix(const struct params *params) {
+  return params->fifo_prefix;
 }
 
 const struct list *get_write_mounts(const struct params *params) {

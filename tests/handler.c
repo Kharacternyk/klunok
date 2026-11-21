@@ -21,7 +21,7 @@
 #define IN_STORE(PATH) "klunok/store/" PATH "/version"
 
 void test_handler(struct trace *trace) {
-  struct handler *handler = load_handler(CONFIG, 1, trace);
+  struct handler *handler = load_handler(CONFIG, NULL, 1, trace);
   assert(ok(trace));
 
   time_t pause = handle_timeout(handler, trace);
@@ -85,7 +85,7 @@ void test_handler(struct trace *trace) {
   close(fd);
   free_handler(handler);
 
-  handler = load_handler(CONFIG, sizeof TEST_ROOT - 1, trace);
+  handler = load_handler(CONFIG, NULL, sizeof TEST_ROOT - 1, trace);
   assert(ok(trace));
   fd = open(CONFIG, O_RDONLY);
   assert(fd >= 0);
@@ -108,7 +108,8 @@ void test_handler(struct trace *trace) {
   assert(!chmod("flush.lua", 0600));
   char *cwd = getcwd(NULL, 0);
   assert(cwd);
-  handler = load_handler("flush.lua", strlen(cwd) + 1, trace);
+  const char *fifo_prefix = "fifo";
+  handler = load_handler("flush.lua", fifo_prefix, strlen(cwd) + 1, trace);
   free(cwd);
   assert(ok(trace));
 
@@ -125,7 +126,8 @@ void test_handler(struct trace *trace) {
     exit(77);
   }
 
-  struct buffer *acknowledgement_path = create_acknowledgement_path(trace);
+  struct buffer *acknowledgement_path =
+      create_acknowledgement_path(fifo_prefix, trace);
   assert(ok(trace));
 
   const char *acknowledgement_path_string =

@@ -3,7 +3,6 @@
 #include "list.h"
 #include "trace.h"
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 
 void test_params(struct trace *trace) {
@@ -12,14 +11,16 @@ void test_params(struct trace *trace) {
   const char *write_mount = "/home/nazar/src";
   const char *exec_mount = "/nix/store";
   const char *both_mount = "/home/nazar/.local/bin";
+  const char *fifo_prefix = "/tmp/klunok";
   const char *argv[] = {"klunok",    "-c", config_path, "-d", drop_path,  "-w",
                         write_mount, "-e", exec_mount,  "-e", both_mount, "-w",
-                        both_mount};
+                        both_mount,  "-f", fifo_prefix};
   int argc = sizeof argv / sizeof *argv;
 
   struct params *params = parse_params(argc, argv, trace);
   assert(ok(trace));
   assert(!strcmp(get_config_path(params), config_path));
+  assert(!strcmp(get_fifo_prefix(params), fifo_prefix));
   assert(!strcmp(get_privilege_dropping_path(params), drop_path));
 
   /*FIXME we shouldn't test the order*/
@@ -40,6 +41,7 @@ void test_params(struct trace *trace) {
   assert(peek(get_write_mounts(params)));
   assert(peek(get_exec_mounts(params)));
   assert(get_privilege_dropping_path(params));
+  assert(!get_fifo_prefix(params));
   free_params(params);
 
   const char *license_argv[] = {"klunok", "-y", "ignored"};

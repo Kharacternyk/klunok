@@ -167,7 +167,8 @@ int main(int argc, const char **argv) {
   }
 
   struct handler *handler =
-      load_handler(get_config_path(params), common_parent_path_length, trace);
+      load_handler(get_config_path(params), get_fifo_prefix(params),
+                   common_parent_path_length, trace);
   if (!ok(trace)) {
     throw_static(messages.main.cannot_load_handler, trace);
     return fail(trace);
