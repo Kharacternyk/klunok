@@ -1,5 +1,6 @@
 {
   nixpkgs,
+  self,
   ...
 }:
 let
@@ -8,7 +9,7 @@ let
   perSystem = lib.genAttrs systems (
     system:
     import ./outputs.nix {
-      inherit lib;
+      inherit lib self;
       pkgs = nixpkgs.legacyPackages.${system};
     }
   );

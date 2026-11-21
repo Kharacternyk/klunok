@@ -1,6 +1,7 @@
 {
   lib,
   pkgs,
+  self,
   ...
 }:
 rec {
@@ -10,6 +11,7 @@ rec {
     callPackage = lib.callPackageWith (
       pkgs
       // {
+        inherit self;
         klunok = packages.default;
         lua = pkgs.lua5_5;
       }

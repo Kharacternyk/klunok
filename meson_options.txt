@@ -1,2 +1,4 @@
 option('lua', type: 'string', value: 'lua')
 option('watch_nix_store', type: 'boolean', value: false)
+option('source_revision', type: 'string', value: '')
+option('dependency_notices', type: 'string', value: '')

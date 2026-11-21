@@ -2,7 +2,7 @@
 #include "constants.h"
 
 #define BARE_VERSION_MESSAGE "Klunok " VERSION ", Lua " LUA_VERSION
-#define USAGE "klunok [-h | -v | -c PATH | -d PATH | -w PATH | -e PATH]..."
+#define USAGE "klunok [-h | -v | -y | -c PATH | -d PATH | -w PATH | -e PATH]..."
 
 #ifdef WATCH_NIX_STORE
 #define VERSION_MESSAGE BARE_VERSION_MESSAGE ", compiled with Nix support"
@@ -78,4 +78,7 @@ const struct translation messages = {
                   .cannot_watch = "Cannot watch a mount point"},
         .info = {.version = VERSION_MESSAGE,
                  .usage = USAGE,
-                 .help = VERSION_MESSAGE "\nUsage: " USAGE}}};
+                 .help =
+                     VERSION_MESSAGE "\nUsage: " USAGE "\nUse -y to display "
+                                     "copyright and license information\nUser "
+                                     "manual: https://klunok.org/"}}};

@@ -23,6 +23,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+extern const char _binary_src_licenses_txt_start[];
+extern const char _binary_src_licenses_txt_end[];
+
 static int fail(const struct trace *trace) {
   unwind(2, trace);
   return EXIT_FAILURE;
@@ -49,6 +52,7 @@ int main(int argc, const char **argv) {
     throw_static(messages.main.cannot_parse_cli, trace);
     return fail(trace);
   }
+
   if (is_version_requested(params)) {
     logstep(2, NULL, messages.main.info.version, 0);
     return EXIT_SUCCESS;
@@ -57,6 +61,12 @@ int main(int argc, const char **argv) {
     logstep(2, NULL, messages.main.info.help, 0);
     return EXIT_SUCCESS;
   }
+  if (is_license_requested(params)) {
+    write_full(1, _binary_src_licenses_txt_start,
+               _binary_src_licenses_txt_end - _binary_src_licenses_txt_start);
+    return EXIT_SUCCESS;
+  }
+
   assert(peek(get_write_mounts(params)));
   assert(peek(get_exec_mounts(params)));
   assert(get_privilege_dropping_path(params));

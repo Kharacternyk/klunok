@@ -41,4 +41,11 @@ void test_params(struct trace *trace) {
   assert(peek(get_exec_mounts(params)));
   assert(get_privilege_dropping_path(params));
   free_params(params);
+
+  const char *license_argv[] = {"klunok", "-y", "ignored"};
+  params = parse_params(3, license_argv, trace);
+  assert(ok(trace));
+  assert(is_license_requested(params));
+  assert(!is_help_requested(params) && !is_version_requested(params));
+  free_params(params);
 }

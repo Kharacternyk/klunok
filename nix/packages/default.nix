@@ -8,6 +8,7 @@
   mkShell,
   ninja,
   pkg-config,
+  self,
   stdenv,
 }:
 stdenv.mkDerivation (finalAttrs: {
@@ -26,8 +27,15 @@ stdenv.mkDerivation (finalAttrs: {
   ];
   mesonFlags = [
     "-Dwatch_nix_store=true"
+    "-Dsource_revision=${self.rev or (lib.removeSuffix "-dirty" (self.dirtyRev or ""))}"
   ];
-  meta.mainProgram = "klunok";
+  meta = {
+    inherit (import "${self}/flake.nix") description;
+    homepage = "https://klunok.org";
+    license = lib.licenses.gpl3Only;
+    mainProgram = "klunok";
+    platforms = lib.platforms.linux;
+  };
   nativeBuildInputs = [
     meson
     ninja

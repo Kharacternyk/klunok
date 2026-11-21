@@ -1,3 +1,5 @@
+import Release from '../src/release-badge.jsx';
+
 # CLI
 
 ## `-c`: path to the configuration file
@@ -71,7 +73,9 @@ klunok -h
 
 ```
 Klunok 1.3.0, Lua 5.4.7, compiled with Nix support
-Usage: klunok [-h | -v | -c PATH | -d PATH | -w PATH | -e PATH]...
+Usage: klunok [-h | -v | -y | -c PATH | -d PATH | -w PATH | -e PATH]...
+Use -y to display copyright and license information
+User manual: https://klunok.org/
 ```
 
 ## `-v`: print version
@@ -84,4 +88,20 @@ klunok -v
 
 ```
 Klunok 1.3.0, Lua 5.4.7, compiled with Nix support
+```
+
+## `-y`: print copyright and licenses
+
+<Release>2.0.0</Release>
+
+Example:
+
+```bash
+klunok -y
+```
+
+```
+Klunok is Copyright (C) 2022-2026 Klunok authors
+Licensed under GNU General Public License, version 3 (see below).
+Source code for this release is available at https://github.com/Kharacternyk/klunok
 ```

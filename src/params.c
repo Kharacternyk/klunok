@@ -9,6 +9,7 @@
 struct params {
   bool is_version_requested;
   bool is_help_requested;
+  bool is_license_requested;
   const char *config_path;
   const char *privilege_dropping_path;
   struct list *write_mounts;
@@ -21,7 +22,8 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
   struct list *exec_mounts = create_list(trace);
   char opt = 0;
 
-  for (int i = 1; i < argc && ok(trace) && opt != 'h' && opt != 'v'; ++i) {
+  for (int i = 1;
+       i < argc && ok(trace) && opt != 'h' && opt != 'v' && opt != 'y'; ++i) {
     switch (opt) {
     case 0:
       if (argv[i][0] != '-' || !argv[i][1] || argv[i][2]) {
@@ -71,6 +73,9 @@ struct params *parse_params(int argc, const char **argv, struct trace *trace) {
     case 'v':
       params->is_version_requested = true;
       break;
+    case 'y':
+      params->is_license_requested = true;
+      break;
     case 'c':
     case 'd':
     case 'w':
@@ -115,6 +120,10 @@ bool is_help_requested(const struct params *params) {
 
 bool is_version_requested(const struct params *params) {
   return params->is_version_requested;
+}
+
+bool is_license_requested(const struct params *params) {
+  return params->is_license_requested;
 }
 
 const char *get_config_path(const struct params *params) {

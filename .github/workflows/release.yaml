@@ -16,6 +16,7 @@ jobs:
       - uses: cachix/install-nix-action@v31
       - run: nix flake check
       - run: nix build .#static
+      - run: nix build .#static.releaseSources --out-link release-sources
       - run: echo "tag=v$(<version)" >> "$GITHUB_ENV"
       - run: git tag "${tag}"
       - run: git tag "${tag%.*}"
@@ -23,5 +24,7 @@ jobs:
       - run: git push --tags --force
       - uses: softprops/action-gh-release@v3
         with:
-          files: result/bin/klunok
+          files: |
+            result/bin/klunok
+            release-sources/*
           tag_name: ${{env.tag}}

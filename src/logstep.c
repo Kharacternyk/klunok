@@ -2,7 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 
-static void write_full(int fd, const char *data, size_t size) {
+void write_full(int fd, const char *data, size_t size) {
   while (size) {
     ssize_t written_size = write(fd, data, size);
     if (written_size <= 0) {
