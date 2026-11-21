@@ -11,3 +11,8 @@
 - In configuration sets, `false` is now equivalent to `nil`: both exclude the key.
   Previously, keys with `false` values were included;
   use `true` or another truthy value to keep them included.
+
+- The default Lua version for the [static binary](./installation.md?method=binary)
+  and [Nix](./installation.md?method=nix) installation methods has been bumped
+  from 5.4 to 5.5.
+  A list of breaking changes is available at https://www.lua.org/manual/5.5/manual.html#8.
