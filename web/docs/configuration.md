@@ -600,7 +600,7 @@ declare('elf_interpreter_count_guess', nil, is_positive)
 
 ### `flushed_path_count_guess`
 
-<Release />
+<Release>2.0.0</Release>
 
 Guess of how many flushes of distinct paths happen during the lifetime
 of one Klunok process.

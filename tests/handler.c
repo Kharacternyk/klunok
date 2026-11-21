@@ -1,5 +1,6 @@
 #include "handler.h"
 #include "buffer.h"
+#include "flusher.h"
 #include "sync.h"
 #include "test-constants.h"
 #include "test-flusher.h"
@@ -119,7 +120,8 @@ void test_handler(struct trace *trace) {
   char boot_id[BOOT_ID_SIZE];
   read_boot_id(boot_id);
 
-  if (set_flush_xattr(FLUSHED, 1, boot_id, UINT64_MAX - 1, 77, 22)) {
+  if (set_flush_xattr(FLUSHED, 1, boot_id, UINT64_MAX - 1,
+                      bypass_queue_with_timestamp, 77, 22)) {
     exit(77);
   }
 
@@ -142,7 +144,8 @@ void test_handler(struct trace *trace) {
 
   assert(!access("klunok/store/" FLUSHED "/22.txt", F_OK));
 
-  assert(!set_flush_xattr(FLUSHED, 1, boot_id, UINT64_MAX, 78, 0));
+  assert(!set_flush_xattr(FLUSHED, 1, boot_id, UINT64_MAX,
+                          bypass_queue_with_timestamp, 78, 0));
   handle_close_write(getpid(), fd, handler, trace);
   assert(ok(trace));
   assert_acknowledgement(acknowledgement_fd, 78);
@@ -154,7 +157,8 @@ void test_handler(struct trace *trace) {
   assert(config_fd >= 0);
   const char change[] = "version_pattern = 'reloaded'\n";
   assert(write(config_fd, change, sizeof change - 1) == sizeof change - 1);
-  assert(!set_flush_xattr("flush.lua", 1, boot_id, UINT64_MAX, 79, 0));
+  assert(!set_flush_xattr("flush.lua", 1, boot_id, UINT64_MAX, bypass_queue, 79,
+                          0));
   handle_close_write(getpid(), config_fd, handler, trace);
   assert(ok(trace));
   assert_acknowledgement(acknowledgement_fd, 79);

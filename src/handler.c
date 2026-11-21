@@ -156,7 +156,7 @@ static const char *get_project_root_end(const char *project_end,
   return project_end;
 }
 
-static bool push_to_linq(pid_t pid, char *path, bool flushed,
+static bool push_to_linq(pid_t pid, char *path, struct flush_request *request,
                          struct handler *handler, struct trace *trace) {
   if (!ok(trace)) {
     return false;
@@ -214,12 +214,12 @@ static bool push_to_linq(pid_t pid, char *path, bool flushed,
 
   free_sieved_path(sieved_path);
 
-  if (!is_pushed && !flushed) {
+  if (!is_pushed && !request) {
     return false;
   }
 
   try(trace);
-  if (flushed) {
+  if (request && get_kind(request) != add_to_queue) {
     *path = '!';
   }
   push(path, handler->linq, trace);
@@ -474,17 +474,21 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
 
   const char *event = get_event_close_write_ignored(handler->config);
 
+  if (request && (get_kind(request) == bypass_queue ||
+                  get_kind(request) == bypass_queue_with_timestamp)) {
+    store(file_path,
+          get_kind(request) == bypass_queue_with_timestamp ? get_time(request)
+                                                           : time(NULL),
+          handler, trace);
+  }
+
+  if (push_to_linq(pid, file_path, request, handler, trace)) {
+    event = get_event_close_write_not_ignored(handler->config);
+  }
+
   if (request) {
-    store(file_path, get_time(request), handler, trace);
-
-    if (push_to_linq(pid, file_path, true, handler, trace)) {
-      event = get_event_close_write_not_ignored(handler->config);
-    }
-
     acknowledge(request, pid, handler->flusher, trace);
     free(request);
-  } else if (push_to_linq(pid, file_path, false, handler, trace)) {
-    event = get_event_close_write_not_ignored(handler->config);
   }
 
   record_event(event, pid, file_path, handler, trace);

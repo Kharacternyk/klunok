@@ -75,6 +75,7 @@ struct flusher *create_flusher(size_t flushed_path_count_guess,
 }
 
 struct flush_request {
+  enum flush_kind kind;
   uint64_t id;
   uint64_t time;
 };
@@ -94,13 +95,13 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
 
   struct flush_xattr xattr = {};
   uint8_t wire_xattr[sizeof xattr.version + sizeof xattr.boot_id +
-                     sizeof xattr.timestamp + sizeof xattr.request.id +
-                     sizeof xattr.request.time];
+                     sizeof xattr.timestamp + sizeof(uint8_t) +
+                     sizeof xattr.request.id + sizeof xattr.request.time];
 
   ssize_t wire_xattr_size =
       getxattr(path, "user.klunok.flush", wire_xattr, sizeof wire_xattr);
 
-  if (wire_xattr_size < 0 || wire_xattr_size < sizeof wire_xattr) {
+  if (wire_xattr_size != (ssize_t)sizeof wire_xattr) {
     return NULL;
   }
 
@@ -140,6 +141,15 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
     return NULL;
   }
 
+  enum flush_kind kind = wire_xattr[i++];
+
+  if (kind != bypass_queue && kind != bypass_queue_with_timestamp &&
+      kind != add_to_queue && kind != drop_from_queue) {
+    return NULL;
+  }
+
+  xattr.request.kind = kind;
+
   for (size_t k = i; i < k + sizeof xattr.request.id; ++i) {
     xattr.request.id <<= 8;
     xattr.request.id += wire_xattr[i];
@@ -149,9 +159,14 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
     xattr.request.time += wire_xattr[i];
   }
 
-  time_t request_time = xattr.request.time;
-  if (request_time < 0 || (uint64_t)request_time != xattr.request.time ||
-      !localtime(&request_time)) {
+  if (kind == bypass_queue_with_timestamp) {
+    time_t request_time = xattr.request.time;
+
+    if (request_time < 0 || (uint64_t)request_time != xattr.request.time ||
+        !localtime(&request_time)) {
+      return NULL;
+    }
+  } else if (xattr.request.time != 0) {
     return NULL;
   }
 
@@ -166,6 +181,10 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
   *request = xattr.request;
 
   return request;
+}
+
+enum flush_kind get_kind(struct flush_request *request) {
+  return request->kind;
 }
 
 uint64_t get_time(struct flush_request *request) { return request->time; }
@@ -186,7 +205,8 @@ void acknowledge(const struct flush_request *request, pid_t pid,
       return;
     }
 
-    int fd = open(get_string(get_view(path)), O_WRONLY | O_NONBLOCK);
+    int fd =
+        open(get_string(get_view(path)), O_WRONLY | O_NONBLOCK | O_NOFOLLOW);
 
     free_buffer(path);
 
@@ -196,7 +216,7 @@ void acknowledge(const struct flush_request *request, pid_t pid,
 
     struct stat stat;
 
-    if (fstat(fd, &stat) || !S_ISFIFO(stat.st_mode)) {
+    if (fstat(fd, &stat) || !S_ISFIFO(stat.st_mode) || stat.st_nlink > 1) {
       close(fd);
       return;
     }
