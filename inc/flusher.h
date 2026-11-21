@@ -26,7 +26,7 @@ enum flush_kind get_kind(struct flush_request *request)
 uint64_t get_time(struct flush_request *request)
     __attribute__((pure, nonnull, warn_unused_result));
 
-void acknowledge(const struct flush_request *request, pid_t pid,
+void acknowledge(const struct flush_request *request, pid_t pid, int pidfd,
                  struct flusher *flusher, struct trace *trace);
 
 void free_flusher(struct flusher *flusher);

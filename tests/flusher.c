@@ -8,7 +8,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/pidfd.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/un.h>
 #include <sys/xattr.h>
 #include <unistd.h>
 
@@ -53,13 +56,26 @@ void read_boot_id(char *boot_id) {
   assert(!close(fd));
 }
 
+int listen_for_acknowledgements(const char *path) {
+  struct sockaddr_un address = {.sun_family = AF_UNIX};
+  assert(strlen(path) < sizeof address.sun_path);
+  strcpy(address.sun_path, path);
+  unlink(path);
+  int fd = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
+  assert(fd >= 0);
+  assert(!bind(fd, (struct sockaddr *)&address, sizeof address));
+  assert(!listen(fd, 1));
+  return fd;
+}
+
 void assert_acknowledgement(int fd, uint64_t id) {
   uint8_t expected[sizeof(uint8_t) + sizeof id];
   expected[0] = 1;
   write_u64(id, expected + 1);
 
-  uint8_t response[2 * sizeof expected];
-  assert(read(fd, response, sizeof response) == sizeof expected);
+  uint8_t response[sizeof expected];
+  assert(recv(fd, response, sizeof response, MSG_TRUNC | MSG_DONTWAIT) ==
+         sizeof response);
   assert(!memcmp(response, expected, sizeof expected));
 }
 
@@ -71,6 +87,9 @@ struct buffer *create_acknowledgement_path(struct trace *trace) {
 }
 
 void test_flusher(struct trace *trace) {
+  pid_t pid = getpid();
+  int pidfd = pidfd_open(pid, 0);
+  assert(pidfd >= 0);
   const char *path = "flushable";
   int fd = creat(path, 0644);
   assert(fd >= 0);
@@ -104,12 +123,7 @@ void test_flusher(struct trace *trace) {
   const char *acknowledgement_path_string =
       get_string(get_view(acknowledgement_path));
 
-  unlink(acknowledgement_path_string);
-  assert(!mkfifo(acknowledgement_path_string, 0600));
-
-  int acknowledgement_fd =
-      open(acknowledgement_path_string, O_RDONLY | O_NONBLOCK);
-  assert(acknowledgement_fd >= 0);
+  int listener = listen_for_acknowledgements(acknowledgement_path_string);
 
   assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX - 2,
                           bypass_queue_with_timestamp, 11, 22));
@@ -118,9 +132,24 @@ void test_flusher(struct trace *trace) {
   assert(request);
   assert(get_time(request) == 22);
 
-  acknowledge(request, getpid(), flusher, trace);
+  acknowledge(request, pid, pidfd, flusher, trace);
   assert(ok(trace));
+  int acknowledgement_fd = accept(listener, NULL, NULL);
+  assert(acknowledgement_fd >= 0);
   assert_acknowledgement(acknowledgement_fd, 11);
+
+  /* The same numeric PID with a different pidfd must miss both the cache
+     and the peer check on the new connection. */
+  int other_pidfd = pidfd_open(getppid(), 0);
+  assert(other_pidfd >= 0);
+  acknowledge(request, pid, other_pidfd, flusher, trace);
+  assert(ok(trace));
+  int rejected = accept(listener, NULL, NULL);
+  assert(rejected >= 0);
+  uint8_t byte;
+  assert(recv(rejected, &byte, sizeof byte, MSG_DONTWAIT) == 0);
+  assert(!close(rejected));
+  assert(!close(other_pidfd));
 
   free(request);
 
@@ -134,7 +163,7 @@ void test_flusher(struct trace *trace) {
   assert(request);
   assert(get_time(request) == 44);
 
-  acknowledge(request, getpid(), flusher, trace);
+  acknowledge(request, pid, pidfd, flusher, trace);
   assert(ok(trace));
   assert_acknowledgement(acknowledgement_fd, 33);
 
@@ -162,6 +191,8 @@ void test_flusher(struct trace *trace) {
   free(request);
 
   assert(!close(acknowledgement_fd));
+  assert(!close(listener));
+  assert(!close(pidfd));
   assert(!unlink(acknowledgement_path_string));
   free_buffer(acknowledgement_path);
 

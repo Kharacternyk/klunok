@@ -1,5 +1,4 @@
 #include "handler.h"
-#include "bitmap.h"
 #include "buffer.h"
 #include "config.h"
 #include "counter.h"
@@ -11,6 +10,7 @@
 #include "linq.h"
 #include "messages.h"
 #include "parents.h"
+#include "process.h"
 #include "set.h"
 #include "sieve.h"
 #include "storepath.h"
@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/fanotify.h>
 #include <sys/stat.h>
 
 struct handler {
@@ -30,7 +31,7 @@ struct handler {
   struct config *config;
   struct journal *journal;
   struct linq *linq;
-  struct bitmap *editor_pid_bitmap;
+  struct editors *editors;
   struct set *elf_interpreters;
   struct flusher *flusher;
 };
@@ -62,8 +63,8 @@ struct handler *load_handler(const char *config_path,
         create_flusher(get_flushed_path_count_guess(handler->config), trace);
     handler->elf_interpreters =
         create_set(get_elf_interpreter_count_guess(handler->config), trace);
-    handler->editor_pid_bitmap =
-        create_bitmap(get_max_pid_guess(handler->config), trace);
+    handler->editors =
+        create_editors(get_max_pid_guess(handler->config), trace);
 
     try(trace);
     handler->linq = load_linq(get_queue_path(handler->config),
@@ -101,7 +102,7 @@ static void record_event(const char *event, pid_t pid, const char *path,
   }
 }
 
-void handle_open_exec(pid_t pid, int fd, struct handler *handler,
+void handle_open_exec(pid_t pid, int pidfd, int fd, struct handler *handler,
                       struct trace *trace) {
   if (!ok(trace)) {
     return;
@@ -115,6 +116,9 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
   ++exe_filename;
 
   const char *event = get_event_open_exec_not_editor(handler->config);
+  if (pidfd == FAN_EPIDFD) {
+    forget_editor(pid, handler->editors);
+  }
 
   struct buffer_view *exe_filename_view =
       create_buffer_view(exe_filename, trace);
@@ -126,17 +130,17 @@ void handle_open_exec(pid_t pid, int fd, struct handler *handler,
 
   if (is_within(exe_filename_view, get_editors(handler->config))) {
     event = get_event_open_exec_editor(handler->config);
-    set_bit(pid, handler->editor_pid_bitmap, trace);
+    track_editor(pid, pidfd, handler->editors, trace);
 
     char *interpreter = get_elf_interpreter(fd, trace);
     if (interpreter) {
       add(interpreter, handler->elf_interpreters, trace);
       free(interpreter);
     }
-  } else if (get_bit(pid, handler->editor_pid_bitmap)) {
+  } else if (is_editor(pid, pidfd, handler->editors)) {
     struct buffer_view *file_path_view = create_buffer_view(file_path, trace);
     if (ok(trace) && !is_within(file_path_view, handler->elf_interpreters)) {
-      unset_bit(pid, handler->editor_pid_bitmap);
+      forget_editor(pid, handler->editors);
     }
     free_buffer_view(file_path_view);
   }
@@ -156,8 +160,9 @@ static const char *get_project_root_end(const char *project_end,
   return project_end;
 }
 
-static bool push_to_linq(pid_t pid, char *path, struct flush_request *request,
-                         struct handler *handler, struct trace *trace) {
+static bool push_to_linq(pid_t pid, int pidfd, char *path,
+                         struct flush_request *request, struct handler *handler,
+                         struct trace *trace) {
   if (!ok(trace)) {
     return false;
   }
@@ -188,7 +193,7 @@ static bool push_to_linq(pid_t pid, char *path, struct flush_request *request,
   const char *const *ends = get_sieved_ends(sieved_path);
 
   const char *farthest_end = get_hiding_dot(sieved_path);
-  bool is_written_by_editor = get_bit(pid, handler->editor_pid_bitmap);
+  bool is_written_by_editor = is_editor(pid, pidfd, handler->editors);
   bool is_pushed = !get_hiding_dot(sieved_path) && is_written_by_editor;
 
   for (size_t i = 0; i < sizeof sets / sizeof sets[0]; ++i) {
@@ -458,7 +463,7 @@ static void store(const char *path, time_t time, struct handler *handler,
   free_sieved_path(sieved_path);
 }
 
-void handle_close_write(pid_t pid, int fd, struct handler *handler,
+void handle_close_write(pid_t pid, int pidfd, int fd, struct handler *handler,
                         struct trace *trace) {
   if (!ok(trace)) {
     return;
@@ -482,12 +487,12 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
           handler, trace);
   }
 
-  if (push_to_linq(pid, file_path, request, handler, trace)) {
+  if (push_to_linq(pid, pidfd, file_path, request, handler, trace)) {
     event = get_event_close_write_not_ignored(handler->config);
   }
 
   if (request) {
-    acknowledge(request, pid, handler->flusher, trace);
+    acknowledge(request, pid, pidfd, handler->flusher, trace);
     free(request);
   }
 
@@ -578,7 +583,7 @@ void free_handler(struct handler *handler) {
     free_config(handler->config);
     free_journal(handler->journal);
     free_linq(handler->linq);
-    free_bitmap(handler->editor_pid_bitmap);
+    free_editors(handler->editors);
     free_set(handler->elf_interpreters);
     free_flusher(handler->flusher);
     free(handler);

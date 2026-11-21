@@ -8,6 +8,7 @@
 #include "params.h"
 #include "parents.h"
 #include "prctl.h"
+#include "process.h"
 #include "set.h"
 #include "trace.h"
 #include <assert.h>
@@ -71,7 +72,8 @@ int main(int argc, const char **argv) {
   assert(peek(get_exec_mounts(params)));
   assert(get_privilege_dropping_path(params));
 
-  int fanotify_fd = fanotify_init(FAN_CLASS_NOTIF, O_RDONLY);
+  int fanotify_fd =
+      fanotify_init(FAN_CLASS_NOTIF | FAN_REPORT_PIDFD, O_RDONLY | O_CLOEXEC);
   if (fanotify_fd < 0) {
     throw_errno(trace);
     throw_static(messages.main.fanotify.cannot_init, trace);
@@ -144,9 +146,15 @@ int main(int argc, const char **argv) {
 
   set_process_option(PR_SET_DUMPABLE, 0, trace);
   set_process_option(PR_SET_NO_NEW_PRIVS, 1, trace);
+  set_process_option(PR_SET_MDWE, PR_MDWE_REFUSE_EXEC_GAIN, trace);
 
   if (!ok(trace)) {
     throw_static(messages.main.cannot_apply_process_hardening, trace);
+    return fail(trace);
+  }
+
+  require_pidfs(trace);
+  if (!ok(trace)) {
     return fail(trace);
   }
 
@@ -187,32 +195,55 @@ int main(int argc, const char **argv) {
 
   for (;;) {
     int status = poll(poll_fds, 2, pause * 1000);
+
     if (status < 0 || (status > 0 && poll_fds[0].revents ^ POLLIN &&
                        poll_fds[1].revents ^ POLLIN)) {
       throw_errno(trace);
       throw_static(messages.main.fanotify.cannot_poll, trace);
     } else if (status > 0 && poll_fds[0].revents & POLLIN) {
-      struct fanotify_event_metadata event;
-      try(trace);
-      TNEG(read(fanotify_fd, &event, sizeof event) - sizeof event, trace);
-      finally_rethrow_static(messages.main.fanotify.cannot_read_event, trace);
-      if (ok(trace)) {
-        if (event.vers != FANOTIFY_METADATA_VERSION) {
-          throw_static(messages.main.fanotify.version_mismatch, trace);
-        } else if (event.mask & FAN_Q_OVERFLOW) {
-          throw_static(messages.main.fanotify.queue_overflow, trace);
-        } else {
-          if (event.mask & FAN_OPEN_EXEC) {
-            try(trace);
-            handle_open_exec(event.pid, event.fd, handler, trace);
-            finally_rethrow_static(messages.main.cannot_handle_exec, trace);
-          } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
-            try(trace);
-            handle_close_write(event.pid, event.fd, handler, trace);
-            finally_rethrow_static(messages.main.cannot_handle_write, trace);
-          }
-          close(event.fd);
-        }
+      struct {
+        struct fanotify_event_metadata metadata;
+        struct fanotify_event_info_pidfd info;
+      } event;
+
+      ssize_t size = TNEG(read(fanotify_fd, &event, sizeof event), trace);
+
+      if (!ok(trace) || size < (ssize_t)sizeof event.metadata) {
+        throw_static(messages.main.fanotify.cannot_read_event, trace);
+        return fail(trace);
+      }
+      if (event.metadata.vers != FANOTIFY_METADATA_VERSION) {
+        throw_static(messages.main.fanotify.version_mismatch, trace);
+        return fail(trace);
+      }
+      if (event.metadata.mask & FAN_Q_OVERFLOW) {
+        throw_static(messages.main.fanotify.queue_overflow, trace);
+        return fail(trace);
+      }
+      if (size != sizeof event || event.metadata.event_len != sizeof event ||
+          event.metadata.metadata_len != sizeof event.metadata ||
+          event.info.hdr.info_type != FAN_EVENT_INFO_TYPE_PIDFD ||
+          event.info.hdr.len != sizeof event.info) {
+        throw_static(messages.main.fanotify.cannot_read_event, trace);
+        return fail(trace);
+      }
+
+      pid_t pid = event.metadata.pid;
+      int pidfd = event.info.pidfd;
+
+      if (event.metadata.mask & FAN_OPEN_EXEC) {
+        try(trace);
+        handle_open_exec(pid, pidfd, event.metadata.fd, handler, trace);
+        finally_rethrow_static(messages.main.cannot_handle_exec, trace);
+      } else if (event.metadata.mask & FAN_CLOSE_WRITE && pid != self) {
+        try(trace);
+        handle_close_write(pid, pidfd, event.metadata.fd, handler, trace);
+        finally_rethrow_static(messages.main.cannot_handle_write, trace);
+      }
+
+      close(event.metadata.fd);
+      if (pidfd >= 0) {
+        close(pidfd);
       }
     } else if (status > 0) {
       return EXIT_SUCCESS;

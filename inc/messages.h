@@ -59,6 +59,7 @@ struct translation {
     const char *out_of_memory;
     const char *cli_usage_violated;
     const char *cannot_parse_cli;
+    const char *pidfs_required;
     const char *cannot_drop_privileges;
     const char *cannot_apply_process_hardening;
     const char *cannot_create_signalfd;

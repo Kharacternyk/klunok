@@ -2,7 +2,8 @@ import Asciinema from '../src/asciinema.jsx';
 
 # Usage
 
-Klunok uses the Linux kernel fanotify API, which as of now requires root privileges.
+Klunok uses pidfs, introduced in Linux 6.9, to compare process identities.
+It uses root privileges to set up fanotify mount marks.
 Therefore, Klunok should be invoked, for example, with `sudo`:
 
 ```bash

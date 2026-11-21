@@ -9,6 +9,9 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/fanotify.h>
+#include <sys/pidfd.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -21,6 +24,9 @@
 #define IN_STORE(PATH) "klunok/store/" PATH "/version"
 
 void test_handler(struct trace *trace) {
+  pid_t pid = getpid();
+  int pidfd = pidfd_open(pid, 0);
+  assert(pidfd >= 0);
   struct handler *handler = load_handler(CONFIG, 1, trace);
   assert(ok(trace));
 
@@ -30,16 +36,16 @@ void test_handler(struct trace *trace) {
 
   int fd = open(CONFIG, O_RDONLY);
   assert(fd >= 0);
-  handle_open_exec(getpid(), fd, handler, trace);
+  handle_open_exec(pid, pidfd, fd, handler, trace);
   assert(ok(trace));
 
-  handle_close_write(getpid(), fd, handler, trace);
+  handle_close_write(pid, pidfd, fd, handler, trace);
   assert(ok(trace));
 
   close(fd);
   fd = open(F2, O_RDONLY);
   assert(fd >= 0);
-  handle_close_write(getpid(), fd, handler, trace);
+  handle_close_write(pid, pidfd, fd, handler, trace);
   assert(ok(trace));
 
   pause = handle_timeout(handler, trace);
@@ -49,7 +55,7 @@ void test_handler(struct trace *trace) {
   assert(access(IN_STORE(F1) ".lua", F_OK) == 0);
   assert(access(IN_STORE(F2) ".lua", F_OK) == 0);
 
-  handle_close_write(getpid(), fd, handler, trace);
+  handle_close_write(pid, pidfd, fd, handler, trace);
   assert(ok(trace));
 
   pause = handle_timeout(handler, trace);
@@ -61,7 +67,7 @@ void test_handler(struct trace *trace) {
   close(fd);
   fd = open(EMPTY, O_CREAT | O_RDONLY, S_IRWXU);
 
-  handle_close_write(getpid(), fd, handler, trace);
+  handle_close_write(pid, pidfd, fd, handler, trace);
   assert(ok(trace));
 
   assert(unlink(EMPTY) >= 0);
@@ -74,7 +80,7 @@ void test_handler(struct trace *trace) {
   close(fd);
   fd = open(EMPTY, O_CREAT | O_RDONLY, S_IWOTH);
 
-  handle_close_write(getpid(), fd, handler, trace);
+  handle_close_write(pid, pidfd, fd, handler, trace);
   assert(ok(trace));
 
   pause = handle_timeout(handler, trace);
@@ -89,9 +95,10 @@ void test_handler(struct trace *trace) {
   assert(ok(trace));
   fd = open(CONFIG, O_RDONLY);
   assert(fd >= 0);
-  handle_open_exec(getpid(), fd, handler, trace);
+  /* The editor exited before either queued event was read. */
+  handle_open_exec(pid, FAN_NOPIDFD, fd, handler, trace);
   assert(ok(trace));
-  handle_close_write(getpid(), fd, handler, trace);
+  handle_close_write(pid, FAN_NOPIDFD, fd, handler, trace);
   assert(ok(trace));
 
   pause = handle_timeout(handler, trace);
@@ -131,22 +138,19 @@ void test_handler(struct trace *trace) {
   const char *acknowledgement_path_string =
       get_string(get_view(acknowledgement_path));
 
-  unlink(acknowledgement_path_string);
-  assert(!mkfifo(acknowledgement_path_string, 0600));
+  int listener = listen_for_acknowledgements(acknowledgement_path_string);
 
-  int acknowledgement_fd =
-      open(acknowledgement_path_string, O_RDONLY | O_NONBLOCK);
-  assert(acknowledgement_fd >= 0);
-
-  handle_close_write(getpid(), fd, handler, trace);
+  handle_close_write(pid, pidfd, fd, handler, trace);
   assert(ok(trace));
+  int acknowledgement_fd = accept(listener, NULL, NULL);
+  assert(acknowledgement_fd >= 0);
   assert_acknowledgement(acknowledgement_fd, 77);
 
   assert(!access("klunok/store/" FLUSHED "/22.txt", F_OK));
 
   assert(!set_flush_xattr(FLUSHED, 1, boot_id, UINT64_MAX,
                           bypass_queue_with_timestamp, 78, 0));
-  handle_close_write(getpid(), fd, handler, trace);
+  handle_close_write(pid, pidfd, fd, handler, trace);
   assert(ok(trace));
   assert_acknowledgement(acknowledgement_fd, 78);
 
@@ -159,12 +163,14 @@ void test_handler(struct trace *trace) {
   assert(write(config_fd, change, sizeof change - 1) == sizeof change - 1);
   assert(!set_flush_xattr("flush.lua", 1, boot_id, UINT64_MAX, bypass_queue, 79,
                           0));
-  handle_close_write(getpid(), config_fd, handler, trace);
+  handle_close_write(pid, pidfd, config_fd, handler, trace);
   assert(ok(trace));
   assert_acknowledgement(acknowledgement_fd, 79);
   assert(!close(config_fd));
 
   assert(!close(acknowledgement_fd));
+  assert(!close(listener));
+  assert(!close(pidfd));
   assert(!unlink(acknowledgement_path_string));
   free_buffer(acknowledgement_path);
   close(fd);

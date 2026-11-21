@@ -1,14 +1,15 @@
 #include "flusher.h"
 #include "buffer.h"
+#include "process.h"
 #include "serialize.h"
 #include "set.h"
 #include "trace.h"
-#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/xattr.h>
 #include <time.h>
 #include <unistd.h>
@@ -19,8 +20,8 @@ struct flusher {
   uint64_t global_timestamp;
   struct set *path_timestamps;
 
-  pid_t last_pid;
-  int last_pid_fd;
+  int peer_pidfd;
+  int socket_fd;
 };
 
 struct flusher *create_flusher(size_t flushed_path_count_guess,
@@ -40,8 +41,8 @@ struct flusher *create_flusher(size_t flushed_path_count_guess,
     return NULL;
   }
 
-  flusher->last_pid = 0;
-  flusher->last_pid_fd = -1;
+  flusher->peer_pidfd = -1;
+  flusher->socket_fd = -1;
   flusher->global_timestamp =
       timespec.tv_nsec + 1000000000 * (uint64_t)timespec.tv_sec;
   flusher->path_timestamps = path_timestamps;
@@ -189,68 +190,75 @@ enum flush_kind get_kind(struct flush_request *request) {
 
 uint64_t get_time(struct flush_request *request) { return request->time; }
 
-void acknowledge(const struct flush_request *request, pid_t pid,
+static void disconnect_peer(struct flusher *flusher) {
+  if (flusher->socket_fd >= 0) {
+    close(flusher->socket_fd);
+    close(flusher->peer_pidfd);
+    flusher->socket_fd = -1;
+    flusher->peer_pidfd = -1;
+  }
+}
+
+static bool connect_peer(pid_t pid, int pidfd, struct flusher *flusher,
+                         struct trace *trace) {
+  struct buffer *path = create_buffer(trace);
+  concat_string("/tmp/klunok.", path, trace);
+  concat_size(pid, path, trace);
+  struct sockaddr_un address = {.sun_family = AF_UNIX};
+  if (!ok(trace) || get_length(get_view(path)) >= sizeof address.sun_path) {
+    free_buffer(path);
+    return false;
+  }
+  strcpy(address.sun_path, get_string(get_view(path)));
+  free_buffer(path);
+
+  int fd = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+  if (fd < 0) {
+    return false;
+  }
+  int peer = -1;
+  socklen_t size = sizeof peer;
+  if (connect(fd, (struct sockaddr *)&address, sizeof address) < 0 ||
+      getsockopt(fd, SOL_SOCKET, SO_PEERPIDFD, &peer, &size) < 0 ||
+      !same_process(pidfd, peer)) {
+    if (peer >= 0) {
+      close(peer);
+    }
+    close(fd);
+    return false;
+  }
+  disconnect_peer(flusher);
+  flusher->socket_fd = fd;
+  flusher->peer_pidfd = peer;
+  return true;
+}
+
+void acknowledge(const struct flush_request *request, pid_t pid, int pidfd,
                  struct flusher *flusher, struct trace *trace) {
-  if (!ok(trace)) {
+  if (!ok(trace) || pidfd < 0) {
     return;
   }
-
-  if (pid != flusher->last_pid) {
-    struct buffer *path = create_buffer(trace);
-    concat_string("/tmp/klunok.", path, trace);
-    concat_size(pid, path, trace);
-
-    if (!ok(trace)) {
-      free_buffer(path);
-      return;
-    }
-
-    int fd =
-        open(get_string(get_view(path)), O_WRONLY | O_NONBLOCK | O_NOFOLLOW);
-
-    free_buffer(path);
-
-    if (fd < 0) {
-      return;
-    }
-
-    struct stat stat;
-
-    if (fstat(fd, &stat) || !S_ISFIFO(stat.st_mode) || stat.st_nlink > 1) {
-      close(fd);
-      return;
-    }
-
-    if (flusher->last_pid_fd >= 0) {
-      close(flusher->last_pid_fd);
-    }
-
-    flusher->last_pid = pid;
-    flusher->last_pid_fd = fd;
-  }
-
   uint8_t response[9];
   response[0] = 1;
   write_u64(request->id, response + 1);
 
-  /* No looping here, sizeof id is less than PIPE_BUF */
-  if (write(flusher->last_pid_fd, &response, sizeof response) < 0 &&
-      errno == EPIPE) {
-    flusher->last_pid = 0;
-
-    if (flusher->last_pid_fd >= 0) {
-      close(flusher->last_pid_fd);
-      flusher->last_pid_fd = -1;
+  for (int attempts_left = same_process(pidfd, flusher->peer_pidfd) ? 2 : 1;
+       attempts_left > 0; --attempts_left) {
+    if (attempts_left == 1 && !connect_peer(pid, pidfd, flusher, trace)) {
+      return;
     }
+    ssize_t sent =
+        send(flusher->socket_fd, response, sizeof response, MSG_NOSIGNAL);
+    if (sent >= 0 || errno == EAGAIN || errno == EINTR) {
+      return;
+    }
+    disconnect_peer(flusher);
   }
 }
 
 void free_flusher(struct flusher *flusher) {
   if (flusher) {
-    if (flusher->last_pid_fd >= 0) {
-      close(flusher->last_pid_fd);
-    }
-
+    disconnect_peer(flusher);
     free_set(flusher->path_timestamps);
     free(flusher);
   }
