@@ -32,7 +32,7 @@ Please see https://github.com/Kharacternyk/klunok/blob/main/SECURITY.md.
 You can check that the distributed binary
 has been built from the source without modifications
 by reproducing the build locally with [Nix](https://nixos.org/).
-For example, let's verify that the `v0.1.1` release has not been tampered with:
+For example, let's verify that the `v2.0.0` release has not been tampered with:
 
 ```bash
 nix build github:Kharacternyk/klunok/v2.0.0#static
