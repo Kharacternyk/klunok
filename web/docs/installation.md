@@ -43,12 +43,12 @@ Please use alternative installation methods for other architectures.
 You can install Klunok with a flake-enabled version of the Nix package manager:
 
 ```bash
-nix profile install github:Kharacternyk/klunok/v1
+nix profile install github:Kharacternyk/klunok/v2
 ```
 
 Avoid installing `github:Kharacternyk/klunok` (without a version tag),
 as this is the development version that is more likely to have bugs.
-Instead, use `github:Kharacternyk/klunok/v1` for the latest stable version.
+Instead, use `github:Kharacternyk/klunok/v2` for the latest stable version.
 
   </TabItem>
   <TabItem value="source" label="From source">
@@ -88,7 +88,7 @@ assuming GCC 14 or newer and some hardening applied:
 ```bash
 git clone https://github.com/Kharacternyk/klunok
 cd klunok
-git checkout v1
+git checkout v2
 CC=gcc meson setup build -Dbuildtype=release \
   -Dc_args='-fhardened -fsanitize=signed-integer-overflow -fsanitize-trap=signed-integer-overflow' \
   -Dc_link_args=-fhardened
