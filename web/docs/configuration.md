@@ -126,8 +126,6 @@ end
 
 ### `prefix`
 
-<Release>0.1.0</Release>
-
 Prefix used by default for all of the paths that Klunok writes to.
 
 ```lua title="example"
@@ -144,8 +142,6 @@ declare('prefix', nil, is_string)
 
 ### `prefix_var`
 
-<Release>0.1.0</Release>
-
 Prefix used by default for non-store paths that Klunok writes to.
 
 ```lua title="post-config"
@@ -153,8 +149,6 @@ declare('prefix_var', prefix .. '/var', is_string)
 ```
 
 ### `store_root`
-
-<Release>0.1.0</Release>
 
 Root of the store.
 This is where the backed up versions of files that you edit are placed.
@@ -165,8 +159,6 @@ declare('store_root', prefix .. '/store', is_string)
 
 ### `queue_path`
 
-<Release>0.1.0</Release>
-
 Path to the queue.
 The queue is a directory that contains symbolic links to files that you edit.
 Klunok uses the queue for [debouncing](#debouncing).
@@ -176,8 +168,6 @@ declare('queue_path', prefix_var .. '/queue', is_string)
 ```
 
 ### `journal_path`
-
-<Release>0.1.0</Release>
 
 Path to the journal.
 The journal is a file where Klunok records various events,
@@ -224,8 +214,6 @@ without any further modifications.
 
 ### `debounce_seconds`
 
-<Release>0.1.0</Release>
-
 The delay, in seconds, before a file is copied to the store after the last modification.
 
 ```lua title="pre-config"
@@ -243,8 +231,6 @@ These settings use
 
 ### `journal_timestamp_pattern`
 
-<Release>0.1.0</Release>
-
 Pattern of timestamps in the journal.
 
 ```lua title="pre-config"
@@ -256,8 +242,6 @@ declare('journal_timestamp_pattern', nil, is_string)
 ```
 
 ### `version_pattern`
-
-<Release>0.1.0</Release>
 
 Pattern of file versions in the store.
 
@@ -352,8 +336,6 @@ declare('ignored_leading_dots', nil, is_set_of_strings)
 
 ### `editors`
 
-<Release>0.1.0</Release>
-
 Filenames of executables that are considered editors.
 By default, only files edited by these applications are copied to the store.
 If you have problems registering an application as an editor,
@@ -409,8 +391,6 @@ declare('editors', nil, is_set_of_strings)
 
 ### `history_paths`
 
-<Release>0.1.0</Release>
-
 Paths that are assumed to be always appended to.
 Only changes will be stored as new versions.
 These paths are copied to the store regardless of the application that writes to them
@@ -430,8 +410,6 @@ declare('history_paths', nil, is_set_of_strings)
 
 ### `excluded_paths`
 
-<Release>0.1.0</Release>
-
 Paths that are never copied to the store.
 
 ```lua title="pre-config"
@@ -443,8 +421,6 @@ declare('excluded_paths', nil, is_set_of_strings)
 ```
 
 ### `included_paths`
-
-<Release>0.1.0</Release>
 
 Paths that are copied to the store regardless of the application that writes to them,
 and hence regardless of [the `editors` setting](#editors).
@@ -458,8 +434,6 @@ declare('included_paths', nil, is_set_of_strings)
 ```
 
 ### `cluded_paths`
-
-<Release>0.1.0</Release>
 
 Paths that are copied to the store only if they are written to by an editor application.
 Editor applications are defined in [the `editors` setting](#editors).
@@ -548,8 +522,6 @@ Tinkering with these settings cannot impact Klunok in any other way.
 
 ### `queue_size_guess`
 
-<Release>0.1.0</Release>
-
 Guess of the maximum queue size.
 
 ```lua title="post-config"
@@ -557,8 +529,6 @@ declare('queue_size_guess', debounce_seconds * 2, is_positive)
 ```
 
 ### `path_length_guess`
-
-<Release>0.1.0</Release>
 
 Guess of the maximum length of the majority of the paths in the system.
 
@@ -572,8 +542,6 @@ declare('path_length_guess', nil, is_positive)
 
 ### `max_pid_guess`
 
-<Release>0.1.0</Release>
-
 Guess of the maximum PID (process ID) in the system while Klunok is running.
 
 ```lua title="pre-config"
@@ -585,8 +553,6 @@ declare('max_pid_guess', nil, is_positive)
 ```
 
 ### `elf_interpreter_count_guess`
-
-<Release>0.1.0</Release>
 
 Guess of how many ELF interpreters there are in the system.
 
