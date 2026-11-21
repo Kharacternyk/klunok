@@ -227,7 +227,8 @@ static bool push_to_linq(pid_t pid, char *path, struct flush_request *request,
   rethrow_context(path, trace);
   finally_rethrow_static(messages.handler.linq.cannot_push, trace);
 
-  if (project_root_end && *project_root_end) {
+  if (project_root_end && *project_root_end &&
+      (!request || get_kind(request) != drop_from_queue)) {
     /* Keep the trailing slash to distinguish project roots from files. */
     char original_end = project_root_end[1];
     path[project_root_end - path + 1] = 0;
