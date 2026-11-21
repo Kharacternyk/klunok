@@ -35,8 +35,8 @@ by reproducing the build locally with [Nix](https://nixos.org/).
 For example, let's verify that the `v0.1.1` release has not been tampered with:
 
 ```bash
-nix build github:Kharacternyk/klunok/v0.1.1#static
-curl -Lo binary https://github.com/Kharacternyk/klunok/releases/download/v0.1.1/klunok
+nix build github:Kharacternyk/klunok/v2.0.0#static
+curl -Lo binary https://github.com/Kharacternyk/klunok/releases/download/v2.0.0/klunok
 cmp binary ./result/bin/klunok
 ```
 
