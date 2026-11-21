@@ -71,7 +71,8 @@ int main(int argc, const char **argv) {
   assert(peek(get_exec_mounts(params)));
   assert(get_privilege_dropping_path(params));
 
-  int fanotify_fd = fanotify_init(FAN_CLASS_NOTIF, O_RDONLY);
+  int fanotify_fd =
+      fanotify_init(FAN_CLASS_NOTIF | FAN_CLOEXEC, O_RDONLY | O_CLOEXEC);
   if (fanotify_fd < 0) {
     throw_errno(trace);
     throw_static(messages.main.fanotify.cannot_init, trace);
@@ -193,26 +194,24 @@ int main(int argc, const char **argv) {
       throw_static(messages.main.fanotify.cannot_poll, trace);
     } else if (status > 0 && poll_fds[0].revents & POLLIN) {
       struct fanotify_event_metadata event;
-      try(trace);
-      TNEG(read(fanotify_fd, &event, sizeof event) - sizeof event, trace);
-      finally_rethrow_static(messages.main.fanotify.cannot_read_event, trace);
-      if (ok(trace)) {
-        if (event.vers != FANOTIFY_METADATA_VERSION) {
-          throw_static(messages.main.fanotify.version_mismatch, trace);
-        } else if (event.mask & FAN_Q_OVERFLOW) {
-          throw_static(messages.main.fanotify.queue_overflow, trace);
-        } else {
-          if (event.mask & FAN_OPEN_EXEC) {
-            try(trace);
-            handle_open_exec(event.pid, event.fd, handler, trace);
-            finally_rethrow_static(messages.main.cannot_handle_exec, trace);
-          } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
-            try(trace);
-            handle_close_write(event.pid, event.fd, handler, trace);
-            finally_rethrow_static(messages.main.cannot_handle_write, trace);
-          }
-          close(event.fd);
+      ssize_t size = TNEG(read(fanotify_fd, &event, sizeof event), trace);
+      if (size != (ssize_t)sizeof event) {
+        throw_static(messages.main.fanotify.cannot_read_event, trace);
+      } else if (event.vers != FANOTIFY_METADATA_VERSION) {
+        throw_static(messages.main.fanotify.version_mismatch, trace);
+      } else if (event.mask & FAN_Q_OVERFLOW) {
+        throw_static(messages.main.fanotify.queue_overflow, trace);
+      } else {
+        if (event.mask & FAN_OPEN_EXEC) {
+          try(trace);
+          handle_open_exec(event.pid, event.fd, handler, trace);
+          finally_rethrow_static(messages.main.cannot_handle_exec, trace);
+        } else if (event.mask & FAN_CLOSE_WRITE && event.pid != self) {
+          try(trace);
+          handle_close_write(event.pid, event.fd, handler, trace);
+          finally_rethrow_static(messages.main.cannot_handle_write, trace);
         }
+        close(event.fd);
       }
     } else if (status > 0) {
       return EXIT_SUCCESS;
