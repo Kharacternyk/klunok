@@ -473,6 +473,13 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
     return;
   }
 
+  if (request && get_kind(request) == ping) {
+    acknowledge(request, pid, handler->flusher, trace);
+    free(request);
+    free(file_path);
+    return;
+  }
+
   const char *event = get_event_close_write_ignored(handler->config);
 
   if (request && (get_kind(request) == bypass_queue ||

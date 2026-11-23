@@ -149,7 +149,7 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
 
   xattr.request.kind = wire_xattr[i++];
 
-  if (xattr.request.kind > drop_from_queue) {
+  if (xattr.request.kind > ping) {
     return NULL;
   }
 

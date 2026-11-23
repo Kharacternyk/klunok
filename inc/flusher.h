@@ -8,6 +8,7 @@ enum flush_kind {
   bypass_queue_with_timestamp,
   add_to_queue,
   drop_from_queue,
+  ping,
 };
 
 struct trace;

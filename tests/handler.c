@@ -18,6 +18,7 @@
 #define F2 TEST_ROOT "/lua/empty.lua"
 #define EMPTY "empty"
 #define FLUSHED "project/demo/flushed.txt"
+#define PINGED "project/demo/pinged.txt"
 #define IN_STORE(PATH) "klunok/store/" PATH "/version"
 
 void test_handler(struct trace *trace) {
@@ -166,10 +167,22 @@ void test_handler(struct trace *trace) {
   assert_acknowledgement(acknowledgement_fd, 79);
   assert(!close(config_fd));
 
+  assert(!close(fd));
+
+  fd = open(PINGED, O_CREAT | O_RDONLY, S_IRWXU);
+  assert(fd >= 0);
+
+  assert(!set_flush_xattr(PINGED, 1, boot_id, UINT64_MAX, ping, 80, 0));
+  handle_close_write(getpid(), fd, handler, trace);
+  assert(ok(trace));
+  assert_acknowledgement(acknowledgement_fd, 80);
+
+  assert(access("klunok/store/" PINGED "/0.txt", F_OK));
+  assert(!close(fd));
+
   assert(!close(acknowledgement_fd));
   assert(!unlink(acknowledgement_path_string));
   free_buffer(acknowledgement_path);
-  close(fd);
 
   pause = handle_timeout(handler, trace);
   assert(ok(trace));
