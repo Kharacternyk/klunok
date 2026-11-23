@@ -103,8 +103,9 @@ struct flush_request *get_request(const char *path, pid_t pid,
 
   struct flush_xattr xattr = {};
   uint8_t wire_xattr[sizeof xattr.version + sizeof xattr.boot_id +
-                     sizeof xattr.timestamp + sizeof xattr.request.kind +
-                     sizeof xattr.request.id + sizeof xattr.request.time];
+                     sizeof xattr.timestamp + sizeof xattr.pid +
+                     sizeof xattr.request.kind + sizeof xattr.request.id +
+                     sizeof xattr.request.time];
 
   ssize_t wire_xattr_size =
       getxattr(path, "user.klunok.flush", wire_xattr, sizeof wire_xattr);
