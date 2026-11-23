@@ -466,7 +466,7 @@ void handle_close_write(pid_t pid, int fd, struct handler *handler,
   }
   char *file_path = deref_fd(fd, get_path_length_guess(handler->config), trace);
   struct flush_request *request =
-      get_request(file_path, handler->flusher, trace);
+      get_request(file_path, pid, handler->flusher, trace);
 
   if (!ok(trace)) {
     free(file_path);

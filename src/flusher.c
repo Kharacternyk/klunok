@@ -90,10 +90,12 @@ struct flush_xattr {
   uint8_t version;
   char boot_id[36];
   uint64_t timestamp;
+  uint32_t pid;
   struct flush_request request;
 };
 
-struct flush_request *get_request(const char *path, struct flusher *flusher,
+struct flush_request *get_request(const char *path, pid_t pid,
+                                  struct flusher *flusher,
                                   struct trace *trace) {
   if (!flusher || !ok(trace)) {
     return NULL;
@@ -130,6 +132,14 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
     xattr.timestamp += wire_xattr[i];
   }
   if (xattr.timestamp < flusher->global_timestamp) {
+    return NULL;
+  }
+
+  for (size_t k = i; i < k + sizeof xattr.pid; ++i) {
+    xattr.pid <<= 8;
+    xattr.pid += wire_xattr[i];
+  }
+  if (xattr.pid != pid) {
     return NULL;
   }
 

@@ -18,8 +18,8 @@ struct flusher *create_flusher(const char *fifo_prefix,
                                struct trace *trace)
     __attribute__((warn_unused_result));
 
-struct flush_request *get_request(const char *path, struct flusher *flusher,
-                                  struct trace *trace)
+struct flush_request *get_request(const char *path, pid_t pid,
+                                  struct flusher *flusher, struct trace *trace)
     __attribute__((warn_unused_result));
 
 enum flush_kind get_kind(struct flush_request *request)

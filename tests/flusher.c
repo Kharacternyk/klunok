@@ -15,17 +15,19 @@
 int set_flush_xattr(const char *path, uint8_t version, const char *boot_id,
                     uint64_t timestamp, uint8_t kind, uint64_t id,
                     uint64_t time) {
-  uint8_t xattr[2 * sizeof(uint8_t) + BOOT_ID_SIZE + 3 * sizeof(uint64_t)];
+  uint8_t xattr[2 * sizeof(uint8_t) + BOOT_ID_SIZE + 3 * sizeof(uint64_t) +
+                sizeof(uint32_t)];
   size_t i = 0;
 
   xattr[i++] = version;
   memcpy(xattr + i, boot_id, BOOT_ID_SIZE);
   i += BOOT_ID_SIZE;
 
-  i += (write_u64(timestamp, xattr + i), sizeof timestamp);
+  i += write_u64(timestamp, xattr + i);
+  i += write_u32(getpid(), xattr + i);
   xattr[i++] = kind;
-  i += (write_u64(id, xattr + i), sizeof id);
-  i += (write_u64(time, xattr + i), sizeof time);
+  i += write_u64(id, xattr + i);
+  i += write_u64(time, xattr + i);
 
   assert(i == sizeof xattr);
 
@@ -82,7 +84,7 @@ void test_flusher(struct trace *trace) {
   struct flusher *flusher = create_flusher(prefix, 1, trace);
   assert(ok(trace));
 
-  assert(!get_request(path, flusher, trace));
+  assert(!get_request(path, getpid(), flusher, trace));
   assert(ok(trace));
 
   char boot_id[BOOT_ID_SIZE];
@@ -98,7 +100,7 @@ void test_flusher(struct trace *trace) {
     exit(77);
   }
 
-  assert(!get_request(path, flusher, trace));
+  assert(!get_request(path, getpid(), flusher, trace));
   assert(ok(trace));
 
   struct buffer *acknowledgement_path =
@@ -118,10 +120,10 @@ void test_flusher(struct trace *trace) {
   assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX - 2,
                           bypass_queue_with_timestamp, 11, 22));
   struct flusher *disabled = create_flusher(NULL, 1, trace);
-  assert(!get_request(path, disabled, trace));
+  assert(!get_request(path, getpid(), disabled, trace));
   assert(ok(trace));
   free_flusher(disabled);
-  struct flush_request *request = get_request(path, flusher, trace);
+  struct flush_request *request = get_request(path, getpid(), flusher, trace);
   assert(ok(trace));
   assert(request);
   assert(get_time(request) == 22);
@@ -132,12 +134,12 @@ void test_flusher(struct trace *trace) {
 
   free(request);
 
-  assert(!get_request(path, flusher, trace));
+  assert(!get_request(path, getpid(), flusher, trace));
   assert(ok(trace));
 
   assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX - 1,
                           bypass_queue_with_timestamp, 33, 44));
-  request = get_request(path, flusher, trace);
+  request = get_request(path, getpid(), flusher, trace);
   assert(ok(trace));
   assert(request);
   assert(get_time(request) == 44);
@@ -150,20 +152,20 @@ void test_flusher(struct trace *trace) {
 
   assert(!set_flush_xattr(path, 2, boot_id, UINT64_MAX,
                           bypass_queue_with_timestamp, 55, 66));
-  assert(!get_request(path, flusher, trace));
+  assert(!get_request(path, getpid(), flusher, trace));
   assert(ok(trace));
 
   assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX,
                           bypass_queue_with_timestamp, 55, UINT64_MAX));
-  assert(!get_request(path, flusher, trace));
+  assert(!get_request(path, getpid(), flusher, trace));
   assert(ok(trace));
 
   assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX, 10, 55, 0));
-  assert(!get_request(path, flusher, trace));
+  assert(!get_request(path, getpid(), flusher, trace));
   assert(ok(trace));
 
   assert(!set_flush_xattr(path, 1, boot_id, UINT64_MAX, bypass_queue, 55, 0));
-  request = get_request(path, flusher, trace);
+  request = get_request(path, getpid(), flusher, trace);
   assert(ok(trace));
   assert(request);
   assert(get_time(request) == 0);
