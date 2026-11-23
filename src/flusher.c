@@ -81,7 +81,7 @@ struct flusher *create_flusher(const char *fifo_prefix,
 }
 
 struct flush_request {
-  enum flush_kind kind;
+  uint8_t kind;
   uint64_t id;
   uint64_t time;
 };
@@ -101,7 +101,7 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
 
   struct flush_xattr xattr = {};
   uint8_t wire_xattr[sizeof xattr.version + sizeof xattr.boot_id +
-                     sizeof xattr.timestamp + sizeof(uint8_t) +
+                     sizeof xattr.timestamp + sizeof xattr.request.kind +
                      sizeof xattr.request.id + sizeof xattr.request.time];
 
   ssize_t wire_xattr_size =
@@ -147,14 +147,11 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
     return NULL;
   }
 
-  enum flush_kind kind = wire_xattr[i++];
+  xattr.request.kind = wire_xattr[i++];
 
-  if (kind != bypass_queue && kind != bypass_queue_with_timestamp &&
-      kind != add_to_queue && kind != drop_from_queue) {
+  if (xattr.request.kind > drop_from_queue) {
     return NULL;
   }
-
-  xattr.request.kind = kind;
 
   for (size_t k = i; i < k + sizeof xattr.request.id; ++i) {
     xattr.request.id <<= 8;
@@ -165,7 +162,7 @@ struct flush_request *get_request(const char *path, struct flusher *flusher,
     xattr.request.time += wire_xattr[i];
   }
 
-  if (kind == bypass_queue_with_timestamp) {
+  if (xattr.request.kind == bypass_queue_with_timestamp) {
     time_t request_time = xattr.request.time;
 
     if (request_time < 0 || (uint64_t)request_time != xattr.request.time ||
