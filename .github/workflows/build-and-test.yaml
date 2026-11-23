@@ -14,7 +14,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Build & Test (${{ matrix.system }})
+    name: ${{ matrix.system }}
     strategy:
       fail-fast: false
       matrix:
